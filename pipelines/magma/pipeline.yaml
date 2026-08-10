@@ -847,7 +847,7 @@
     "metaspades_hybrid": {
       "name": "metaSPAdes (hybrid)",
       "description": {
-        "en": "Hybrid assembler for samples with BOTH short and long reads",
+        "en": "Hybrid assembler for samples with both short and long reads",
         "pt": "Montador híbrido para amostras com reads curtas E longas"
       },
       "citation": [

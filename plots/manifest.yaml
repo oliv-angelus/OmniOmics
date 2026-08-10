@@ -861,8 +861,8 @@ analyses:
       en: "Functional Differential Abundance"
       pt: "Abundância Diferencial Funcional"
     description:
-      en: "DESeq2 differential-abundance test between two metadata groups, on read counts aggregated by a chosen functional annotation category -- the statistics DOGMA's own pipeline deliberately stops short of (see notes/DOGMA.md). Aggregation by shared functional vocabulary (not raw per-sample transcript/ORF ID) is what makes cross-sample comparison possible at all here, the same real approach CoMW (cited in notes/DOGMA.md) uses."
-      pt: "Teste de abundância diferencial via DESeq2 entre dois grupos de metadados, sobre contagens de leituras agregadas por uma categoria de anotação funcional escolhida -- a estatística que o próprio pipeline do DOGMA deliberadamente não faz (ver notes/DOGMA.md). A agregação por vocabulário funcional compartilhado (não pelo ID bruto de transcrito/ORF por amostra) é o que torna a comparação entre amostras possível aqui, a mesma abordagem real usada pelo CoMW (citado em notes/DOGMA.md)."
+      en: "DESeq2 differential-abundance test between two metadata groups, on read counts aggregated by a chosen functional annotation category -- the statistics the DOGMA pipeline itself deliberately stops short of. Aggregating by shared functional vocabulary, rather than raw per-sample transcript/ORF IDs, is what makes cross-sample comparison possible here -- the same approach CoMW uses."
+      pt: "Teste de abundância diferencial via DESeq2 entre dois grupos de metadados, sobre contagens de leituras agregadas por uma categoria de anotação funcional escolhida -- a estatística que o próprio pipeline do DOGMA deliberadamente não faz. A agregação por vocabulário funcional compartilhado, em vez do ID bruto de transcrito/ORF por amostra, é o que torna a comparação entre amostras possível aqui -- a mesma abordagem usada pelo CoMW."
     applies_to: [dogma]
     input_shape: dogma_annotated
     script: analyses/dogma_functional_differential.R
@@ -1261,8 +1261,8 @@ analyses:
       en: "Genome Summary"
       pt: "Resumo do Genoma"
     description:
-      en: "Real assembly/quality/taxonomy/coverage/typing stats for ONE selected genome from this run, plus its own AMR/virulence gene hits -- the per-genome 'report card' a cross-genome comparison can't give on its own."
-      pt: "Estatísticas reais de montagem/qualidade/taxonomia/cobertura/tipagem de UM genoma selecionado desta execução, mais seus próprios hits de genes de resistência/virulência -- o 'boletim' por genoma que uma comparação entre genomas não consegue dar sozinha."
+      en: "Assembly, quality, taxonomy, coverage and typing statistics for a single selected genome from this run, plus its own AMR/virulence gene hits -- the per-genome 'report card' a cross-genome comparison can't give on its own."
+      pt: "Estatísticas de montagem, qualidade, taxonomia, cobertura e tipagem de um único genoma selecionado desta execução, mais seus próprios hits de genes de resistência/virulência -- o 'boletim' por genoma que uma comparação entre genomas não consegue dar sozinha."
     applies_to: [sigma]
     input_shape: sigma_genomes
     script: analyses/sigma_genome_summary.R
