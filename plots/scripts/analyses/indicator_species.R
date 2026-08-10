@@ -97,6 +97,8 @@ final_plot <- with_title_bar(p, title, size = 6, title_height = 0.12, font_famil
 height <- max(6, nrow(df_plot) * 0.25)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = 12, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 indicators <- lapply(seq_len(nrow(table_out)), function(i) as.list(table_out[i, ]))
 write_json(

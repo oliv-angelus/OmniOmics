@@ -77,6 +77,8 @@ final_plot <- with_title_bar(p, "Rarefaction Curve", size = 7, title_height = 0.
 plot_width <- max(14, n_samples * 0.1)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 8, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = plot_width, height = 8),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "rarefaction_curve", step = step, min_depth = min_depth,

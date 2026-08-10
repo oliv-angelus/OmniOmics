@@ -187,6 +187,8 @@ final_plot <- with_title_bar(p, title, size = 6, title_height = 0.15, font_famil
 height <- max(6, nrow(sigtab) * 0.25)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 14, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = 14, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 biomarkers <- lapply(seq_len(nrow(sigtab)), function(i) {
   list(

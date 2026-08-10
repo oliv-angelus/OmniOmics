@@ -97,6 +97,8 @@ title <- paste0("Functional Differential Abundance (", annotation_col, "): ", te
 final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 9, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 10, height = 9),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "dogma_functional_differential", annotation_column = annotation_col, group_var = group_var,

@@ -113,5 +113,7 @@ title <- paste0("Shared/Unique Taxa (", rank, ", > ", min_abundance * 100, "% me
 final_plot <- with_title_bar(p, title, size = 7, title_height = 0.1, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 11, height = 9, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 11, height = 9),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[venn_diagram] wrote data.json, default_style.json, venn_diagram.rds, preview.png")

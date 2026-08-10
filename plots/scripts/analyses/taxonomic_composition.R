@@ -140,5 +140,7 @@ n_panels <- length(panels)
 plot_width <- max(14, nsamples(ps) * 0.18)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 7 * n_panels, units = "in", dpi = 120, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = plot_width, height = 7 * n_panels),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[taxonomic_composition] wrote data.json, default_style.json, taxonomic_composition.rds, preview.png (%d rank panel(s))", n_panels)

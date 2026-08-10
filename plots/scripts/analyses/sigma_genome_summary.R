@@ -128,6 +128,8 @@ title <- paste0("Genome Summary: ", genome)
 final_plot <- with_title_bar(final_plot, title, size = 10, title_height = 0.08, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = max(6, nrow(card_rows) * 0.35), units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 12, height = max(6, nrow(card_rows) * 0.35)),
+        file.path(args$out_dir, "plot_final.rds"))
 
 effective_style <- default_style_for_groups(if (nrow(hits) > 0) hits$source else character(0),
                                              legend_position = "none", show_labels = FALSE,

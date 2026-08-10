@@ -139,5 +139,7 @@ final_plot <- (panels$Observed$plot | panels$Chao1$plot | panels$ACE$plot) /
   (panels$Shannon$plot | panels$Simpson$plot | panels$Pielou$plot)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 16, height = 10, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 16, height = 10),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[alpha_diversity] wrote data.json, default_style.json, alpha_diversity.rds, preview.png")

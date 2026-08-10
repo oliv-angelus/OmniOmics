@@ -197,5 +197,7 @@ title <- paste0("Redundancy Analysis (RDA): Key Environmental Drivers\n",
 final_plot <- with_title_bar(p, title, size = 6, title_height = 0.14, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = 10, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 12, height = 10),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[rda_environmental_drivers] wrote data.json, default_style.json, rda_environmental_drivers.rds, preview.png")

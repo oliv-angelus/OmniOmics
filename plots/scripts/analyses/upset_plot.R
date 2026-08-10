@@ -177,6 +177,8 @@ width <- max(9, n_intersections_shown * 0.35)
 height <- max(6, 4 + length(groups) * 0.3)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = width, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[upset_plot] wrote data.json, default_style.json, upset_plot.rds, preview.png (%d sets, %d/%d intersections shown)",
           length(groups), n_intersections_shown, n_present_combos)

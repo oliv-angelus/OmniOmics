@@ -66,6 +66,8 @@ title <- paste0("Sample PCA (VST-transformed counts): ", group_var)
 final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 8, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 10, height = 8),
+        file.path(args$out_dir, "plot_final.rds"))
 
 records <- lapply(seq_len(nrow(pca_data)), function(i) {
   list(sample = pca_data$SampleID[i], group = as.character(pca_data[[group_var]][i]),

@@ -119,5 +119,7 @@ height <- max(6, length(unique(df_core$Taxon_Label)) * 0.3)
 width <- max(12, nsamples(ps_core_glom) * 0.2)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 130, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = width, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[core_microbiome] wrote data.json, default_style.json, core_microbiome.rds, preview.png")

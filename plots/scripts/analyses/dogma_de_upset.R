@@ -131,6 +131,8 @@ final_plot <- Reduce(`/`, lapply(panels, patchwork::wrap_elements)) + patchwork:
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = max(9, length(comparison_levels) * 2.5), height = 6 * length(panels),
        units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = max(9, length(comparison_levels) * 2.5), height = 6 * length(panels)),
+        file.path(args$out_dir, "plot_final.rds"))
 
 writeLines(core_up, file.path(args$out_dir, "core_up_gene_families.txt"))
 writeLines(core_down, file.path(args$out_dir, "core_down_gene_families.txt"))

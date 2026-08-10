@@ -72,6 +72,8 @@ final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_famil
 side <- max(6, ncol(dist_matrix) * 0.5)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = side, height = side, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = side, height = side),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "sample_distance_heatmap", group_var = group_var, sample_order = sample_order,
