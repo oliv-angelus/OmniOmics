@@ -1699,7 +1699,7 @@ async def load_plot_data(data: dict):
     if proc.returncode != 0:
         raise HTTPException(status_code=400, detail=clean_output(stdout))
 
-    columns_path = os.path.join(out_dir, "metadata_columns.json()")
+    columns_path = os.path.join(out_dir, "metadata_columns.json")
     with open(columns_path, encoding="utf-8") as f:
         columns_data = json.load(f)
 
