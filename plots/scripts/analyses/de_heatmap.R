@@ -13,7 +13,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -58,7 +58,7 @@ if (length(sig_genes) == 0) {
   dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
   write_json(
     list(analysis_id = "de_heatmap", group_var = group_var, reference_group = reference_group,
-         comparison_level = test_group, n_genes = 0, genes = list),
+         comparison_level = test_group, n_genes = 0, genes = list()),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
   saveRDS(list(full_results = res_df), file.path(args$out_dir, "de_heatmap.rds"))
@@ -100,7 +100,7 @@ p <- ggplot(df, aes(x = Sample, y = Gene, fill = Zscore)) +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
     axis.text.y = element_text(face = "italic", size = 9),
-    panel.grid = element_blank
+    panel.grid = element_blank()
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

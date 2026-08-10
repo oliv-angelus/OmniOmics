@@ -6,7 +6,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -55,7 +55,7 @@ if (!(reference_group %in% levels_available)) {
 
 ps_deseq <- ps
 d <- sample_data(ps_deseq)
-if (any(is.na(dgroup_var))) {
+if (any(is.na(d[[group_var]]))) {
   log_line("[differential_abundance_deseq2] dropping samples with NA in %s", group_var)
   ps_deseq <- subset_samples(ps_deseq, !is.na(get(group_var)))
 }
@@ -153,7 +153,7 @@ if (nrow(sigtab) == 0) {
   log_line("[differential_abundance_deseq2] no biomarkers passed padj < %g & |log2FC| > %g -- writing an empty result, no plot", alpha, min_lfc)
   write_json(
     list(analysis_id = "differential_abundance_deseq2", group_var = group_var, reference_group = reference_group,
-         comparison_level = nivel_teste, n_biomarkers = 0, biomarkers = list),
+         comparison_level = nivel_teste, n_biomarkers = 0, biomarkers = list()),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
   saveRDS(list(full_results = res_tab), file.path(args$out_dir, "differential_abundance_deseq2.rds"))
@@ -174,7 +174,7 @@ p <- ggplot(sigtab, aes(x = Genus, y = log2FoldChange, color = Enriched_In)) +
   geom_point(size = 4) +
   scale_color_manual(values = colors_groups, name = "More abundant in:") +
   labs(y = "Log2 Fold Change", x = NULL) +
-  coord_flip +
+  coord_flip() +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
   theme(
     axis.text.y = element_text(size = 11, face = "italic"),

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 /// after main.dart confirms the backend sidecar process is up and healthy.
 class ApiClient {
   final String baseUrl;
-  final http.Client _client = http().Client;
+  final http.Client _client = http.Client();
 
   ApiClient({required this.baseUrl});
 

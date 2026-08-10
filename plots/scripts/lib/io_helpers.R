@@ -6,7 +6,7 @@
 
 #' Parses `--flag value` pairs (and bare `--flag` boolean switches) from
 #' commandArgs(trailingOnly = TRUE) into a named list.
-parse_cli_args <- function(defaults = list) {
+parse_cli_args <- function(defaults = list()) {
   argv <- commandArgs(trailingOnly = TRUE)
   args <- defaults
   i <- 1
@@ -15,10 +15,10 @@ parse_cli_args <- function(defaults = list) {
     if (startsWith(a, "--")) {
       key <- sub("^--", "", a)
       if (i < length(argv) && !startsWith(argv[i + 1], "--")) {
-        argskey <- argv[i + 1]
+        args[[key]] <- argv[i + 1]
         i <- i + 2
       } else {
-        argskey <- TRUE
+        args[[key]] <- TRUE
         i <- i + 1
       }
     } else {
@@ -35,7 +35,7 @@ parse_cli_args <- function(defaults = list) {
 this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
-  if (length(file_arg) == 0) return(getwd)
+  if (length(file_arg) == 0) return(getwd())
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
 
@@ -63,14 +63,14 @@ find_input_file <- function(input_dir, pattern, prefer = NULL) {
   }
   if (!is.null(prefer) && length(hits) > 1) {
     preferred <- hits[grepl(prefer, hits, fixed = TRUE)]
-    if (length(preferred) > 0) return(preferred1)
+    if (length(preferred) > 0) return(preferred[[1]])
   }
-  hits1
+  hits[[1]]
 }
 
 log_line <- function(...) {
   cat(sprintf(...), "\n")
-  flush(stdout)
+  flush(stdout())
 }
 
 #' `a %||% b`: `b` when `a` is NULL, `a` otherwise -- used throughout the

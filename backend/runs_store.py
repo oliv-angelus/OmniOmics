@@ -34,8 +34,8 @@ def generate_run_name() -> str:
 
 def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: str, cores: int) -> dict:
     run = {
-        "id": uuid.uuid4.hex[:12],
-        "name": generate_run_name,
+        "id": uuid.uuid4().hex[:12],
+        "name": generate_run_name(),
         "pipeline_id": pipeline_id,
         "pipeline_name": pipeline_name,
         "output_dir": output_dir,

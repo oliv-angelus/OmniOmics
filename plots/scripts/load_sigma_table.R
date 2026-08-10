@@ -17,14 +17,13 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "lib")
+lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "build_sigma_table.R"))
 
 suppressMessages(library(jsonlite))
 
-args <- parse_cli_args
-
+args <- parse_cli_args()
 log_line("[load_sigma_table] building the per-genome summary table from %s", args$input)
 genome_summary <- build_sigma_table(args$input)
 log_line("[load_sigma_table] genome summary: %d genome(s) x %d column(s)", nrow(genome_summary), ncol(genome_summary))
@@ -67,7 +66,7 @@ if (!is.null(args$metadata) && args$metadata != "") {
 
 columns <- colnames(coldata)
 column_levels <- lapply(columns, function(col) {
-  vals <- unique(as.character(coldatacol))
+  vals <- unique(as.character(coldata[[col]]))
   vals <- vals[!is.na(vals)]
   sort(vals)
 })
@@ -84,6 +83,6 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_sigma_table] detected %d genome(s): %s[[", length(samples), paste(samples, collapse = "]], "))
-log_line("[load_sigma_table] detected %d groupable column(s): %s[[", length(columns), paste(columns, collapse = "]], "))
+log_line("[load_sigma_table] detected %d genome(s): %s", length(samples), paste(samples, collapse = ", "))
+log_line("[load_sigma_table] detected %d groupable column(s): %s", length(columns), paste(columns, collapse = ", "))
 log_line("[load_sigma_table] wrote sigma_table.rds, metadata_columns.json")

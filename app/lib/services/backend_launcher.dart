@@ -22,8 +22,8 @@ class BackendLauncher {
   String get baseUrl => 'http://127.0.0.1:${_port ?? port}';
 
   Future<void> start() async {
-    final chosenPort = await _pickPort;
-    _port = chosenPort();
+    final chosenPort = await _pickPort();
+    _port = chosenPort;
     // Hand the port to the backend via env; Process.start merges this on top of
     // the parent environment (includeParentEnvironment defaults to true), so
     // OMNIOMICS_DEV_RELOAD and everything else run_dev.sh sets is preserved.
@@ -46,8 +46,8 @@ class BackendLauncher {
       );
     }
 
-    _process!.stdout.transform(const SystemEncoding.decoder).listen((l) => stdout.write('[backend] $l'));
-    _process!.stderr.transform(const SystemEncoding.decoder).listen((l) => stderr.write('[backend-err] $l'));
+    _process!.stdout.transform(const SystemEncoding().decoder).listen((l) => stdout.write('[backend] $l'));
+    _process!.stderr.transform(const SystemEncoding().decoder).listen((l) => stderr.write('[backend-err] $l'));
 
     await _waitHealthy();
   }

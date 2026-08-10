@@ -57,13 +57,13 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
   /// `_destDir`, so without this the Baixar button below would stay
   /// permanently disabled for an already-configured database.
   Future<void> _pickDownloadDestDir() async {
-    final path = await getDirectoryPath;
+    final path = await getDirectoryPath();
     if (path == null) return;
     setState(() => _destDir = path);
   }
 
   Future<void> _pickPath() async {
-    final path = await getDirectoryPath;
+    final path = await getDirectoryPath();
     if (path == null) return;
     if (widget.database.configured) {
       // Already have a database -- picking a new path re-points the setting directly.
@@ -219,7 +219,8 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
               const SizedBox(height: 4),
               // Card sizes to its content in a Wrap-based grid, so a long option
               // list simply grows the card instead of overflowing/getting hidden
-              // behind neighboring cards....db.downloadOptions.map((opt) => RadioListTile<DownloadOption>(
+              // behind neighboring cards.
+              ...db.downloadOptions.map((opt) => RadioListTile<DownloadOption>(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     value: opt,

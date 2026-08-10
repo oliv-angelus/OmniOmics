@@ -38,7 +38,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "lib")
+lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "build_phyloseq.R"))
 
@@ -47,9 +47,8 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args
-
-file_spec <- ABUNDANCE_FILE_PATTERNSargs$pipeline_id
+args <- parse_cli_args()
+file_spec <- ABUNDANCE_FILE_PATTERNS[[args$pipeline_id]]
 if (is.null(file_spec)) {
   stop(sprintf("No abundance-file pattern registered for pipeline_id '%s' -- add one to ABUNDANCE_FILE_PATTERNS in load_phyloseq.R.",
                args$pipeline_id %||% "(missing --pipeline_id)"))
@@ -80,7 +79,7 @@ meta <- data.frame(sample_data(ps), check.names = FALSE)
 columns <- colnames(meta)
 
 column_levels <- lapply(columns, function(col) {
-  vals <- unique(as.character(metacol))
+  vals <- unique(as.character(meta[[col]]))
   vals <- vals[!is.na(vals)]
   sort(vals)
 })
@@ -116,7 +115,7 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_phyloseq] detected %d metadata columns: %s[[", length(columns), paste(columns, collapse = "]], "))
-log_line("[load_phyloseq] detected %d taxonomic ranks: %s[[", length(tax_ranks), paste(tax_ranks, collapse = "]], "))
+log_line("[load_phyloseq] detected %d metadata columns: %s", length(columns), paste(columns, collapse = ", "))
+log_line("[load_phyloseq] detected %d taxonomic ranks: %s", length(tax_ranks), paste(tax_ranks, collapse = ", "))
 log_line("[load_phyloseq] has_tree = %s", has_tree)
 log_line("[load_phyloseq] wrote phyloseq.rds, metadata_columns.json")

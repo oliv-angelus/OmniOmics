@@ -53,7 +53,7 @@ def parse_fasta_ids(fasta_path):
     return ids
 
 
-def main() :
+def main():
     ap = argparse.ArgumentParser
     ap.add_argument("--uc", required=True)
     ap.add_argument("--nonchimeras", required=True)
@@ -92,4 +92,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()

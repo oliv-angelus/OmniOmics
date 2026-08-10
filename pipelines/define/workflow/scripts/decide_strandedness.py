@@ -33,7 +33,7 @@ def parse_report(path):
     }
 
 
-def main() :
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reports", nargs="+", required=True)
     parser.add_argument("--samples", nargs="+", required=True)
@@ -79,4 +79,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()

@@ -44,7 +44,7 @@ def read_eggnog_annotations(path):
     return pd.DataFrame(data, columns=header)
 
 
-def main() :
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--counts", required=True)
     parser.add_argument("--bakta-tsv", required=True)
@@ -80,4 +80,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()

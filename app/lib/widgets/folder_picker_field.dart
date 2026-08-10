@@ -17,7 +17,7 @@ class FolderPickerField extends ConsumerWidget {
   });
 
   Future<void> _pick() async {
-    final result = await getDirectoryPath;
+    final result = await getDirectoryPath();
     if (result != null) onPicked(result);
   }
 

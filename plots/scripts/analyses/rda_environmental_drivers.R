@@ -7,7 +7,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -49,8 +49,8 @@ df_meta <- data.frame(sample_data(ps), check.names = FALSE)
 # then re-infer real types -- same normalization microbiome.R's own script
 # does before treating anything as numeric.
 df_meta_clean <- df_meta %>%
-  mutate(across(everything, as.character)) %>%
-  mutate(across(everything, ~ gsub(",", ".",.))) %>%
+  mutate(across(everything(), as.character)) %>%
+  mutate(across(everything(), ~ gsub(",", ".",.))) %>%
   type.convert(as.is = TRUE)
 rownames(df_meta_clean) <- rownames(df_meta)
 
@@ -87,7 +87,7 @@ if (is.null(rda_model$CCA) || rda_model$CCA$rank == 0) {
   log_line("[rda_environmental_drivers] no variable was individually significant -- showing the full model for visualization")
   rda_model <- full_model
 } else {
-  log_line("[rda_environmental_drivers] selected variables: %s[[", paste(rownames(rda_model$CCA$biplot), collapse = "]], "))
+  log_line("[rda_environmental_drivers] selected variables: %s", paste(rownames(rda_model$CCA$biplot), collapse = ", "))
 }
 
 set.seed(seed)
@@ -166,7 +166,7 @@ write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 
 saveRDS(list(rda_model = rda_model, anova = anova_model), file.path(args$out_dir, "rda_environmental_drivers.rds"))
 
-p <- ggplot +
+p <- ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray50", linewidth = 0.5) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray50", linewidth = 0.5) +
   { if (nrow(arrow_scores) > 0 && all(c("RDA1", "RDA2") %in% colnames(arrow_scores))) list(

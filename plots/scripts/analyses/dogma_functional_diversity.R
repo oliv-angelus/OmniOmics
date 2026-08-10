@@ -17,7 +17,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -102,7 +102,7 @@ run_kruskal <- function(metric) {
   }, error = function(e) NA_real_)
 }
 
-palette <- resolve_palette(alpha_finalgroup_var, style)
+palette <- resolve_palette(alpha_final[[group_var]], style)
 
 plot_metric <- function(metric, title_text) {
   p_value <- run_kruskal(metric)
@@ -121,13 +121,13 @@ plot_metric <- function(metric, title_text) {
   list(plot = with_title_bar(p, title, size = 6, title_height = 0.15, font_family = font_family), p_value = p_value)
 }
 
-panels <- lapply(names(metrics), function(m) plot_metric(m, metricsm))
+panels <- lapply(names(metrics), function(m) plot_metric(m, metrics[[m]]))
 names(panels) <- names(metrics)
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 metric_results <- lapply(names(metrics), function(m) {
-  list(metric = m, label = metricsm, kruskal_p_value = panelsm$p_value)
+  list(metric = m, label = metrics[[m]], kruskal_p_value = panels[[m]]$p_value)
 })
 
 samples <- lapply(seq_len(nrow(alpha_final)), function(i) {
@@ -148,7 +148,7 @@ write_json(
   auto_unbox = TRUE, pretty = TRUE, na = "null"
 )
 
-effective_style <- default_style_for_groups(alpha_finalgroup_var, legend_position = "none", show_labels = FALSE,
+effective_style <- default_style_for_groups(alpha_final[[group_var]], legend_position = "none", show_labels = FALSE,
                                              background = bg, font_family = font_family, palette = palette)
 write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 

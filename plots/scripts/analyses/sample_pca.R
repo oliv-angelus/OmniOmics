@@ -8,7 +8,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -21,8 +21,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args
-
+args <- parse_cli_args()
 if (is.null(args$group_var) || args$group_var == "") stop("--group_var is required")
 group_var <- args$group_var
 style <- read_style_from_path(args$style_json)
@@ -47,7 +46,7 @@ pca_data <- plotPCA(vsd, intgroup = group_var, returnData = TRUE)
 percent_var <- round(100 * attr(pca_data, "percentVar"))
 pca_data$SampleID <- rownames(pca_data)
 
-palette <- resolve_palette(pca_datagroup_var, style)
+palette <- resolve_palette(pca_data[[group_var]], style)
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -69,7 +68,7 @@ ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 8, units = "in", dpi = 150, bg = "white")
 
 records <- lapply(seq_len(nrow(pca_data)), function(i) {
-  list(sample = pca_data$SampleID[i], group = as.character(pca_datagroup_var[i]),
+  list(sample = pca_data$SampleID[i], group = as.character(pca_data[[group_var]][i]),
        pc1 = pca_data$PC1[i], pc2 = pca_data$PC2[i])
 })
 write_json(
@@ -78,7 +77,7 @@ write_json(
   file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
 )
 
-effective_style <- default_style_for_groups(pca_datagroup_var, legend_position = "right", show_labels = TRUE,
+effective_style <- default_style_for_groups(pca_data[[group_var]], legend_position = "right", show_labels = TRUE,
                                              background = bg, font_family = font_family, palette = palette)
 write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 

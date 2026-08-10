@@ -107,7 +107,7 @@ def check_vibrant_tools() -> dict:
     }
 
 @app.get("/api/setup/status")
-def setup_status() :
+def setup_status():
     conda         = check_conda()
     snakemake     = check_snakemake(conda)
     vibrant_tools = check_vibrant_tools()
@@ -142,7 +142,7 @@ async def install_python_deps_ws(websocket: WebSocket):
         rc = await proc.wait()
 
         if rc == 0:
-            await websocket.send_json({"type": "done", "status": check_python_deps})
+            await websocket.send_json({"type": "done", "status": check_python_deps()})
         else:
             await websocket.send_json({"type": "error",
                 "text": "pip install falhou. Tente: pip install -r backend/requirements.txt"})
@@ -161,8 +161,8 @@ async def install_conda_route(path: str = "/home/" + os.environ.get("USER", "use
     return result
 
 @app.post("/api/setup/install-snakemake")
-async def install_snakemake_route() :
-    result = await install_snakemake
+async def install_snakemake_route():
+    result = await install_snakemake()
     return result
 
 @app.get("/api/setup/conda-distributions")
@@ -334,9 +334,11 @@ async def install_vibrant_tools_ws(websocket: WebSocket):
         except Exception:
             pass
 
-# --- Sistema (global) --- @app.get("/api/system/info")
-def system_info() :
-    return get_system_info
+# --- Sistema (global) ---
+
+@app.get("/api/system/info")
+def system_info():
+    return get_system_info()
 
 @app.websocket("/ws/system")
 async def system_monitor_ws(websocket: WebSocket):
@@ -349,12 +351,14 @@ async def system_monitor_ws(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
 
-# --- Pipeline registry (Hub) --- @app.get("/api/pipelines")
-def pipelines_list() :
-    return pipelines.list_pipelines
+# --- Pipeline registry (Hub) ---
+
+@app.get("/api/pipelines")
+def pipelines_list():
+    return pipelines.list_pipelines()
 
 @app.get("/api/pipelines/running")
-def pipelines_running() :
+def pipelines_running():
     """Pipeline ids with a run currently in progress -- lets the UI offer a
     'back to monitor' affordance after navigating away, or on app restart.
     Registered before /api/pipelines/{pid} so "running" isn't swallowed as a pid.
@@ -370,7 +374,9 @@ def pipelines_get(pid: str):
     manifest.pop("_dir", None)
     return manifest
 
-# --- Tools (per pipeline) --- @app.get("/api/pipelines/{pid}/tools")
+# --- Tools (per pipeline) ---
+
+@app.get("/api/pipelines/{pid}/tools")
 def tools_definitions(pid: str):
     return tools_engine.get_tool_list(pid)
 
@@ -380,14 +386,16 @@ def tools_params_string(pid: str, data: dict):
     flags   = data.get("flags", [])
     return {"params": tools_engine.build_params_string(pid, tool_id, flags)}
 
-# --- Databases (per pipeline) --- @app.get("/api/databases")
-def all_databases_status() :
+# --- Databases (per pipeline) ---
+
+@app.get("/api/databases")
+def all_databases_status():
     """Hub-level, cross-pipeline database list -- lets the user configure a
     database (e.g. CheckM2, shared by MAGMA and SIGMA) once, before picking a
     pipeline. Each entry names a (source_pipeline_id, source_key) pair the
     frontend uses to route set/download actions through the existing
     per-pipeline endpoints below, since the underlying setting is global."""
-    return get_all_databases_status
+    return get_all_databases_status()
 
 @app.post("/api/databases/detect")
 def all_databases_detect(data: dict):
@@ -456,7 +464,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
     dest_dir_preexisted = os.path.isdir(dest_dir)
     os.makedirs(dest_dir, exist_ok=True)
 
-    def _cleanup_partial() :
+    def _cleanup_partial():
         for p in created_paths:
             try:
                 if os.path.isdir(p) and not os.path.islink(p):
@@ -536,7 +544,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
             out = path[:-3]
             await send({"type": "log", "text": f"Decompressing {fname}…\n"})
             loop = asyncio.get_event_loop
-            def _gunzip() :
+            def _gunzip():
                 with gzip.open(path, "rb") as fi, open(out, "wb") as fo:
                     shutil.copyfileobj(fi, fo)
                 os.remove(path)
@@ -673,7 +681,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
             await send({"type": "log", "text": f"Running: {post_cmd}\n"})
             await run_cmd(post_cmd)
     except BaseException:
-        _cleanup_partial
+        _cleanup_partial()
         raise
 
     # Save path
@@ -878,7 +886,7 @@ async def _download_all_task(batch_id: str, base_dir: str, chosen_options: dict,
         os.makedirs(base_dir, exist_ok=True)
         save_settings({"db_base_dir": base_dir})
 
-        candidates = [d for d in get_all_databases_status if not d["configured"]]
+        candidates = [d for d in get_all_databases_status() if not d["configured"]]
         if selected:
             selected_set = set(selected)
             candidates = [d for d in candidates if d["source_key"] in selected_set]
@@ -1006,7 +1014,9 @@ async def database_download_all_ws(websocket: WebSocket, pid: str):
     finally:
         download_all_subscribers.get(pid, []).remove(q)
 
-# --- Samples & Config (per pipeline) --- @app.get("/api/pipelines/{pid}/draft")
+# --- Samples & Config (per pipeline) ---
+
+@app.get("/api/pipelines/{pid}/draft")
 def get_launch_draft(pid: str):
     """Returns the last-saved Launch screen state (input dirs, output dir, RAM/cores,
     active tools, per-tool flag overrides) for this pipeline, or {} if none yet.
@@ -1232,7 +1242,7 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
         cwd=pipeline_root,
-        env=_subprocess_env,  # keep the backend's own venv out of the rules' PATH
+        env=_subprocess_env(),  # keep the backend's own venv out of the rules' PATH
         start_new_session=True,  # own process group -> stop/shutdown can kill the whole tree
         limit=1024 * 1024 * 16,  # conda/mamba progress bars redraw via \r with no \n for a
                                   # long time during downloads/extraction -- asyncio treats
@@ -1272,11 +1282,11 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
         pipeline_finished[pid] = True
         # Don't clobber a status /stop already set to "stopped" -- SIGTERM makes
         # the exit code negative, which would otherwise read as "error" here.
-        current = next((r for r in runs_store.list_runs if r["id"] == run_id), None)
+        current = next((r for r in runs_store.list_runs() if r["id"] == run_id), None)
         if not current or current.get("status") != "stopped":
             runs_store.update_run(run_id, status="done" if exit_code == 0 else "error",
                                    exit_code=exit_code, finished_at=time.time())
-            current = next((r for r in runs_store.list_runs if r["id"] == run_id), None)
+            current = next((r for r in runs_store.list_runs() if r["id"] == run_id), None)
 
         # Provenance/reproducibility report -- written even for a stopped/failed
         # run, since knowing exactly what *was* configured is still useful.
@@ -1375,7 +1385,7 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
                 cwd=pipeline_root,
-                env=_subprocess_env,
+                env=_subprocess_env(),
             )
             try:
                 await asyncio.wait_for(unlock_proc.communicate(), timeout=30)
@@ -1470,11 +1480,11 @@ async def stop_pipeline(pid: str):
     return {"stopped": True}
 
 @app.get("/api/runs")
-def api_list_runs() :
+def api_list_runs():
     """Backs the Results page's run list -- every run ever started, most recent
     first, across all pipelines. File browsing itself happens client-side
     (dart:io) directly against each run's output_dir, no endpoint needed for that."""
-    return runs_store.list_runs
+    return runs_store.list_runs()
 
 
 # Never delete these, no matter what a run record's output_dir claims -- a
@@ -1517,7 +1527,7 @@ def delete_runs(data: dict):
     if not requested_ids:
         return {"deleted": [], "blocked_active": [], "failed_dirs": []}
 
-    all_runs = runs_store.list_runs
+    all_runs = runs_store.list_runs()
     by_id = {r["id"]: r for r in all_runs}
 
     active_run_ids = set(pipeline_current_run.values())
@@ -1644,7 +1654,7 @@ async def load_plot_data(data: dict):
     metadata_path = data.get("metadata_path")
     if not metadata_path:
         raise HTTPException(status_code=400, detail="metadata_path is required.")
-    parent_run = next((r for r in runs_store.list_runs if r["id"] == parent_run_id), None)
+    parent_run = next((r for r in runs_store.list_runs() if r["id"] == parent_run_id), None)
     if not parent_run:
         raise HTTPException(status_code=404, detail="Parent run not found.")
 
@@ -1674,7 +1684,7 @@ async def load_plot_data(data: dict):
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
-        env=_subprocess_env,
+        env=_subprocess_env(),
     )
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
@@ -1733,7 +1743,7 @@ async def _run_plot_task(run_id: str, cmd: list, cwd: str, plot_run_id: str | No
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
         cwd=cwd,
-        env=_subprocess_env,
+        env=_subprocess_env(),
         start_new_session=True,
     )
     plot_processes[run_id] = proc
@@ -1779,7 +1789,7 @@ async def run_plot_analysis(analysis_id: str, data: dict):
         raise HTTPException(status_code=404, detail=f"Unknown analysis: {analysis_id}")
 
     parent_run_id = data.get("parent_run_id")
-    parent_run = next((r for r in runs_store.list_runs if r["id"] == parent_run_id), None)
+    parent_run = next((r for r in runs_store.list_runs() if r["id"] == parent_run_id), None)
     if not parent_run:
         raise HTTPException(status_code=404, detail="Parent run not found.")
 
@@ -1916,20 +1926,20 @@ def api_list_plot_runs(parent_run_id: str | None = None):
 
 
 @app.get("/api/plots/r-env/status")
-def api_r_env_status() :
+def api_r_env_status():
     settings = load_settings()
     return plots_engine.check_r_env(settings.get("conda_path"))
 
 
 @app.post("/api/plots/r-env/install")
-async def api_install_r_env() :
+async def api_install_r_env():
     settings = load_settings()
     conda = settings.get("conda_path") or shutil.which("conda") or "conda"
     return await plots_engine.install_r_env(conda)
 
 
 @app.on_event("shutdown")
-async def _stop_all_pipelines_on_exit() :
+async def _stop_all_pipelines_on_exit():
     """Only real app shutdown reaches here (see BackendLauncher / didChangeAppLifecycleState
     on the Flutter side) -- navigating within the app never triggers this."""
     for proc in pipeline_processes.values():
@@ -1954,7 +1964,7 @@ if os.environ.get("OMNIOMICS_DEV_RELOAD"):
     class _ManifestReloadHandler(FileSystemEventHandler):
         def on_any_event(self, event):
             if event.src_path.endswith("pipeline.yaml"):
-                pipelines.reload_registry
+                pipelines.reload_registry()
 
     _dev_reload_observer = Observer
     _dev_reload_observer.schedule(_ManifestReloadHandler, pipelines.PIPELINES_DIR, recursive=True)

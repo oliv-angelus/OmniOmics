@@ -50,7 +50,9 @@ suppressMessages({
 
   ann_dir <- file.path(results_dir, "05_ANNOTATION", sample, domain)
 
-  # --- Salmon (transcript-keyed, dense: every transcript gets a row) ----- quant_path <- file.path(results_dir, "06_QUANTIFICATION", sample, domain, paste0(sample, "_quant"), "quant.sf")
+  # --- Salmon (transcript-keyed, dense: every transcript gets a row) -----
+
+  quant_path <- file.path(results_dir, "06_QUANTIFICATION", sample, domain, paste0(sample, "_quant"), "quant.sf")
   if (file.exists(quant_path) && file.size(quant_path) > 0) {
     quant <- read.delim(quant_path, header = TRUE, check.names = FALSE)
     quant <- quant %>% transmute(transcript_id = Name, salmon_TPM = TPM, salmon_NumReads = NumReads)
@@ -73,7 +75,9 @@ suppressMessages({
     }
   }
 
-  # --- CAZy (dbCAN overview.tsv, ORF-keyed, sparse) ----------------------- cazy_path <- file.path(ann_dir, "cazy", "overview.tsv")
+  # --- CAZy (dbCAN overview.tsv, ORF-keyed, sparse) -----------------------
+
+  cazy_path <- file.path(ann_dir, "cazy", "overview.tsv")
   if (file.exists(cazy_path) && file.size(cazy_path) > 0) {
     cazy <- read.delim(cazy_path, header = TRUE, check.names = FALSE)
     if (nrow(cazy) > 0) {
@@ -156,7 +160,9 @@ suppressMessages({
     tab <- left_join(tab, catbat, by = "transcript_id")
   }
 
-  # --- MAGMA Cross-Reference (optional, ORF-keyed, sparse, NO header) ----- xref_path <- file.path(results_dir, "08_MAGMA_XREF", sample, domain, paste0(sample, "_magma_mag_annotations.tsv"))
+  # --- MAGMA Cross-Reference (optional, ORF-keyed, sparse, NO header) -----
+
+  xref_path <- file.path(results_dir, "08_MAGMA_XREF", sample, domain, paste0(sample, "_magma_mag_annotations.tsv"))
   if (file.exists(xref_path) && file.size(xref_path) > 0) {
     xref <- read.delim(xref_path, header = FALSE, check.names = FALSE,
                         col.names = c("orf_id", "sseqid", "pident", "length", "evalue", "bitscore", "mag", "taxonomy"))
@@ -277,8 +283,8 @@ aggregate_dogma_counts <- function(long_table, annotation_col, coldata, value_co
   wide <- agg %>%
     pivot_wider(names_from = sample_domain, values_from = value, values_fill = 0) %>%
     as.data.frame
-  rownames(wide) <- wideannotation_col
-  gene_ids <- wideannotation_col
+  rownames(wide) <- wide[[annotation_col]]
+  gene_ids <- wide[[annotation_col]]
   counts <- as.matrix(wide[, setdiff(colnames(wide), annotation_col), drop = FALSE])
   storage.mode(counts) <- "integer"  # Salmon's NumReads/TPM are floats (multi-mapping-weighted) -- DESeq2 needs integer counts, same rounding convention used elsewhere in this app (e.g. Emu's EM-estimated counts)
 

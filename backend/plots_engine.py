@@ -34,7 +34,7 @@ def _load_manifest() -> dict:
     return _cache
 
 
-def reload_manifest() :
+def reload_manifest():
     """Drop the in-memory cache so the next call re-reads manifest.yaml from disk."""
     global _cache
     _cache = None
@@ -148,7 +148,7 @@ def check_r_env(conda_path: str | None) -> dict:
     if not rscript:
         return {"installed": False, "path": None, "version": None}
     try:
-        result = subprocess.run([rscript, "--version"], capture_output=True, text=True, env=_subprocess_env)
+        result = subprocess.run([rscript, "--version"], capture_output=True, text=True, env=_subprocess_env())
         version = (result.stdout or result.stderr).strip()
         return {"installed": True, "path": rscript, "version": version}
     except Exception:
@@ -167,7 +167,7 @@ async def install_r_env(conda_path: str) -> dict:
         conda_path, "env", "create", "-f", R_ENV_SPEC,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
-        env=_subprocess_env,
+        env=_subprocess_env(),
     )
     await proc.wait()
 

@@ -7,7 +7,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -65,19 +65,19 @@ present_sets <- lapply(groups, function(g) {
 })
 names(present_sets) <- groups
 
-log_line("[venn_diagram] set sizes: %s", paste(sprintf("%s=%d[[", groups, lengths(present_sets)), collapse = "]], "))
+log_line("[venn_diagram] set sizes: %s", paste(sprintf("%s=%d", groups, lengths(present_sets)), collapse = ", "))
 
 # Every non-empty intersection (2^n - 1 combinations), computed directly
 # rather than relying on ggVennDiagram's internal data structures --
 # straightforward and independently checkable.
 all_taxa <- unique(unlist(present_sets))
-intersections <- list
+intersections <- list()
 for (k in seq_along(groups)) {
   combos <- combn(groups, k, simplify = FALSE)
   for (combo in combos) {
     in_all <- Reduce(intersect, present_sets[combo])
     if (length(in_all) > 0) {
-      intersectionspaste(combo, collapse = " & ") <- in_all
+      intersections[[paste(combo, collapse = " & ")]] <- in_all
     }
   }
 }
@@ -85,7 +85,7 @@ for (k in seq_along(groups)) {
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 intersections_json <- lapply(names(intersections), function(nm) {
-  list(sets = nm, n_taxa = length(intersectionsnm), taxa = intersectionsnm)
+  list(sets = nm, n_taxa = length(intersections[[nm]]), taxa = intersections[[nm]])
 })
 
 write_json(

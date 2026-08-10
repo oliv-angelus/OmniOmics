@@ -14,14 +14,13 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "lib")
+lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "build_count_matrix.R"))
 
 suppressMessages(library(jsonlite))
 
-args <- parse_cli_args
-
+args <- parse_cli_args()
 log_line("[load_count_matrix] resolving input under %s", args$input)
 counts_path <- find_input_file(args$input, "contagem_anotada\\.tsv$")
 log_line("[load_count_matrix] counts file: %s", counts_path)
@@ -36,7 +35,7 @@ log_line("[load_count_matrix] count matrix: %d genes x %d samples", nrow(count_d
 columns <- colnames(count_data$coldata)
 
 column_levels <- lapply(columns, function(col) {
-  vals <- unique(as.character(count_data$coldatacol))
+  vals <- unique(as.character(count_data$coldata[[col]]))
   vals <- vals[!is.na(vals)]
   sort(vals)
 })
@@ -51,5 +50,5 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_count_matrix] detected %d metadata columns: %s[[", length(columns), paste(columns, collapse = "]], "))
+log_line("[load_count_matrix] detected %d metadata columns: %s", length(columns), paste(columns, collapse = ", "))
 log_line("[load_count_matrix] wrote count_matrix.rds, metadata_columns.json")

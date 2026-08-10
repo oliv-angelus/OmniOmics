@@ -120,7 +120,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
 }
 
 extension PaletteX on BuildContext {
-  AppPalette get colors => Theme.of(this).extension<AppPalette>!;
+  AppPalette get colors => Theme.of(this).extension<AppPalette>()!;
 }
 
 enum RunStatus { queued, running, done, error }

@@ -139,7 +139,7 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
   counts <- read.delim(tree$counts_path, header = TRUE, check.names = FALSE, colClasses = "character")
   tax <- read.delim(tree$taxonomy_path, header = TRUE, check.names = FALSE, colClasses = "character")
 
-  ids <- as.character(countstree$id_col)
+  ids <- as.character(counts[[tree$id_col]])
   otu_matrix <- as.matrix(counts[, setdiff(colnames(counts), tree$id_col), drop = FALSE])
   storage.mode(otu_matrix) <- "numeric"
   rownames(otu_matrix) <- ids
@@ -153,7 +153,7 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
   # names, see load_phyloseq.R) stays consistent regardless of which
   # platform produced the run.
   rank_cols_out <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
-  tax <- tax[match(ids, as.character(taxtree$id_col)),, drop = FALSE]
+  tax <- tax[match(ids, as.character(tax[[tree$id_col]])),, drop = FALSE]
   tax_matrix <- as.matrix(tax[, tree$rank_cols, drop = FALSE])
   colnames(tax_matrix) <- rank_cols_out
   rownames(tax_matrix) <- ids
@@ -191,7 +191,7 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
 find_prism_tree_files <- function(input_dir) {
   tree_hits <- list.files(input_dir, pattern = "^prism_tree\\.nwk$", recursive = TRUE, full.names = TRUE)
   if (length(tree_hits) == 0) return(NULL)
-  tree_path <- tree_hits1
+  tree_path <- tree_hits[[1]]
   tree_dir <- dirname(tree_path)
 
   dada2_taxonomy <- file.path(tree_dir, "prism_asv_taxonomy.tsv")

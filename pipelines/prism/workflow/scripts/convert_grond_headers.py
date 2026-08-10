@@ -59,7 +59,7 @@ def load_taxonomy(path):
     return tax
 
 
-def main() :
+def main():
     ap = argparse.ArgumentParser
     ap.add_argument("--fasta", required=True, help="GROND *_nrRep.fna.gz (or *_full.fna.gz)")
     ap.add_argument("--taxonomy", required=True, help="matching GROND *_taxRep.tsv (or *_taxFull.tsv)")
@@ -107,4 +107,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()
