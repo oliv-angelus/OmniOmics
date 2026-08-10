@@ -68,3 +68,90 @@ Tudo marcado como "conferido" foi conferido contra a run demo sintética. As col
 de ler as regras reais e a documentação das ferramentas, não de saída real. O CheckM2 real,
 por exemplo, emite mais colunas que as quatro acima. Os leitores devem ser tolerantes a
 colunas extras (foi o que se fez no SIGMA), e uma execução real continua pendente.
+
+## Plano do próximo bloco: QC/montagem/GUNC/eggNOG/Kaiju + anel genômico (2026-08-10)
+
+Pedido do usuário (resumo): gráfico de abundância do Kaiju; gráficos simples de QC
+antes/depois da limpeza; gráficos simples de métricas de montagem; GUNC junto do resultado
+final de MIMAG das MAGs; perfil funcional do eggNOG das amostras (item que o usuário tem
+certeza que quer); e — para as demais saídas de anotação por amostra/MAG sem uso (CRISPR,
+vírus, elementos móveis, BGCs) — um anel genômico estilo Proksee, com decisão pendente
+entre gráfico ou tabela/relatório grande.
+
+Pesquisa feita antes de planejar (disciplina do projeto: fundamentar antes de codar):
+
+- **Layout de anel genômico confirmado**: Cumsille et al. 2023, GenoVi, *PLOS Comput Biol*
+  ([DOI](https://doi.org/10.1371/journal.pcbi.1010998), via PubMed PMC10104344), que compara
+  GenoVi contra CGView, Proksee, DNAPlotter, Circleator e Circos. Layout padrão de fora para
+  dentro: contigs → CDS fita direta (+ anotação funcional) → tRNA/rRNA → CDS fita reversa →
+  conteúdo GC → GC skew, com anéis extras de anotação sobrepostos (o artigo usa isso para
+  destacar clusters biossintéticos — mesma lógica que serve para CRISPR/vírus/elementos
+  móveis). Ferramenta em R: **`circlize`** (CRAN, motor por trás da maioria desses
+  visualizadores, sem depender de Python novo).
+- **eggNOG-mapper v2 real** (25 colunas confirmadas via `USAGE.md` do repositório oficial):
+  `COG_category` é a coluna 7, `KEGG_Pathway` a 13. **O DOGMA já usa exatamente essas colunas**
+  (`build_dogma_table.R`, `eggnog_COG_category`/`eggnog_KEGG_Pathway`) — reaproveitar a mesma
+  lógica para o eggNOG por amostra do MAGMA é baixo risco, não é formato novo.
+- **fastp JSON confirmado**: `summary.before_filtering`/`summary.after_filtering`, cada um com
+  `total_reads`, `total_bases`, `q30_rate`, `gc_content`.
+- **GUNC confirmado** (documentação oficial, `grp-bork.embl-community.io/gunc/output.html`):
+  13 colunas exatas em `GUNC.progenomes_2.1.maxCSS_level.tsv` — `genome`, `n_genes_called`,
+  `n_genes_mapped`, `n_contigs`, `taxonomic_level`, `proportion_genes_retained_in_major_clades`,
+  `genes_retained_index`, `clade_separation_score`, `contamination_portion`,
+  `n_effective_surplus_clades`, `mean_hit_identity`, `reference_representation_score`,
+  `pass.GUNC`. Corte oficial: `clade_separation_score <= 0.45` passa.
+- **MINCED**: roda sem `-gffFull` na pipeline (confirmado lendo a regra) → GFF resumido, uma
+  feature por array CRISPR — mesmo padrão de contagem já usado para o barrnap.
+- **VirSorter2** (`final-viral-score.tsv`): `seqname`, score por grupo, `max_score`,
+  `max_score_group`, `length`, `hallmark`, `viral genes %`, `nonviral genes %`.
+- **geNomad** (`*_plasmid_summary.tsv`): `seq_name`, `length`, `topology`, `n_genes`,
+  `plasmid_score`, `fdr`, `n_hallmarks`, `conjugation_genes`, `amr_genes`. `*_virus_summary.tsv`
+  tem `marker_enrichment` e `taxonomy` (ICTV VMR).
+- **ISEScan**: `seqID`, `family`, `cluster`, `isBegin`/`isEnd`, `isLen`, `ncopy4is`, `strand`.
+- **MOB-suite** (`mob_recon`, não `mob_typer` — confirmado lendo a regra):
+  `mobtyper_results.txt` com `rep_type(s)`, `relaxase_type(s)`, `mpf_type`,
+  `PredictedMobility`, `mash_nearest_neighbor`.
+- **BiG-SCAPE**: não aprofundado ainda — mais complexo (baseado em rede de similaridade),
+  fica para quando chegar a vez dele.
+- **Mesmo bug de nome de arquivo do achado anterior** (`magname=$(basename "$f".fa)` →
+  `{mag}.fa.fa` em disco) confirmado também em `isescan_mags` e `minced_mags` — os parsers
+  desse bloco todo precisam usar `.mag_shell_name()` (já existe em `build_magma_mag_table.R`).
+
+### Fase A — bloco fácil, formato confirmado, baixo risco (próxima sessão de código)
+
+1. **Kaiju**: `abundance_table_final_kaiju_RAW.tsv` já tem a mesma forma da tabela do Kraken
+   → oferecer como fonte alternativa nas 12 análises de comunidade existentes (escolha
+   Kraken/Kaiju/os dois), mais uma análise nova de concordância entre classificadores.
+2. **QC antes/depois**: novo `build_magma_qc_table.R` lendo `{sample}_fastp.json` (curto-prazo)
+   e `NanoStats.txt` do NanoPlot (longo-prazo) — gráfico simples de barras pareadas
+   antes/depois por amostra (total de reads, % Q30, GC).
+3. **Métricas de montagem**: `metaquast/report.tsv` e `metaquast_prokaryotic/report.tsv` por
+   amostra — mesmo padrão `transposed_report.tsv` já usado no SIGMA (`.read_quast`).
+   N50, total length, # contigs, GC%.
+4. **GUNC + MIMAG**: juntar `pass.GUNC`/`clade_separation_score` na MESMA tabela/ficha de MAG
+   já existente (`build_magma_mag_table.R`/`magma_mag_summary.R`), não como análise separada —
+   é exatamente o que o usuário pediu ("devem ir junto com os resultados das MAGs finais
+   MIMAG"). GUNC roda por AMOSTRA contra todos os bins dela (`--input_dir`), então o join é
+   por MAG igual ao CheckM2.
+5. **eggNOG por amostra**: novo `build_magma_sample_functional_table.R`, reaproveitando a
+   lógica já testada de `build_dogma_table.R` para `COG_category`/`KEGG_Pathway`. Gráfico de
+   composição funcional por amostra (barras empilhadas por categoria COG), mesmo padrão do
+   `dogma_functional_composition.R`.
+
+### Fase B — anel genômico + resto da anotação (sessão dedicada, depois da Fase A)
+
+1. Verificar BiG-SCAPE de verdade antes de decidir seu lugar no anel (rede de similaridade
+   não é uma feature posicional simples como as outras).
+2. Construir `build_magma_mag_ring_data.R`: um MAG por vez, produz as trilhas do anel
+   (CDS por fita, GC/GC-skew via janela deslizante no FASTA do genoma, tRNA/rRNA do
+   barrnap/trnascan já lidos, CRISPR do MINCED, regiões virais do VirSorter2/geNomad,
+   elementos móveis do ISEScan/MOB-suite) usando `circlize`.
+3. Decisão gráfico-vs-tabela pendente até ver o anel de verdade: provável que o anel sirva
+   para MAGs individuais (poucas features, visual vale a pena) e uma tabela grande sirva
+   melhor para visão agregada entre muitos MAGs (mesmo padrão já adotado na ficha por MAG:
+   sequência expansível em vez de gráfico).
+4. Aplicar o mesmo tratamento (composição funcional) ao eggNOG por MAG, já que os dados são
+   os mesmos formato, só o nível muda.
+
+Ordem acordada com o usuário: **Fase A primeiro, Fase B depois**, "aos poucos" — não tentar
+tudo de uma vez.
