@@ -83,7 +83,11 @@ class _BootErrorApp extends StatelessWidget {
               children: [
                 const Icon(Icons.error_outline, color: Colors.red, size: 40),
                 const SizedBox(height: 16),
-                Text('Falha ao iniciar o backend:\n$error', textAlign: TextAlign.center),
+                // Bilingual literal: this screen runs outside the root
+                // ProviderScope (see runApp above), so the locale provider
+                // that ref.t() reads is not available here.
+                Text('Falha ao iniciar o backend / Failed to start the backend:\n$error',
+                    textAlign: TextAlign.center),
               ],
             ),
           ),

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
-/// Lightweight pt-BR/EN toggle for the app shell chrome (nav, settings, about,
-/// resources, dependency gate). Screens further down the flow
-/// (Launch/Monitor forms) are not wired to this.
+/// Lightweight pt-BR/EN string table for the whole UI, keyed by a short
+/// identifier and looked up with `ref.t('key')`. Both maps below must hold
+/// the same key set. Text that comes from a pipeline's own pipeline.yaml or
+/// from plots/manifest.yaml is localized there instead, via its own
+/// {en, pt} blocks (see localizedManifestText).
 final localeProvider = StateProvider<Locale>((ref) => const Locale('pt'));
 
 const _pt = <String, String>{
@@ -49,6 +51,12 @@ const _pt = <String, String>{
   'resources_free': 'disponível',
 
   'about_title': 'Sobre',
+  'about_author': 'Autor',
+  'about_author_placeholder': 'Nome, formação e linha de pesquisa vão aqui.',
+  'about_lab': 'Laboratório',
+  'about_lab_placeholder': 'Nome do laboratório, instituição e link do site vão aqui.',
+  'about_publications': 'Publicações que usam o OmniOmics',
+  'about_publications_placeholder': 'Lista de artigos/citações que usaram este app vai aqui.',
 
   'install': 'Instalar',
   'cancel': 'Cancelar',
@@ -333,6 +341,12 @@ const _en = <String, String>{
   'resources_free': 'free',
 
   'about_title': 'About',
+  'about_author': 'Author',
+  'about_author_placeholder': 'Name, background and research area go here.',
+  'about_lab': 'Lab',
+  'about_lab_placeholder': 'Lab name, institution and website link go here.',
+  'about_publications': 'Publications using OmniOmics',
+  'about_publications_placeholder': 'List of papers/citations that used this app goes here.',
 
   'install': 'Install',
   'cancel': 'Cancel',
