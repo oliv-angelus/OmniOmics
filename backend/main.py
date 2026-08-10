@@ -1613,11 +1613,39 @@ plot_finished: dict = {}     # run_id -> bool
 # used by /api/plots/{analysis_id}/run (tells each analysis script which
 # CLI flag name to expect the cached object's path under -- matches
 # whatever that script's own parse_cli_args reads).
+def _merge_columns_data(acc: dict, incoming: dict, primary: bool) -> None:
+    """Merges one loader's metadata_columns.json into the accumulated view.
+
+    The shapes describe different rows (community taxa vs. assembled genomes),
+    so their `columns`/`column_levels` are unioned rather than replaced -- a
+    MAGMA run offers both its metadata columns and its per-MAG groupings in
+    one dropdown set. `tax_ranks` and `samples` come from whichever shape
+    actually reports them (only one does, per shape), and the primary shape
+    wins any genuine key collision so existing single-shape pipelines keep
+    byte-identical behavior.
+    """
+    for key in ("columns",):
+        merged = list(acc.get(key, []))
+        for v in incoming.get(key, []) or []:
+            if v not in merged:
+                merged.append(v)
+        acc[key] = merged
+    levels = dict(acc.get("column_levels", {}))
+    for k, v in (incoming.get("column_levels") or {}).items():
+        if primary or k not in levels:
+            levels[k] = v
+    acc["column_levels"] = levels
+    for key in ("tax_ranks", "samples", "annotation_columns"):
+        if incoming.get(key):
+            acc[key] = incoming[key]
+
+
 INPUT_SHAPE_INFO = {
     "phyloseq": {"loader_script": "load_phyloseq.R", "rds_filename": "phyloseq.rds", "rds_flag": "--phyloseq_rds"},
     "count_matrix": {"loader_script": "load_count_matrix.R", "rds_filename": "count_matrix.rds", "rds_flag": "--count_matrix_rds"},
     "dogma_annotated": {"loader_script": "load_dogma_table.R", "rds_filename": "dogma_table.rds", "rds_flag": "--dogma_table_rds"},
     "sigma_genomes": {"loader_script": "load_sigma_table.R", "rds_filename": "sigma_table.rds", "rds_flag": "--sigma_table_rds"},
+    "magma_mags": {"loader_script": "load_magma_mag_table.R", "rds_filename": "magma_mag_table.rds", "rds_flag": "--magma_mag_table_rds"},
 }
 
 
@@ -1667,41 +1695,51 @@ async def load_plot_data(data: dict):
     if not rscript:
         raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
 
-    try:
-        input_shape = plots_engine.get_input_shape_for_pipeline(parent_run["pipeline_id"])
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    shape_info = INPUT_SHAPE_INFO.get(input_shape, INPUT_SHAPE_INFO["phyloseq"])
-    loader_script = shape_info["loader_script"]
-    rds_filename = shape_info["rds_filename"]
+    input_shapes = plots_engine.get_input_shapes_for_pipeline(parent_run["pipeline_id"])
+    primary_shape = input_shapes[0]
+    rds_filename = INPUT_SHAPE_INFO.get(primary_shape, INPUT_SHAPE_INFO["phyloseq"])["rds_filename"]
 
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(parent_run["output_dir"], "plots", "_loaded", timestamp)
     os.makedirs(out_dir, exist_ok=True)
 
-    cmd = [rscript, os.path.join(plots_engine.PLOTS_DIR, "scripts", loader_script),
-           "--input", os.path.join(parent_run["output_dir"], "results"),
-           "--metadata", metadata_path,
-           "--out_dir", out_dir,
-           "--pipeline_id", parent_run["pipeline_id"]]
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-        env=_subprocess_env(),
-    )
-    try:
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
-    except asyncio.TimeoutError:
-        proc.kill()
-        raise HTTPException(status_code=504, detail="Carregamento demorou demais (timeout).")
+    # One loader per shape, all writing into the same out_dir under their own
+    # rds_filename, so the run step can pick the right cached object by the
+    # chosen analysis's shape without the client tracking more than one path.
+    # Each loader overwrites metadata_columns.json, so it is read back and
+    # merged right after its own subprocess finishes.
+    columns_data: dict = {}
+    for shape in input_shapes:
+        shape_info = INPUT_SHAPE_INFO.get(shape, INPUT_SHAPE_INFO["phyloseq"])
+        cmd = [rscript, os.path.join(plots_engine.PLOTS_DIR, "scripts", shape_info["loader_script"]),
+               "--input", os.path.join(parent_run["output_dir"], "results"),
+               "--metadata", metadata_path,
+               "--out_dir", out_dir,
+               "--pipeline_id", parent_run["pipeline_id"]]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=_subprocess_env(),
+        )
+        try:
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
+        except asyncio.TimeoutError:
+            proc.kill()
+            raise HTTPException(status_code=504, detail="Carregamento demorou demais (timeout).")
 
-    if proc.returncode != 0:
-        raise HTTPException(status_code=400, detail=clean_output(stdout))
+        if proc.returncode != 0:
+            raise HTTPException(status_code=400, detail=clean_output(stdout))
 
-    columns_path = os.path.join(out_dir, "metadata_columns.json")
-    with open(columns_path, encoding="utf-8") as f:
-        columns_data = json.load(f)
+        columns_path = os.path.join(out_dir, "metadata_columns.json")
+        with open(columns_path, encoding="utf-8") as f:
+            shape_columns = json.load(f)
+        _merge_columns_data(columns_data, shape_columns, primary=(shape == primary_shape))
+
+    # Restore the merged view, so a later reader of this folder sees every
+    # shape's columns rather than only the last loader's.
+    with open(os.path.join(out_dir, "metadata_columns.json"), "w", encoding="utf-8") as f:
+        json.dump(columns_data, f, ensure_ascii=False, indent=2)
 
     return {
         "data_rds": os.path.join(out_dir, rds_filename),
@@ -1831,9 +1869,18 @@ async def run_plot_analysis(analysis_id: str, data: dict):
     # from the /load step either way, just under the name that reads right
     # for what the object actually is in each script.
     analysis_def = plots_engine.get_analysis(analysis_id)
-    rds_flag = INPUT_SHAPE_INFO.get(analysis_def.get("input_shape", "phyloseq"), INPUT_SHAPE_INFO["phyloseq"])["rds_flag"]
+    shape_info = INPUT_SHAPE_INFO.get(analysis_def.get("input_shape", "phyloseq"), INPUT_SHAPE_INFO["phyloseq"])
+    # The client tracks one data_rds, but a pipeline whose analyses need more
+    # than one shape (MAGMA: community table + assembled genomes) has all of
+    # them cached side by side in that file's own folder -- so the right one
+    # is resolved by filename here rather than round-tripping a map through
+    # the app. Falls back to whatever the client sent if this shape's file
+    # isn't there, which keeps runs loaded before this existed working.
+    shape_rds = os.path.join(os.path.dirname(data_rds), shape_info["rds_filename"])
+    if not os.path.exists(shape_rds):
+        shape_rds = data_rds
     cmd = [rscript, plots_engine.script_path(analysis_id),
-           rds_flag, data_rds,
+           shape_info["rds_flag"], shape_rds,
            "--out_dir", out_dir]
     if style_json:
         cmd += ["--style_json", style_json]

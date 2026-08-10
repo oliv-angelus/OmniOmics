@@ -69,10 +69,25 @@ def get_input_shape_for_pipeline(pipeline_id: str) -> str:
     analyses at all yet, so an unconfigured pipeline fails at "no compatible
     analyses" rather than here.
     """
-    shapes = {a.get("input_shape", "phyloseq") for a in get_analysis_list(pipeline_id)}
-    if len(shapes) > 1:
-        raise ValueError(f"Pipeline '{pipeline_id}' has analyses with mixed input_shape values: {shapes} -- not supported.")
+    shapes = get_input_shapes_for_pipeline(pipeline_id)
     return next(iter(shapes), "phyloseq")
+
+
+def get_input_shapes_for_pipeline(pipeline_id: str) -> list:
+    """Every distinct input_shape this pipeline's analyses need, in manifest
+    order. A pipeline may legitimately need more than one: MAGMA analyses read
+    both the read-level Kraken2/Bracken community table ("phyloseq") and the
+    assembled genomes ("magma_mags"), which are different rows describing
+    different biology, not two views of one table. The load step builds one
+    cached object per shape into the same out_dir, so the run step can pick
+    the right file by the chosen analysis's own shape.
+    """
+    shapes = []
+    for a in get_analysis_list(pipeline_id):
+        shape = a.get("input_shape", "phyloseq")
+        if shape not in shapes:
+            shapes.append(shape)
+    return shapes or ["phyloseq"]
 
 
 def build_params_args(analysis_id: str, param_states: list) -> list:
