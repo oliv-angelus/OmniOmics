@@ -117,6 +117,18 @@ suppressMessages({
   tk
 }
 
+#' Every 09_ANNOTATION/mags/* rule computes its own per-MAG file/directory
+#' prefix as `magname=$(basename "$f".fa)` (confirmed by reading the real
+#' shell in every one of vfdb_mags/barrnap_mags/trnascan_mags/amrfinder_mags/
+#' prodigal_mags, and by literally running that line: with $f ending in
+#' ".../{mag}.fa", `"$f".fa` concatenates a second, unintended ".fa" before
+#' basename strips the path -- so on disk it is genuinely `{mag}.fa.fa`, not
+#' `{mag}` or `{mag}.fa`. A real, pre-existing MAGMA bug (self-consistent
+#' across rules, so the pipeline still runs; only the file naming is
+#' affected) -- reproduced here rather than assumed away, since these readers
+#' have to find what the pipeline actually writes.
+.mag_shell_name <- function(mag) paste0(mag, ".fa.fa")
+
 #' Barrnap writes standard GFF3; the rRNA gene name is in the attributes
 #' column as `Name=16S_rRNA`. Counting distinct 5S/16S/23S names gives the
 #' rRNA half of MIMAG's high-quality criterion.
@@ -131,7 +143,7 @@ suppressMessages({
                     rrna_23s = NA_integer_, stringsAsFactors = FALSE)
   if (!dir.exists(d)) return(out)
   for (i in seq_along(mag_ids)) {
-    f <- file.path(d, paste0(mag_ids[i], ".gff"))
+    f <- file.path(d, paste0(.mag_shell_name(mag_ids[i]), "_rrna.gff"))
     if (!file.exists(f)) next
     lines <- try(readLines(f, warn = FALSE), silent = TRUE)
     if (inherits(lines, "try-error")) next
@@ -156,7 +168,7 @@ suppressMessages({
   out <- data.frame(mag = mag_ids, trna_types = NA_integer_, stringsAsFactors = FALSE)
   if (!dir.exists(d)) return(out)
   for (i in seq_along(mag_ids)) {
-    f <- file.path(d, paste0(mag_ids[i], ".txt"))
+    f <- file.path(d, paste0(.mag_shell_name(mag_ids[i]), "_trna.out"))
     if (!file.exists(f)) next
     lines <- try(readLines(f, warn = FALSE), silent = TRUE)
     if (inherits(lines, "try-error") || length(lines) < 4) next
@@ -254,36 +266,70 @@ build_magma_mag_abundance <- function(results_dir) {
 
 #' Long per-MAG AMR/virulence gene hits, same sparse shape as SIGMA's
 #' build_sigma_gene_hits. Files are per MAG under 09_ANNOTATION/mags/.
-build_magma_mag_gene_hits <- function(results_dir) {
+#'
+#' Carries the join keys each source needs for .attach_gene_sequences() to
+#' later fetch the real sequence: AMRFinderPlus's own "Protein identifier" is
+#' the exact FASTA header Prodigal wrote (AMRFinder is run with `-p` directly
+#' against Prodigal's .faa -- confirmed from the real rule, see
+#' 07_annotation_mobilome.smk's amrfinder_mags), so it is a clean 1:1 lookup.
+#' abricate (VFDB) is run against the whole MAG genome fasta, not a protein
+#' prediction, so its hit is a nucleotide region (contig + start + end)
+#' rather than a single record.
+build_magma_mag_gene_hits <- function(results_dir, mag_ids) {
   base <- file.path(results_dir, "09_ANNOTATION", "mags")
   if (!dir.exists(base)) return(NULL)
   parts <- list()
 
+  # amrfinder_mags writes one subdirectory per MAG (magname = .mag_shell_name)
+  # containing a FIXED filename "amrfinder_results.tsv" -- unlike vfdb below,
+  # the MAG id is not part of the filename itself, only the directory.
   amr_dir <- file.path(base, "amrfinder")
   if (dir.exists(amr_dir)) {
-    for (f in list.files(amr_dir, pattern = "_amrfinder_results\\.tsv$", full.names = TRUE)) {
+    for (mag in mag_ids) {
+      f <- file.path(amr_dir, .mag_shell_name(mag), "amrfinder_results.tsv")
+      if (!file.exists(f)) next
       df <- try(read.delim(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
       if (inherits(df, "try-error") || nrow(df) == 0) next
       gene_col <- intersect(c("Element symbol", "Gene symbol"), colnames(df))
+      name_col <- intersect(c("Element name", "Sequence name"), colnames(df))
       if (length(gene_col) == 0) next
       parts[[length(parts) + 1]] <- data.frame(
-        mag = sub("_amrfinder_results\\.tsv$", "", basename(f)),
+        mag = mag,
         source = "amrfinder",
         gene = as.character(df[[gene_col[1]]]),
+        product = if (length(name_col)) as.character(df[[name_col[1]]]) else NA_character_,
+        class = as.character(df[["Class"]] %||% NA),
+        subclass = as.character(df[["Subclass"]] %||% NA),
+        pct_identity = suppressWarnings(as.numeric(df[["% Identity to reference"]] %||% NA)),
+        pct_coverage = suppressWarnings(as.numeric(df[["% Coverage of reference"]] %||% NA)),
+        protein_id = as.character(df[["Protein identifier"]] %||% NA),
+        contig = NA_character_, seq_start = NA_integer_, seq_end = NA_integer_,
         stringsAsFactors = FALSE
       )
     }
   }
 
+  # vfdb_mags writes one flat file per MAG, "{magname}_vfdb_results.tab",
+  # directly under the outdir (no per-MAG subdirectory, unlike amrfinder).
   vfdb_dir <- file.path(base, "vfdb")
   if (dir.exists(vfdb_dir)) {
-    for (f in list.files(vfdb_dir, pattern = "_vfdb_results\\.tab$", full.names = TRUE)) {
+    for (mag in mag_ids) {
+      f <- file.path(vfdb_dir, paste0(.mag_shell_name(mag), "_vfdb_results.tab"))
+      if (!file.exists(f)) next
       df <- try(read.delim(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
       if (inherits(df, "try-error") || nrow(df) == 0 || !"GENE" %in% colnames(df)) next
       parts[[length(parts) + 1]] <- data.frame(
-        mag = sub("_vfdb_results\\.tab$", "", basename(f)),
+        mag = mag,
         source = "vfdb",
         gene = as.character(df$GENE),
+        product = as.character(df[["PRODUCT"]] %||% NA),
+        class = NA_character_, subclass = NA_character_,
+        pct_identity = suppressWarnings(as.numeric(df[["%IDENTITY"]] %||% NA)),
+        pct_coverage = suppressWarnings(as.numeric(df[["%COVERAGE"]] %||% NA)),
+        protein_id = NA_character_,
+        contig = as.character(df[["SEQUENCE"]] %||% NA),
+        seq_start = suppressWarnings(as.integer(df[["START"]] %||% NA)),
+        seq_end = suppressWarnings(as.integer(df[["END"]] %||% NA)),
         stringsAsFactors = FALSE
       )
     }
@@ -291,4 +337,85 @@ build_magma_mag_gene_hits <- function(results_dir) {
 
   if (length(parts) == 0) return(NULL)
   bind_rows(parts)
+}
+
+#' Parses a FASTA file into a named character vector (header token up to the
+#' first whitespace -> sequence, newlines stripped). Shared by both sequence
+#' extractors below; kept intentionally simple (no Biostrings dependency --
+#' this app's r-plots env doesn't otherwise need one) since MAG genome/protein
+#' FASTAs are small enough to read whole.
+.read_fasta_map <- function(path) {
+  if (!file.exists(path)) return(NULL)
+  lines <- try(readLines(path, warn = FALSE), silent = TRUE)
+  if (inherits(lines, "try-error") || length(lines) == 0) return(NULL)
+  starts <- which(startsWith(lines, ">"))
+  if (length(starts) == 0) return(NULL)
+  ends <- c(starts[-1] - 1, length(lines))
+  ids <- sub("^>(\\S+).*$", "\\1", lines[starts])
+  seqs <- vapply(seq_along(starts), function(i) {
+    body <- lines[(starts[i] + 1):ends[i]]
+    paste(body[nzchar(trimws(body))], collapse = "")
+  }, character(1))
+  stats::setNames(as.list(seqs), ids)
+}
+
+#' Adds real sequences to a gene_hits data frame, scoped to `mags` -- called
+#' with only the MAGs the user actually selected, not the whole run, since
+#' reading every MAG's protein/genome FASTA at load time (before any MAG is
+#' even picked) would be wasted I/O on runs with dozens of MAGs.
+#'
+#' AMR hits resolve by exact protein_id lookup in Prodigal's own .faa.
+#' VFDB hits resolve by slicing [seq_start, seq_end] out of the MAG's own
+#' assembly fasta (dereplicated_genomes, the same file abricate was run
+#' against) -- a 1-based, inclusive range per abricate's own convention.
+attach_gene_sequences <- function(gene_hits, results_dir, mags) {
+  if (is.null(gene_hits) || nrow(gene_hits) == 0) {
+    if (is.null(gene_hits)) return(NULL)
+    gene_hits$sequence <- character(0); gene_hits$sequence_type <- character(0)
+    return(gene_hits)
+  }
+  gene_hits <- gene_hits[gene_hits$mag %in% mags, , drop = FALSE]
+  gene_hits$sequence <- NA_character_
+  gene_hits$sequence_type <- NA_character_
+
+  for (m in unique(gene_hits$mag)) {
+    rows_amr <- which(gene_hits$mag == m & gene_hits$source == "amrfinder")
+    if (length(rows_amr) > 0) {
+      faa <- file.path(results_dir, "09_ANNOTATION", "mags", "prodigal", .mag_shell_name(m),
+                       paste0(.mag_shell_name(m), "_proteins.faa"))
+      prot <- .read_fasta_map(faa)
+      if (!is.null(prot)) {
+        gene_hits$sequence[rows_amr] <- vapply(rows_amr, function(i) {
+          prot[[gene_hits$protein_id[i]]] %||% NA_character_
+        }, character(1))
+        gene_hits$sequence_type[rows_amr] <- "protein"
+      }
+    }
+    rows_vf <- which(gene_hits$mag == m & gene_hits$source == "vfdb")
+    if (length(rows_vf) > 0) {
+      genome <- file.path(results_dir, "07_DEREP", "drep_out", "dereplicated_genomes", paste0(m, ".fa"))
+      if (!file.exists(genome)) {
+        # Falls back to whichever sample's binette output produced it, for a
+        # MAG that didn't survive dereplication (build_magma_mag_table.R
+        # still lists it, with dereplicated = FALSE). Uses the same
+        # sample-directory matching as .mag_sample() -- not a split on the
+        # last underscore, since a sample name can itself contain one.
+        sample <- .mag_sample(m, results_dir)
+        genome <- file.path(results_dir, "06_MAG_REFINEMENT", sample, "binette", "final_bins", paste0(m, ".fa"))
+      }
+      contigs <- .read_fasta_map(genome)
+      if (!is.null(contigs)) {
+        gene_hits$sequence[rows_vf] <- vapply(rows_vf, function(i) {
+          seq <- contigs[[gene_hits$contig[i]]]
+          s <- gene_hits$seq_start[i]; e <- gene_hits$seq_end[i]
+          if (is.null(seq) || is.na(s) || is.na(e)) return(NA_character_)
+          lo <- min(s, e); hi <- max(s, e)
+          if (hi > nchar(seq)) return(NA_character_)
+          substr(seq, lo, hi)
+        }, character(1))
+        gene_hits$sequence_type[rows_vf] <- "nucleotide"
+      }
+    }
+  }
+  gene_hits
 }

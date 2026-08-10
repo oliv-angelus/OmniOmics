@@ -34,7 +34,7 @@ log_line("[load_magma_mag_table] abundance: %s",
          if (is.null(abundance)) "no coverm_coverage.tsv found" else
            sprintf("%d MAG-sample pair(s)", nrow(abundance)))
 
-gene_hits <- build_magma_mag_gene_hits(args$input)
+gene_hits <- build_magma_mag_gene_hits(args$input, mag_table$mag)
 log_line("[load_magma_mag_table] AMR/virulence hits: %s",
          if (is.null(gene_hits)) "none found" else sprintf("%d row(s)", nrow(gene_hits)))
 
@@ -76,7 +76,15 @@ column_levels <- lapply(columns, function(col) {
 names(column_levels) <- columns
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
-saveRDS(list(mag_table = mag_table, abundance = abundance, gene_hits = gene_hits, coldata = coldata),
+# results_dir is cached alongside the parsed tables so an analysis script
+# (which normally only ever sees this .rds, not the raw pipeline output --
+# see the header comment in main.py's /run endpoint) can still reach the raw
+# genome/protein FASTAs on demand, e.g. magma_mag_summary.R's real gene
+# sequence lookup. Only the tables above are meant to be read blindly; a
+# script using results_dir must handle files that may no longer exist (see
+# main.py's output_exists check on runs generally).
+saveRDS(list(mag_table = mag_table, abundance = abundance, gene_hits = gene_hits, coldata = coldata,
+            results_dir = args$input),
         file.path(args$out_dir, "magma_mag_table.rds"))
 
 write_json(

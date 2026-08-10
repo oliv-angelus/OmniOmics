@@ -138,6 +138,24 @@ VF_GENES = {
 AMINO_ACIDS = ("Ala Arg Asn Asp Cys Gln Glu Gly His Ile Leu Lys Met Phe Pro "
                "Ser Thr Trp Tyr Val").split()
 
+DNA_ALPHABET = "ACGT"
+AA_ALPHABET = "ACDEFGHIKLMNPQRSTVWY"  # 20 standard one-letter codes, no stop
+
+
+def random_dna(n):
+    return "".join(random.choice(DNA_ALPHABET) for _ in range(n))
+
+
+def random_protein(n):
+    return "".join(random.choice(AA_ALPHABET) for _ in range(n))
+
+
+def fasta_record(header, seq, width=70):
+    lines = [f">{header}"]
+    for i in range(0, len(seq), width):
+        lines.append(seq[i:i + width])
+    return "\n".join(lines) + "\n"
+
 
 def w(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -163,6 +181,17 @@ def build_abundance(scale=1.0, noise=0.12):
             counts.append(int(jitter(base * m * scale, noise)))
         rows.append([lineage] + counts + [sum(counts)])
     return tsv(rows)
+
+
+# Every 09_ANNOTATION/mags/* rule computes its own per-MAG output prefix as
+# `magname=$(basename "$f".fa)` -- a real, pre-existing MAGMA bug (confirmed
+# by reading and literally running that line): with $f ending in ".../{mag}.fa",
+# `"$f".fa` concatenates an unintended second ".fa" before basename strips the
+# path, so on disk the prefix is genuinely "{mag}.fa.fa". Reproduced here
+# rather than "fixed" in the fixture, since the fixture's entire point is to
+# match what the pipeline actually writes.
+def mag_shell_name(mag):
+    return f"{mag}.fa.fa"
 
 
 def main():
@@ -210,13 +239,22 @@ def main():
             w(os.path.join(res, "02_ASSEMBLY", s, sub, "report.tsv"), tsv(rows))
 
     # --- 05_BINNING / 06_MAG_REFINEMENT ---------------------------------
+    # One real (if short) random contig per MAG, reused everywhere that MAG's
+    # assembly is expected on disk -- long enough that VFDB's coordinate
+    # slicing (see below) always lands inside real sequence, short enough
+    # that the fixture stays fast to generate and to read.
+    mag_genome = {}
+    for suffix, sample, comp, cont, size, rrna, trna, derep, lineage in MAGS:
+        mag = f"{sample}_{suffix}"
+        mag_genome[mag] = random_dna(random.randint(4000, 9000))
+
     by_sample = {}
     for suffix, sample, comp, cont, size, rrna, trna, derep, lineage in MAGS:
         by_sample.setdefault(sample, []).append((suffix, comp, cont, size))
     for s in SAMPLES:
         for binner in ("metabat2", "semibin2", "maxbin2", "vamb"):
             w(os.path.join(res, "05_BINNING", s, binner, "bin.1.fa"),
-              f">{s}_{binner}_contig1\nACGTACGTACGT\n")
+              fasta_record(f"{s}_{binner}_contig1", random_dna(2000)))
         rows = [["Name", "Completeness", "Contamination", "Genome_Size",
                  "Completeness_Model_Used", "Additional_Notes"]]
         for suffix, comp, cont, size in by_sample.get(s, []):
@@ -226,18 +264,20 @@ def main():
                        "GUNC.progenomes_2.1.maxCSS_level.tsv"),
           "# demonstration stub -- GUNC chimerism report\n")
         for suffix, _c, _x, _s in by_sample.get(s, []):
-            w(os.path.join(res, "06_MAG_REFINEMENT", s, "binette", "final_bins", f"{s}_{suffix}.fa"),
-              f">{s}_{suffix}_contig1\nACGTACGTACGT\n")
+            mag = f"{s}_{suffix}"
+            w(os.path.join(res, "06_MAG_REFINEMENT", s, "binette", "final_bins", f"{mag}.fa"),
+              fasta_record(f"{mag}_contig1", mag_genome[mag]))
 
     # --- 07_DEREP -------------------------------------------------------
     for suffix, sample, *_rest in MAGS:
         mag = f"{sample}_{suffix}"
-        w(os.path.join(res, "07_DEREP", "all_hq_mags", f"{mag}.fa"), f">{mag}_contig1\nACGTACGT\n")
+        w(os.path.join(res, "07_DEREP", "all_hq_mags", f"{mag}.fa"),
+          fasta_record(f"{mag}_contig1", mag_genome[mag]))
     for suffix, sample, comp, cont, size, rrna, trna, derep, lineage in MAGS:
         if derep:
             mag = f"{sample}_{suffix}"
             w(os.path.join(res, "07_DEREP", "drep_out", "dereplicated_genomes", f"{mag}.fa"),
-              f">{mag}_contig1\nACGTACGT\n")
+              fasta_record(f"{mag}_contig1", mag_genome[mag]))
     w(os.path.join(res, "07_DEREP", "drep_out", "data_tables", "Widb.csv"),
       "# demonstration stub -- dRep winner table\n")
 
@@ -267,42 +307,67 @@ def main():
     w(os.path.join(res, "10_MAG_COVERAGE", "coverm_coverage.tsv"), tsv(rows))
 
     # --- 09_ANNOTATION (per MAG) ----------------------------------------
+    # Every path below uses mag_shell_name(mag) == "{mag}.fa.fa" -- the real
+    # (buggy) prefix MAGMA's own rules compute, not "{mag}" or "{mag}.fa".
     mags_dir = os.path.join(res, "09_ANNOTATION", "mags")
     for suffix, sample, comp, cont, size, rrna, trna, derep, lineage in MAGS:
         mag = f"{sample}_{suffix}"
+        shell_name = mag_shell_name(mag)
+        genome_seq = mag_genome[mag]
         if rrna is not None:
             lines = ["##gff-version 3"]
             for name, n in zip(("5S_rRNA", "16S_rRNA", "23S_rRNA"), rrna):
                 for i in range(n):
-                    start = 1000 * (i + 1)
-                    lines.append(f"{mag}_contig1\tbarrnap:0.9\trRNA\t{start}\t{start + 1500}\t"
+                    start = 200 * (i + 1)
+                    lines.append(f"{mag}_contig1\tbarrnap:0.9\trRNA\t{start}\t{start + 120}\t"
                                  f"1e-40\t+\t.\tName={name};product={name.replace('_', ' ')}")
-            w(os.path.join(mags_dir, "barrnap", f"{mag}.gff"), "\n".join(lines) + "\n")
+            w(os.path.join(mags_dir, "barrnap", f"{shell_name}_rrna.gff"), "\n".join(lines) + "\n")
         if trna is not None:
             rows = ["Sequence\ttRNA\tBounds\ttRNA\tAnti\tIntron Bounds\tInf",
                     "Name  \t#   \tBegin\tEnd\tType\tCodon\tScore",
                     "--------\t----\t-----\t----\t----\t-----\t-----"]
             for i, aa in enumerate(AMINO_ACIDS[:trna], start=1):
                 rows.append(f"{mag}\t{i}\t{100 * i}\t{100 * i + 73}\t{aa}\tTGC\t{round(random.uniform(45, 92), 1)}")
-            w(os.path.join(mags_dir, "trnascan", f"{mag}.txt"), "\n".join(rows) + "\n")
+            w(os.path.join(mags_dir, "trnascan", f"{shell_name}_trna.out"), "\n".join(rows) + "\n")
 
+        # Real protein sequences, one FASTA record per AMR gene, written where
+        # pyrodigal's own rule puts them -- a subdirectory named shell_name,
+        # containing "{shell_name}_proteins.faa". AMRFinderPlus's "Protein
+        # identifier" column below matches these headers exactly, the same
+        # 1:1 lookup attach_gene_sequences() does against a real run.
         amr = AMR_GENES.get(suffix, [])
-        rows = [["Protein identifier", "Element symbol", "Element name", "Class", "Subclass",
-                 "% Coverage of reference", "% Identity to reference"]]
+        faa_records = []
+        amr_rows = [["Protein identifier", "Element symbol", "Element name", "Class", "Subclass",
+                     "% Coverage of reference", "% Identity to reference"]]
         for gene, cls in amr:
-            rows.append([f"{mag}_prot{random.randint(1, 900)}", gene, f"{gene} resistance protein",
-                         cls.upper(), cls, round(random.uniform(88, 100), 1), round(random.uniform(90, 100), 1)])
-        w(os.path.join(mags_dir, "amrfinder", f"{mag}_amrfinder_results.tsv"), tsv(rows))
+            prot_id = f"{mag}_prot{len(faa_records) + 1}"
+            faa_records.append(fasta_record(prot_id, random_protein(random.randint(80, 260))))
+            amr_rows.append([prot_id, gene, f"{gene} resistance protein",
+                             cls.upper(), cls, round(random.uniform(88, 100), 1), round(random.uniform(90, 100), 1)])
+        if faa_records:
+            w(os.path.join(mags_dir, "prodigal", shell_name, f"{shell_name}_proteins.faa"),
+              "".join(faa_records))
+        w(os.path.join(mags_dir, "amrfinder", shell_name, "amrfinder_results.tsv"), tsv(amr_rows))
 
+        # VFDB hits are nucleotide regions on the MAG's own contig -- picking a
+        # real, in-bounds [start, end) window of the generated genome sequence
+        # means attach_gene_sequences() slicing it back out is a genuine round
+        # trip, not a coincidence.
         vf = VF_GENES.get(suffix, [])
-        rows = [["#FILE", "SEQUENCE", "GENE", "COVERAGE", "%COVERAGE", "%IDENTITY", "DATABASE", "PRODUCT"]]
-        for gene in vf:
-            rows.append([f"{mag}.fa", f"{mag}_contig1", gene, "1-900/900",
-                         round(random.uniform(90, 100), 2), round(random.uniform(88, 99), 2),
-                         "vfdb", f"{gene} virulence factor"])
-        w(os.path.join(mags_dir, "vfdb", f"{mag}_vfdb_results.tab"), tsv(rows))
+        # abricate's coordinates are 1-based, START < END regardless of
+        # strand -- these are the columns attach_gene_sequences() reads.
+        vf_rows = [["#FILE", "SEQUENCE", "START", "END", "STRAND", "GENE", "COVERAGE",
+                    "%COVERAGE", "%IDENTITY", "DATABASE", "PRODUCT"]]
+        for j, gene in enumerate(vf):
+            span = random.randint(200, 600)
+            start = 300 + j * 700
+            end = min(start + span, len(genome_seq) - 1)
+            vf_rows.append([f"{mag}.fa", f"{mag}_contig1", start, end, "+", gene,
+                            f"{start}-{end}/{end - start}", round(random.uniform(90, 100), 2),
+                            round(random.uniform(88, 99), 2), "vfdb", f"{gene} virulence factor"])
+        w(os.path.join(mags_dir, "vfdb", f"{shell_name}_vfdb_results.tab"), tsv(vf_rows))
 
-        w(os.path.join(mags_dir, "eggnog", f"{mag}_annotations.emapper.annotations"),
+        w(os.path.join(mags_dir, "eggnog", shell_name, f"{shell_name}_annotations.emapper.annotations"),
           "# demonstration stub -- eggNOG-mapper annotations\n")
 
     # --- config ---------------------------------------------------------
