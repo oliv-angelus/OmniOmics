@@ -131,7 +131,8 @@ const _extraTagLabels = <String, (String pt, String en)>{
   'eukaryote': ('Eucarioto', 'Eukaryote'),
   'pangenome': ('Pangenoma', 'Pangenome'),
   'genotyping': ('Genotipagem', 'Genotyping'),
-  // DEFINE only supports short-read RNA-seq (Bowtie2 + featureCounts) -- // unlike SIGMA/MAGMA/DOGMA's short/long/hybrid read_type, there is no long-
+  // DEFINE only supports short-read RNA-seq (Bowtie2 + featureCounts) --
+  // unlike SIGMA/MAGMA/DOGMA's short/long/hybrid read_type, there is no long-
   // read path, so this flags that scope up front on the Hub card.
   'short_only': ('Só reads curtas', 'Short reads only'),
   // MAGMA/SIGMA both have a real hybrid assembler (short+long reads combined

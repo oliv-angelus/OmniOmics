@@ -30,13 +30,11 @@ suppressMessages({
 #'   share one lineage string). This is a deliberate resolution change, not
 #'   just an additive attachment: it's also the real, standard DADA2/
 #'   phyloseq-tutorial convention (Callahan et al.) to build phyloseq at
-#'   ASV/OTU resolution in the first place -- PRISM's own lineage-collapsing
-#'   before this point was a pragmatic shape-matching choice (to reuse
-#'   MAGMA's abundance-table shape for free) made *before* real ASV-level
-#'   output existed, not the scientifically preferred one. When `tree` is
-#'   NULL (MAGMA/DOGMA, or a PRISM run with no tree -- e.g. <3 taxa
-#'   detected, or a run predating this feature), behavior is byte-for-byte
-#'   unchanged from before.
+#'   ASV/OTU resolution in the first place; PRISM's lineage-collapsing
+#'   path reuses MAGMA's abundance-table shape, which is convenient but
+#'   coarser. When `tree` is NULL (MAGMA/DOGMA, or a PRISM run with no
+#'   tree -- e.g. fewer than 3 taxa detected), the lineage-collapsed path
+#'   is used instead.
 #' @return A phyloseq object with OTU/TAX/SAMPLE components, plus a real
 #'   phy_tree when `tree` was given.
 build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
@@ -70,7 +68,7 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
   # GTDB" as a fixed rule.
   # A single hardcoded rank-name vector is wrong for whichever shape it
   # wasn't built against -- silently shifts every column one slot (caught
-  #: a hardcoded 8-field split against 7-field GTDB data put
+  # in practice: a hardcoded 8-field split against 7-field GTDB data put
   # Species-level strings under "Genus", visible as "s__X spNNN" in a
   # Genus-level composition plot's legend instead of real genus names).
   # Detect the actual depth instead of assuming it.

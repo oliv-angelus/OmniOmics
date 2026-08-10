@@ -18,7 +18,7 @@ samples = pd.read_table(config["samples"]).set_index("sample", drop=False).filln
 # EUKulele_main.py and the database-management logic in manage_steps.py /
 # download_database.py are authoritative and were read directly):
 # - `-m mets` (metatranscriptome mode, required), `-x proteins --p_ext.pep`
-# (protein-only input, matching TransDecoder's.pep extension directly --
+# (protein-only input, matching TransDecoder's .pep extension directly --
 # no rename needed, just point --p_ext at it).
 # - `-s <dir>` wants a *directory* of protein files, not a single file --
 # same "tool wants its own directory" shape as Trinity/TransDecoder/

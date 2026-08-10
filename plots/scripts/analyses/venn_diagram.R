@@ -1,6 +1,5 @@
 # Venn diagram of taxa present (above --min_abundance) per level of
-# --group_var. Not part of the original microbiome.R script -- added at the
-# user's request (see plots/manifest.yaml). Up to 4 sets (ggVennDiagram's
+# --group_var. Up to 4 sets (ggVennDiagram's
 # practical/readable limit for this kind of label-heavy diagram).
 this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)

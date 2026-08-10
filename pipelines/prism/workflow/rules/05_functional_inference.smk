@@ -21,14 +21,13 @@ rule picrust2:
         max_nsti=_flag_value(config["params"].get("picrust2", ""), "--max_nsti", "2.0"),
         stratified_flag=lambda wc: "--stratified" if "--stratified" in config["params"].get("picrust2", "") else ""
     conda: "../envs/picrust2.yaml"
-    #.get with a default, not a plain [] lookup -- real bug caught by a
-    # real dry-run: Snakemake evaluates `threads:` at DAG-build
-    # time even when picrust2 is disabled/not yet in a run's config (e.g. any
-    # config.yaml generated before picrust2 was added to the manifest, or any
-    # run where the user simply didn't enable it), so a plain
-    # config["threads"]["picrust2"] KeyError's the whole DAG build even for
-    # runs that never touch this rule's active branch -- the same class of
-    # gotcha already documented elsewhere (Kaiju's fmi glob, _resolve_ref_path).
+    # .get with a default, not a plain [] lookup: Snakemake evaluates
+    # `threads:` at DAG-build time even when picrust2 is disabled or absent
+    # from a run's config (any config.yaml generated before picrust2 was
+    # added to the manifest, or any run where it isn't enabled), so
+    # config["threads"]["picrust2"] would KeyError the whole DAG build even
+    # for runs that never reach this rule -- the same class of gotcha as
+    # Kaiju's fmi glob and _resolve_ref_path.
     threads: config["threads"].get("picrust2", 1)
     log: "logs/functional/picrust2.log"
     shell:

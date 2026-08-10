@@ -1,9 +1,7 @@
 # UpSet plot of taxa present (above --min_abundance) per level of
 # --group_var -- the many-groups alternative to venn_diagram.R (which caps
-# at 4 sets; see notes/Known Issues and Next Steps.md's Venn-diagram entry,
-# Shade & Handelsman 2012). Not part of the original microbiome.R script --
-# added at the user's request, same as venn_diagram. Set computation is a
-# direct copy of venn_diagram.R's (kept independently checkable there too);
+# at 4 sets; Shade & Handelsman 2012). Set computation is a direct copy of
+# venn_diagram.R's (kept independently checkable there too);
 # only the plotting library and the no-cap validation differ.
 this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)

@@ -7,8 +7,7 @@ import '../theme/app_theme.dart';
 /// between "pick the file" and "build the phyloseq object from it" -- lets
 /// the user fix an obvious mistake (a typo'd group label, a stray value, or
 /// a typo'd COLUMN NAME) without leaving the app or re-picking a whole new
-/// file, per the user's explicit request. Column headers are editable too
-/// (real reported case: "vai que o usuário vê uma letra errada lá") -- they
+/// file. Column headers are editable too -- they
 /// aren't just labels here, every analysis's --group_var/--rank dropdown is
 /// populated from them downstream, so a typo there is just as worth fixing
 /// in place as a typo'd cell. v1 scope, deliberately: existing cell/header

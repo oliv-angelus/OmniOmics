@@ -4,7 +4,7 @@ import csv
 
 # ── Phase 2, mode 2 (PROTOTYPE) ────────────────────────────────────────────
 # Cross-references DOGMA's own de novo assembled transcripts (TransDecoder
-#.pep, from mode 1/mode 3 -- see DOGMA) against a companion MAGMA run's
+# .pep, from mode 1/mode 3 -- see DOGMA) against a companion MAGMA run's
 # dereplicated MAGs, via DIAMOND blastp against each MAG's own Prodigal/
 # Pyrodigal protein predictions -- reusing files MAGMA already produces
 # unchanged (results/09_ANNOTATION/mags/prodigal/{mag}/{mag}_proteins.faa)

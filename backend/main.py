@@ -1070,7 +1070,8 @@ def config_generate(pid: str, data: dict):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
-# --- Pipeline execution (per pipeline) --- # A run's lifetime is owned by its background task, not by any particular
+# --- Pipeline execution (per pipeline) ---
+# A run's lifetime is owned by its background task, not by any particular
 # websocket connection -- navigating away from the Monitor screen (or losing
 # the connection) must not kill the pipeline. Every /ws/pipelines/{pid}/run
 # connection just replays this run's event log from disk (see
@@ -1320,7 +1321,8 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
 
     already_running = pid in pipeline_processes and pipeline_processes[pid].returncode is None
     if not already_running:
-        # Clear any stop request left over from an earlier, unrelated click -- # see the check right before the real run launches below, and
+        # Clear any stop request left over from an earlier, unrelated click --
+        # see the check right before the real run launches below, and
         # stop_pipeline's comment for why this flag exists at all.
         pipeline_stop_requested[pid] = False
 
@@ -1357,7 +1359,8 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         if snakemake_bin:
             cmd = [snakemake_bin]
         else:
-            # Last-resort fallback if the env's binary couldn't be located -- # signal handling isn't guaranteed to work through this path.
+            # Last-resort fallback if the env's binary couldn't be located --
+            # signal handling isn't guaranteed to work through this path.
             cmd = [conda or "conda", "run", "--no-capture-output", "-n", "snakemake", "snakemake"]
 
         os.makedirs(CONDA_ENVS_DIR, exist_ok=True)
@@ -1405,7 +1408,8 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
             await websocket.send_json({"type": "done", "code": -15})
             return
 
-        # Event log lives next to the run's own results/logs, not in memory -- # see _emit and pipeline_log_paths. A fresh file per run (not
+        # Event log lives next to the run's own results/logs, not in memory --
+        # see _emit and pipeline_log_paths. A fresh file per run (not
         # appended-to across runs) so replay-on-connect for *this* run never
         # shows a previous run's tail.
         log_dir = os.path.join(output_dir, "logs")
@@ -1712,7 +1716,8 @@ async def load_plot_data(data: dict):
         "annotation_columns": columns_data.get("annotation_columns", []),
         # SIGMA-only: real per-genome identifiers this run has, feeding
         # PlotParam's "sample" type (a real Flutter dropdown, not a
-        # workaround) so a per-genome analysis can ask "which genome?" -- # see plot_loaded_data.dart's own docstring for why this needed a
+        # workaround) so a per-genome analysis can ask "which genome?" --
+        # see plot_loaded_data.dart's own docstring for why this needed a
         # distinct mechanism from "column"/"level" (no metadata column to
         # depend on; the sample identity is a fixed fact about the run).
         "samples": columns_data.get("samples", []),
@@ -1803,7 +1808,8 @@ async def run_plot_analysis(analysis_id: str, data: dict):
         raise HTTPException(status_code=400, detail="data_rds is required -- call /api/plots/load first.")
     param_states = data.get("parameters", [])
     # Optional: the Plots tab's "Personalizar" panel writes its current
-    # background/font/palette edits to a JSON file (own path, own lifetime -- # not inside this run's own out_dir, since that doesn't exist yet at the
+    # background/font/palette edits to a JSON file (own path, own lifetime --
+    # not inside this run's own out_dir, since that doesn't exist yet at the
     # point the frontend needs to write it) and passes the path straight
     # through here. The R script reads it directly by absolute path, so no
     # copying/relocating is needed on the backend's side.
@@ -1884,10 +1890,9 @@ async def plots_ws(websocket: WebSocket, run_id: str):
 
 @app.post("/api/plots/{run_id}/export")
 async def export_plot(run_id: str, data: dict):
-    """Runs the generic export/render_final.R against a compute run's cached.rds + style.json() at the user's chosen format/DPI/size. Phase 1: style.json()
-    is still whatever the compute step wrote (default_style.json()) -- the
-    interactive preview widget that lets a user edit it doesn't exist yet
-    (Phase 2 of the Plots-tab plan)."""
+    """Renders a compute run's cached .rds through export/render_final.R at
+    the caller's chosen format/DPI/size, using the style.json the compute
+    step wrote (default_style.json unless overridden)."""
     run = plot_runs_store.get_plot_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Plot run not found.")

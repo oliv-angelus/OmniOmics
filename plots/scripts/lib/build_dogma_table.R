@@ -122,7 +122,7 @@ suppressMessages({
   }
 
   # --- FeGenie (ORF-keyed, sparse, real CSV; protein_sequence column
-  # dropped -- large/redundant, the ORF's sequence is already in the.pep) -
+  # dropped -- large/redundant, the ORF's sequence is already in the .pep) -
   fegenie_path <- file.path(ann_dir, "fegenie", "FeGenie-geneSummary.csv")
   if (file.exists(fegenie_path) && file.size(fegenie_path) > 0) {
     fegenie <- read.csv(fegenie_path, check.names = FALSE, stringsAsFactors = FALSE)
@@ -133,9 +133,10 @@ suppressMessages({
   }
 
   # --- EUKulele (ORF-keyed despite the confusing "transcript_name" column
-  # name -- confirmed from source: DOGMA feeds it TransDecoder's.pep, so
+  # name -- confirmed from source: DOGMA feeds it TransDecoder's .pep, so
   # its per-row ID really is the ORF id). Real file has an extra leading
-  # unnamed pandas-index column (to.csv(sep='\t') with no index=False) -- # read.delim already handles a short header row correctly (R recycles
+  # unnamed pandas-index column (to.csv(sep='\t') with no index=False) --
+  # read.delim already handles a short header row correctly (R recycles
   # the mismatch onto rownames), same idiom already used elsewhere for
   # not-quite-headerful TSVs.
   euk_path <- file.path(ann_dir, "eukulele", "taxonomy_estimation", paste0(sample, "-estimated-taxonomy.out"))

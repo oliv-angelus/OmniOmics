@@ -18,7 +18,8 @@
 ABUNDANCE_FILE_PATTERNS <- list(
   magma = list(pattern = "abundance_table_final_RAW\\.tsv$"),
   # Real bug caught by a real test: PRISM's own filename
-  # "prism_abundance_table.tsv" isn't unique across a run's results tree -- # results/04_DENOISE/dada2/ and results/04_DENOISE/emu/ each write their
+  # "prism_abundance_table.tsv" isn't unique across a run's results tree --
+  # results/04_DENOISE/dada2/ and results/04_DENOISE/emu/ each write their
   # OWN copy (one real, one an empty touch-placeholder, depending on which
   # platform actually ran, see 04_denoise_classify.smk) -- and
   # list.files(pattern=)'s pattern only ever matches against the file's

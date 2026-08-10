@@ -106,7 +106,8 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
     if not active_tools:
         methods_paragraphs.append("No tools were active for this run.")
 
-    # ---- Reference databases ----------------------------------------------- # A database is only listed if its key plausibly belongs to one of *this
+    # ---- Reference databases -----------------------------------------------
+    # A database is only listed if its key plausibly belongs to one of *this
     # run's* active tools (fuzzy substring match, e.g. "amrfinder" database <->
     # "amrfinderplus" tool) -- config.yaml's databases block otherwise carries
     # every database the app knows about globally, active or not, which would

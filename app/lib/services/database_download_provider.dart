@@ -116,7 +116,8 @@ class DatabaseDownloadsNotifier extends Notifier<Map<String, DatabaseDownloadSta
           _sockets.remove(key);
           break;
         case 'cancelled':
-          // Normally cancel already dropped this key from state locally -- // this only fires if a "cancelled" for *this* connection arrives
+          // Normally cancel already dropped this key from state locally --
+          // this only fires if a "cancelled" for *this* connection arrives
           // some other way (e.g. the backend itself replaced it on a fresh
           // start elsewhere). Either way, nothing left to show for it here.
           final next = {...state}..remove(key);

@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 /// Lightweight pt-BR/EN toggle for the app shell chrome (nav, settings, about,
-/// resources, dependency gate). Screens further down the flow (Launch/Monitor
-/// forms) are not yet wired to this -- deliberate v1 scope cut, noted so it's
-/// not mistaken for an oversight.
+/// resources, dependency gate). Screens further down the flow
+/// (Launch/Monitor forms) are not wired to this.
 final localeProvider = StateProvider<Locale>((ref) => const Locale('pt'));
 
 const _pt = <String, String>{

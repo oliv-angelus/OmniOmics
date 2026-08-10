@@ -1,9 +1,8 @@
-# Shared body for every scripts/analyses/*.R file until the real statistics
-# are implemented (see plots/manifest.yaml's header comment -- alpha_diversity
-# and beta_diversity are real now, the rest are still stubs). Proves the real
-# wiring end-to-end (Rscript spawn, PATH-clean conda env, arg passing, reading
-# the cached phyloseq.rds /api/plots/load already built, writing data.json
-# under --out_dir) without pretending to compute real statistics yet.
+# Shared body for analyses whose statistics are not implemented yet
+# (manifest.yaml marks these with `implemented: false`). It exercises the
+# full execution path -- Rscript spawn, PATH-clean conda env, argument
+# passing, reading the cached phyloseq.rds built by /api/plots/load, writing
+# data.json under --out_dir -- without computing any statistics.
 suppressMessages({
   library(jsonlite)
   library(phyloseq)

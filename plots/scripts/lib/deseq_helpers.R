@@ -27,7 +27,8 @@ run_deseq <- function(count_data, group_var, reference_group = NULL) {
   }
 
   counts <- count_data$counts
-  # Samples with NA in group_var can't be assigned to a design level -- # dropped rather than erroring, same reasoning as build_phyloseq-based
+  # Samples with NA in group_var can't be assigned to a design level --
+  # dropped rather than erroring, same reasoning as build_phyloseq-based
   # analyses already use for their own group_var.
   keep_samples <- !is.na(coldata[[group_var]])
   if (!all(keep_samples)) {
@@ -86,23 +87,19 @@ run_deseq <- function(count_data, group_var, reference_group = NULL) {
   )
 }
 
-#' Resolves the exact DESeq2 coefficient name for a user-CHOSEN test_group
-#' vs. reference_group comparison -- replaces an earlier version of this
-#' analysis set that silently always took resultsNames(dds)'s LAST
-#' coefficient regardless of how many non-reference levels group_var had. A
-#' real reported bug, not a style nitpick: with group_var having more than 2
-#' levels (any real multi-condition experiment -- e.g. control/acid/base/
-#' heat/cold), the user had no way to pick WHICH non-reference condition a
-#' volcano/MA/heatmap/enrichment analysis actually tested -- it was always
-#' whichever level happened to sort last alphabetically, with no UI control
-#' over it and no indication that was even happening. Every non-reference
+#' Resolves the exact DESeq2 coefficient name for an explicitly chosen
+#' test_group vs. reference_group comparison, rather than defaulting to
+#' resultsNames(dds)'s last coefficient. With group_var having more than 2
+#' levels (any multi-condition experiment -- e.g. control/acid/base/heat/
+#' cold), the last coefficient is just whichever level sorts last
+#' alphabetically, which fixes the comparison silently and offers no way to
+#' test a different condition. Every non-reference
 #' level's own coefficient already exists simultaneously on ONE fitted
 #' model (run_deseq relevels to reference_group once; DESeq2's own
 #' treatment-contrast parameterization then gives every OTHER level its own
 #' "<group_var>_<level>_vs_<reference_group>" coefficient for free -- the
-#' same fact `de_upset.R` already relies on to loop over all of them). This
-#' just resolves the ONE the user actually asked for via --test_group,
-#' instead of guessing.
+#' same fact `de_upset.R` relies on to loop over all of them). This resolves
+#' the one named by --test_group.
 deseq_coef_name <- function(dds, group_var, test_group, reference_group) {
   if (test_group == reference_group) {
     stop(sprintf("test_group and reference_group can't both be '%s' -- pick a different condition to test.", test_group))

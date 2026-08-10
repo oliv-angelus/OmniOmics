@@ -95,16 +95,14 @@ title_text_width_in <- function(label, size, font_family) {
 }
 
 #' Wraps `title` onto as many lines as needed so no line exceeds
-#' `max_width_in` inches when actually rendered -- fixes a real reported bug:
+#' `max_width_in` inches when actually rendered. Needed because
 #' `annotate("text",...)` (what title_bar uses) never wraps or shrinks on
 #' its own, so a long title (e.g. de_heatmap's "Top N DE Genes (VST, row
 #' z-score): X vs Y") visibly overflowed past the gray70 title bar's left AND
 #' right edges on any plot narrow enough that the title's real rendered width
-#' exceeded the plot's own width -- worse on real (often small) RNA-seq
-#' sample counts than on the wider synthetic fixtures this was mostly
-#' verified against before. Returns `title` unchanged (one line) if it
-#' already fits -- the common case, so most plots render identically to
-#' before this fix.
+#' exceeded the plot's own width -- most pronounced at small RNA-seq sample
+#' counts, where the plot itself is narrow. Returns `title` unchanged (one
+#' line) if it already fits, which is the common case.
 wrap_title_to_width <- function(title, max_width_in, size, font_family) {
   if (title_text_width_in(title, size, font_family) <= max_width_in) return(title)
   wrap_chars <- max(10, nchar(title) - 1)

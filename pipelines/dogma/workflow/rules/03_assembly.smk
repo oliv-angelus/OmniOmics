@@ -25,12 +25,12 @@ wildcard_constraints:
 # ── domain_filter wiring ───────────────────────────────────────────────────
 # Every rule below carries a {domain} wildcard, resolved against Snakefile's
 # DOMAINS list: ["all"] when domain_filter is inactive (plain ribodetector-
-# clean reads, same behavior as before this wiring existed), ["prokaryote"] or
+# clean reads), ["prokaryote"] or
 # ["eukaryote"] when active with a single mode, or ["prokaryote", "eukaryote"]
 # when mode is "both" -- in which case the *entire* downstream Phase 2 chain
 # (assembly through every annotation extra) runs twice per sample, fully
-# separately, per the user's explicit choice over the simpler
-# alternative (domain_filter only affecting 02_SCREENING characterization).
+# separately, rather than domain_filter only affecting 02_SCREENING
+# characterization.
 
 
 def _short_reads_r1(wildcards):
@@ -128,7 +128,8 @@ rule transcript_set:
     output:
         mad="results/03_ASSEMBLY/{sample}/{domain}/{sample}_transcripts_mad.fasta"
     params:
-        # Real two-step MMseqs2 dedup per PMC9983209 (Krinos et al. 2023) -- # read directly from the paper's own "eukrhythmic" Snakemake source
+        # Real two-step MMseqs2 dedup per PMC9983209 (Krinos et al. 2023) --
+        # read directly from the paper's own "eukrhythmic" Snakemake source
         # (07-CAG.smk, 12-MAD.smk), not just the prose, since the prose alone
         # doesn't give exact flags. Step 1 collapses IDENTICAL contigs that
         # multiple assemblers independently recovered (100% identity); step 2
@@ -139,7 +140,8 @@ rule transcript_set:
         # both the two-stage structure and the coverage mode/value).
         # eukrhythmic runs step 1 per "assembly group" then step 2 once
         # globally across every sample/group combined; DOGMA has no
-        # co-assembly step (per-sample only, a deliberate earlier decision -- # see DOGMA), so both steps run per-sample here instead, matching
+        # co-assembly step (per-sample only, a deliberate earlier decision --
+        # see DOGMA), so both steps run per-sample here instead, matching
         # the paper's two-stage *structure* at DOGMA's actual granularity.
         step1_extra=config["params"].get("transcript_set_step1", "--min-seq-id 1.00 --cov-mode 1 -c 0.98"),
         step2_extra=config["params"].get("transcript_set", "--min-seq-id 0.98 --cov-mode 1 -c 0.98")

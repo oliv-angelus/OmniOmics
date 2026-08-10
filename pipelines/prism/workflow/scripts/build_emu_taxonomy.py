@@ -51,7 +51,8 @@ def main():
             if line.startswith(">"):
                 tax_id += 1
                 # Header shape (real, confirmed): pure semicolon-joined
-                # lineage, no accession/ID token before it -- # "Domain;Phylum;Class;Order;Family;Genus;Species".
+                # lineage, no accession/ID token before it --
+                # "Domain;Phylum;Class;Order;Family;Genus;Species".
                 lineage = line[1:].strip()
                 ranks = lineage.split(";")
                 ranks = (ranks + [""] * len(RANK_NAMES))[:len(RANK_NAMES)]

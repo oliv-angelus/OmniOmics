@@ -316,7 +316,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   /// Shared by the per-row trash icon (single run) and the "Apagar
   /// selecionadas" bulk action. Always confirms first and always deletes the
-  /// run's actual output folder from disk, not just the history entry -- /// running runs are filtered out client-side too (belt and suspenders with
+  /// run's actual output folder from disk, not just the history entry --
+  /// running runs are filtered out client-side too (belt and suspenders with
   /// the backend's own block).
   Future<void> _confirmAndDelete(List<RunRecord> targets) async {
     final colors = context.colors;

@@ -61,7 +61,8 @@ build_group_network <- function(group) {
   ps_sub <- prune_samples(keep, ps)
   ps_sub <- prune_taxa(taxa_sums(ps_sub) > 0, ps_sub)
 
-  # Hmisc::rcorr errors outright ("must have >4 observations") below this -- # confirmed against a 1-sample-per-group pilot-study-shaped
+  # Hmisc::rcorr errors outright ("must have >4 observations") below this --
+  # confirmed against a 1-sample-per-group pilot-study-shaped
   # fixture, where a group this small can't support a correlation network at
   # all. Skipped the same way a group with no correlations meeting the
   # cutoffs already is (see the sum(cor_matrix != 0) == 0 check below),

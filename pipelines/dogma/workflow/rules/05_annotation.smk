@@ -41,7 +41,7 @@ rule eggnog_sample:
 # --output_dir <dir> --db_dir <dir> --threads N` writes results/overview.tsv
 # (consensus CAZy family calls across DIAMOND/HMM/dbCAN-sub) plus per-method
 # TSVs into --output_dir. --mode protein is required since the input here is
-# TransDecoder's.pep, not raw DNA (the prok/meta modes run gene calling
+# TransDecoder's .pep, not raw DNA (the prok/meta modes run gene calling
 # themselves, which DOGMA already did via TransDecoder).
 rule cazy_annotate:
     input:

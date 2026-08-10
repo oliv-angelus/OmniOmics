@@ -14,11 +14,10 @@ samples = pd.read_table(config["samples"]).set_index("sample", drop=False).filln
 # contigs." No featureCounts here -- researched real precedent (eukrhythmic,
 # CoMW, MT-Enviro) before deciding, found none of them actually pair Salmon
 # with ORF/gene-level counting on a de novo metatranscriptome assembly, and
-# TransDecoder's.gff3 isn't directly featureCounts-compatible anyway (real
-# incompatibility). User's call, keep Salmon only
-# for now to finish DOGMA end-to-end first; featureCounts (ORF-level counts,
-# joined to TransDecoder coordinates) is a real candidate future refinement,
-# not discarded -- see DOGMA "Still open" for the reasoning.
+# TransDecoder's .gff3 isn't directly featureCounts-compatible anyway (real
+# incompatibility), so quantification is Salmon-only. featureCounts
+# (ORF-level counts joined to TransDecoder coordinates) remains a candidate
+# refinement rather than a rejected option.
 #
 # **Scope note, worth remembering**: because there's no shared reference
 # across samples, `quant.sf` is a per-sample table (transcript x {TPM,

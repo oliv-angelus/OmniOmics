@@ -114,13 +114,11 @@ diagdds <- tryCatch(
   }
 )
 
-# Which non-reference level this comparison actually tests is now a real
-# user choice (--test_group) -- a real reported bug: this used
-# to always take resultsNames's LAST coefficient regardless of how many
-# non-reference levels group_var had, so with more than 2 groups (e.g. this
-# app's 5-group synthetic test fixture) the user had no way to pick WHICH
-# condition was actually being tested against the reference, and no
-# indication that a choice was even being made silently on their behalf.
+# Which non-reference level this comparison tests is an explicit parameter
+# (--test_group) rather than resultsNames's last coefficient. With more than
+# two groups, taking the last coefficient would silently fix the comparison
+# to whichever level happens to sort last, with no way to choose and no
+# indication that a choice was being made at all.
 # Every non-reference level's own coefficient already exists on this SAME
 # fitted model (DESeq2's own treatment-contrast parameterization gives one
 # per level automatically), so this just resolves the specific one asked
