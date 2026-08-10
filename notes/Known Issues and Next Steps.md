@@ -420,3 +420,40 @@ Corrigido no caminho:
 `plots_building`, `results_clear_selection`, `monitor_stopping_log`, `cores_label`...).
 Inofensivas, mas algumas sugerem rótulos escritos para elementos de UI que nunca foram
 ligados — vale conferir ao mexer nessas telas.
+
+### Sequela: 7 chamadas perdidas que só apareciam em runtime (2026-08-10)
+
+O app não subia mesmo depois de todas as verificações acima terem passado. Sete chamadas
+sem parênteses sobreviveram porque **continuam sendo código válido** — o resultado é um
+objeto função em vez do valor esperado, e nem parser, nem compilador, nem `pyflakes`, nem
+`flutter analyze` reclamam.
+
+- `backend_launcher.dart`: `final repoRoot = _findRepoRoot;` guardava a *função*. A
+  interpolação virava `"Closure: () => String/.venv/bin/python3"`, o arquivo não existia e
+  o launcher caía no `python3` do sistema — daí `ModuleNotFoundError: aiofiles`, que está
+  instalado no `.venv`. O `workingDirectory: repoRoot()` chamava certo, então o
+  `backend/main.py` era encontrado e o sintoma apontava para dependência faltando, não para
+  o interpretador errado.
+- `main.py`: `app = FastAPI` (sem instanciar) → `add_middleware` virava chamada não-ligada,
+  `CORSMiddleware` entrava como `self` e faltava `middleware_class`.
+- `main.py`: `Observer`, `_ManifestReloadHandler` e `.start` no watcher de manifests.
+- `main.py`: `asyncio.get_event_loop` sem chamar.
+- `system_monitor.py`: `psutil.virtual_memory` sem chamar (500 em `/api/system/info`).
+- `databases_engine.py`: `hashlib.sha256` sem chamar, 2 sítios — o checksum de download
+  sempre bateria errado.
+
+**Dois detectores novos** (ambos varridos até zerar), que complementam os cinco já listados
+acima:
+
+7. **Classe importada atribuída sem instanciar** — AST: `X = NomeClasse` onde `NomeClasse`
+   é um import CamelCase. Pegou `app = FastAPI` e `Observer`.
+8. **`module.attr` callable usado como valor** — resolvido *importando o módulo de verdade*
+   e testando `callable(getattr(mod, attr))`. Pegou `psutil.virtual_memory`,
+   `hashlib.sha256`, `asyncio.get_event_loop`. Detectores puramente sintáticos não têm como
+   saber que `virtual_memory` é função; só o módulo real sabe.
+
+**Lição reforçada**: para esta classe de dano, *executar* é a única verificação que conta.
+A validação anterior tinha rodado os scripts R e os loaders da aba Plots — por isso o lado
+R saiu limpo — mas nunca tinha subido o backend nem aberto o app. Agora foi feito: as 13
+rotas GET respondem 200, `/api/system/info` devolve CPU/RAM/disco reais, e as descrições
+chegam ao Flutter como `{pt, en}`.
