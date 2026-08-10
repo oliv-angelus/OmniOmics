@@ -271,6 +271,31 @@ class _MultiSampleField extends ConsumerWidget {
                 : ListView(
                     shrinkWrap: true,
                     children: [
+                      // Toggles between select-all and clear-all depending on
+                      // the current state, rather than two separate buttons --
+                      // a run can have dozens of MAGs, and "mark all then
+                      // uncheck a couple" is the common case that motivated
+                      // this in the first place.
+                      CheckboxListTile(
+                        dense: true,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        value: working.length == options.length
+                            ? true
+                            : (working.isEmpty ? false : null),
+                        tristate: true,
+                        title: Text(ref.t('plots_select_all'),
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                        onChanged: (_) => setLocalState(() {
+                          if (working.length == options.length) {
+                            working.clear();
+                          } else {
+                            working
+                              ..clear()
+                              ..addAll(options);
+                          }
+                        }),
+                      ),
+                      const Divider(height: 1),
                       for (final o in options)
                         CheckboxListTile(
                           dense: true,

@@ -17,6 +17,7 @@ import '../../widgets/file_picker_field.dart';
 import '../../widgets/metadata_table_editor.dart';
 import '../../widgets/plot_param_form.dart';
 import '../../widgets/plot_style_panel.dart';
+import '../../widgets/mag_summary_table.dart';
 
 /// Dedicated workspace for ONE finished run's analyses -- metadata (loaded
 /// once, cached as a phyloseq object) -> pick a compatible analysis ->
@@ -355,7 +356,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// from the parameter form landed on the run list, not the analyses list).
   void _goBack(PlotRunState? runState) {
     if (runState != null && runState.finished) {
-      _newAnalysis; // same "start over" as the button by that name -- one step back to the analyses list
+      _newAnalysis(); // same "start over" as the button by that name -- one step back to the analyses list
       return;
     }
     if (runState != null && !runState.finished) {
@@ -539,7 +540,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
                     // organized without truncating anything.
                         : SingleChildScrollView(
                         child: LayoutBuilder(
-                          builder: (context, constraints) => _buildAnalysisRows(constraints.maxWidth),
+                          builder: (context, constraints) => _buildAnalysisSections(colors, constraints.maxWidth),
                         ),
                       ),
           ),
@@ -551,15 +552,52 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   static const _analysisCardWidth = 280.0;
   static const _analysisCardSpacing = 16.0;
 
-  Widget _buildAnalysisRows(double availableWidth) {
-    // Lower-bounded at 1 only -- NOT upper-bounded by _analyses.length. A
+  /// Section label for an input_shape, when a pipeline's analyses span more
+  /// than one (currently just MAGMA: read-level community taxa vs. assembled
+  /// MAGs -- see plots_engine.get_input_shapes_for_pipeline). Every other
+  /// pipeline has exactly one shape, so [_buildAnalysisSections] skips
+  /// grouping entirely and this is never called for them.
+  String _shapeSectionLabel(String shape) => switch (shape) {
+        'magma_mags' => ref.t('plots_section_mags'),
+        _ => ref.t('plots_section_community'),
+      };
+
+  /// Groups [_analyses] by input_shape and gives each group its own labeled
+  /// section, only when the pipeline actually has more than one shape --
+  /// community-level and MAG-level analyses work on different ROWS (samples
+  /// vs. genomes) and mixing them in one unlabeled grid would make that
+  /// distinction invisible. A single-shape pipeline (everything but MAGMA
+  /// today) renders exactly as before: one flat grid, no headers.
+  Widget _buildAnalysisSections(AppPalette colors, double availableWidth) {
+    final shapes = _analyses.map((a) => a.inputShape).toSet();
+    if (shapes.length <= 1) return _buildAnalysisRows(_analyses, availableWidth);
+
+    final order = ['phyloseq', 'count_matrix', 'dogma_annotated', 'sigma_genomes', 'magma_mags'];
+    final ordered = [...shapes]..sort((a, b) => order.indexOf(a).compareTo(order.indexOf(b)));
+    final sections = <Widget>[];
+    for (final shape in ordered) {
+      final group = _analyses.where((a) => a.inputShape == shape).toList();
+      if (group.isEmpty) continue;
+      sections.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(_shapeSectionLabel(shape),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: colors.textSecondary)),
+      ));
+      sections.add(_buildAnalysisRows(group, availableWidth));
+      sections.add(const SizedBox(height: 24));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: sections);
+  }
+
+  Widget _buildAnalysisRows(List<PlotAnalysis> analyses, double availableWidth) {
+    // Lower-bounded at 1 only -- NOT upper-bounded by analyses.length. A
     // short list (e.g. a pipeline with only 2 compatible analyses) should
     // still get normal-width cards left-aligned with empty stretched slots
     // filling out the row, not a couple of columns stretched to abnormal
     // width just because there happened to be few items.
     final columns = math.max(1, ((availableWidth + _analysisCardSpacing) / (_analysisCardWidth + _analysisCardSpacing)).floor());
     final rows = <Widget>[];
-    for (var i = 0; i < _analyses.length; i += columns) {
+    for (var i = 0; i < analyses.length; i += columns) {
       if (rows.isNotEmpty) rows.add(const SizedBox(height: _analysisCardSpacing));
       final rowChildren = <Widget>[];
       for (var col = 0; col < columns; col++) {
@@ -569,8 +607,8 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           // An incomplete final row gets empty stretched slots rather than
           // letting its real cards grow wider to fill the row -- keeps every
           // card the same width regardless of which row it's in.
-          child: index < _analyses.length
-              ? _AnalysisCard(analysis: _analyses[index], onTap: () => _selectAnalysis(_analyses[index])): const SizedBox(),
+          child: index < analyses.length
+              ? _AnalysisCard(analysis: analyses[index], onTap: () => _selectAnalysis(analyses[index])): const SizedBox(),
         ));
       }
       rows.add(IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: rowChildren)));
@@ -624,9 +662,34 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     );
   }
 
+  /// Reads and decodes an analysis's own data.json, for analyses (currently
+  /// just magma_mag_summary) whose real content is structured data rendered
+  /// natively rather than a static image. Returns null on any read/parse
+  /// failure -- the caller falls back to the plain image+log view, same as a
+  /// run whose data.json genuinely doesn't have this shape.
+  Map<String, dynamic>? _readDataJson(String outDir) {
+    try {
+      final raw = File('$outDir/data.json').readAsStringSync();
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Widget _buildRunPanel(AppPalette colors, PlotRunState runState) {
     final previewFile = File('${runState.outDir}/preview.png');
     final hasPreview = runState.finished && runState.succeeded && previewFile.existsSync();
+    // magma_mag_summary's real content is this interactive table (MIMAG +
+    // genes + real sequences, per the user's own request that the static
+    // report-card image be replaced, not just prettied up) -- shown ABOVE
+    // the static scatter plot, which stays available for its own sake
+    // (a real completeness-vs-contamination view) and so Customize/Export
+    // keep working exactly as they do for every other analysis.
+    final isMagSummary = runState.analysisId == 'magma_mag_summary';
+    List? magRecords;
+    if (isMagSummary && runState.finished && runState.succeeded) {
+      magRecords = _readDataJson(runState.outDir)?['records'] as List?;
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -657,6 +720,10 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
                 ),
             ],
           ),
+          if (magRecords != null && magRecords.isNotEmpty)...[
+            const SizedBox(height: 16),
+            MagSummaryTable(records: magRecords),
+          ],
           // The preview is the whole point of running an analysis -- lead
           // with it, full-width, once it exists; the log (useful while
           // watching a run, less so afterward) collapses out of the way.

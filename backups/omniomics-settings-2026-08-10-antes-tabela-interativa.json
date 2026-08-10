@@ -1,0 +1,1127 @@
+{
+  "conda_path": "/home/angelo/miniforge3/bin/conda",
+  "launch_drafts": {
+    "magma": {
+      "input_dirs": {
+        "short_reads_dir": "/home/angelo/Downloads/OmniOmics/build",
+        "long_reads_dir": "/home/angelo/Downloads/OmniOmics/test_data/long_reads"
+      },
+      "output_dir": "/home/angelo/Downloads/run01",
+      "ram_gb": "4",
+      "cores": "4",
+      "long_read_platform": "pacbio_raw",
+      "thread_overrides": {},
+      "active_tools": [
+        "fastp",
+        "filtlong",
+        "kraken2",
+        "bracken",
+        "kreport2mpa",
+        "kaiju",
+        "megahit",
+        "metaquast",
+        "tiara",
+        "bowtie2",
+        "minimap2",
+        "samtools_index",
+        "semibin2",
+        "vamb",
+        "binette",
+        "checkm2",
+        "gunc",
+        "mags_annot",
+        "drep",
+        "coverm",
+        "gtdbtk",
+        "abricate",
+        "barrnap",
+        "trnascan",
+        "virsorter2",
+        "genomad",
+        "vibrant",
+        "isescan",
+        "minced",
+        "mobsuite",
+        "vfdb",
+        "antismash",
+        "bigscape",
+        "jgi_summarize",
+        "metabat2",
+        "maxbin2",
+        "checkv",
+        "prodigal",
+        "eggnog",
+        "metaspades_hybrid",
+        "flye"
+      ],
+      "active_tracks": {
+        "amrfinderplus": [
+          "sample",
+          "mags"
+        ],
+        "abricate": [
+          "sample",
+          "mags"
+        ],
+        "isescan": [
+          "sample",
+          "mags"
+        ],
+        "minced": [
+          "sample",
+          "mags"
+        ],
+        "vfdb": [
+          "sample",
+          "mags"
+        ],
+        "antismash": [
+          "sample",
+          "mags"
+        ],
+        "bigscape": [
+          "sample",
+          "mags"
+        ],
+        "prodigal": [
+          "sample",
+          "mags"
+        ],
+        "eggnog": [
+          "mags",
+          "sample"
+        ]
+      },
+      "tool_params": {
+        "fastp": {
+          "enabledFlags": [
+            "--qualified_quality_phred",
+            "--length_required",
+            "--trim_front1",
+            "--trim_front2"
+          ],
+          "flagValues": {
+            "--qualified_quality_phred": "30",
+            "--length_required": "50",
+            "--trim_front1": "1",
+            "--trim_front2": "1",
+            "--trim_tail1": "0",
+            "--trim_tail2": "0",
+            "--cut_front": "true",
+            "--cut_tail": "true",
+            "--cut_mean_quality": "20",
+            "--detect_adapter_for_pe": "true",
+            "--dedup": "true",
+            "--low_complexity_filter": "true",
+            "--complexity_threshold": "30"
+          },
+          "extraParams": ""
+        },
+        "filtlong": {
+          "enabledFlags": [
+            "--min_length",
+            "--keep_percent"
+          ],
+          "flagValues": {
+            "--min_length": "500",
+            "--max_length": "0",
+            "--keep_percent": "90.0",
+            "--target_bases": "0",
+            "--min_mean_q": "0.0"
+          },
+          "extraParams": ""
+        },
+        "kraken2": {
+          "enabledFlags": [
+            "--confidence"
+          ],
+          "flagValues": {
+            "--confidence": "0.05",
+            "--minimum-hit-groups": "2",
+            "--report-zero-counts": "true",
+            "--paired": "true",
+            "--gzip-compressed": "true"
+          },
+          "extraParams": ""
+        },
+        "bracken": {
+          "enabledFlags": [
+            "-l",
+            "-r"
+          ],
+          "flagValues": {
+            "-l": "S",
+            "-r": "150",
+            "-t": "10"
+          },
+          "extraParams": ""
+        },
+        "kreport2mpa": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "kaiju": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-a": "greedy",
+            "-e": "3",
+            "-m": "11",
+            "-s": "65",
+            "-E": "0.01",
+            "-X": "true"
+          },
+          "extraParams": ""
+        },
+        "megahit": {
+          "enabledFlags": [
+            "--min-contig-len",
+            "-m"
+          ],
+          "flagValues": {
+            "--min-contig-len": "300",
+            "-m": "0.85",
+            "--k-min": "21",
+            "--k-max": "141",
+            "--k-step": "10",
+            "--k-list": "21,29,39,59,79,99,119,141",
+            "--min-count": "2",
+            "--prune-level": "2",
+            "--prune-depth": "2",
+            "--bubble-level": "2",
+            "--merge-level": "20,0.95",
+            "--disconnect-ratio": "0.1",
+            "--low-local-ratio": "0.2",
+            "--cleaning-rounds": "5",
+            "--no-mercy": "true",
+            "--no-local": "true",
+            "--kmin-1pass": "true",
+            "--presets": "",
+            "--mem-flag": "1"
+          },
+          "extraParams": ""
+        },
+        "metaspades_hybrid": {
+          "enabledFlags": [
+            "-m"
+          ],
+          "flagValues": {
+            "-m": "60",
+            "--only-assembler": "true",
+            "--careful": "true",
+            "--k-mer-size": ""
+          },
+          "extraParams": ""
+        },
+        "flye": {
+          "enabledFlags": [
+            "--meta"
+          ],
+          "flagValues": {
+            "--meta": "true",
+            "--nano-raw": "true",
+            "--min-overlap": "0",
+            "--iterations": "1",
+            "--genome-size": "",
+            "--asm-coverage": "0",
+            "--scaffold": "true",
+            "--keep-haplotypes": "true"
+          },
+          "extraParams": ""
+        },
+        "metaquast": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-contig": "500",
+            "--max-ref-number": "50",
+            "--no-check-references": "true"
+          },
+          "extraParams": ""
+        },
+        "tiara": {
+          "enabledFlags": [
+            "--min_len"
+          ],
+          "flagValues": {
+            "--min_len": "500",
+            "-p": "0.65",
+            "--to_fasta": "prokarya eukarya unknown"
+          },
+          "extraParams": ""
+        },
+        "bowtie2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--sensitive": "true",
+            "--no-unal": "true",
+            "--no-discordant": "true"
+          },
+          "extraParams": ""
+        },
+        "minimap2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-x": "map-ont"
+          },
+          "extraParams": ""
+        },
+        "jgi_summarize": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--percentIdentity": "97.0"
+          },
+          "extraParams": ""
+        },
+        "samtools_index": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "metabat2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--minContig": "2500",
+            "--minClsSize": "200000",
+            "--maxEdges": "200",
+            "--pTNF": "0.0",
+            "--minCV": "1.0",
+            "--seed": "0"
+          },
+          "extraParams": ""
+        },
+        "semibin2": {
+          "enabledFlags": [
+            "--environment"
+          ],
+          "flagValues": {
+            "--environment": "global",
+            "--ratio": "0.05",
+            "--min-len": "2500",
+            "--minfasta-kbs": "200",
+            "--epochs": "20"
+          },
+          "extraParams": ""
+        },
+        "vamb": {
+          "enabledFlags": [
+            "--minfasta",
+            "-m"
+          ],
+          "flagValues": {
+            "--minfasta": "10000",
+            "-m": "500",
+            "--epochs": "500",
+            "--batchsize": "256",
+            "--nhiddens": "512 512",
+            "--nlatent": "32"
+          },
+          "extraParams": ""
+        },
+        "maxbin2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-min_contig_length": "1000",
+            "-max_iteration": "50",
+            "-prob_threshold": "0.9",
+            "-markerset": "107"
+          },
+          "extraParams": ""
+        },
+        "binette": {
+          "enabledFlags": [
+            "-v"
+          ],
+          "flagValues": {
+            "-v": "true",
+            "--min_completeness": "40.0",
+            "--max_contamination": "100.0"
+          },
+          "extraParams": ""
+        },
+        "checkm2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--remove_intermediates": "true"
+          },
+          "extraParams": ""
+        },
+        "gunc": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_mapped_genes": "11",
+            "--sensitive": "true"
+          },
+          "extraParams": ""
+        },
+        "mags_annot": {
+          "enabledFlags": [
+            "hq_min_completeness",
+            "hq_max_contamination"
+          ],
+          "flagValues": {
+            "hq_min_completeness": "70",
+            "hq_max_contamination": "10"
+          },
+          "extraParams": ""
+        },
+        "drep": {
+          "enabledFlags": [
+            "-comp",
+            "-con"
+          ],
+          "flagValues": {
+            "-comp": "50",
+            "-con": "10",
+            "-pa": "0.9",
+            "-sa": "0.95",
+            "-nc": "0.1",
+            "--clusterAlg": "average"
+          },
+          "extraParams": ""
+        },
+        "coverm": {
+          "enabledFlags": [
+            "-m",
+            "--min-covered-fraction"
+          ],
+          "flagValues": {
+            "-m": "relative_abundance",
+            "--min-covered-fraction": "0",
+            "--min-read-percent-identity": "0.0"
+          },
+          "extraParams": ""
+        },
+        "gtdbtk": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--extension": "fa",
+            "--min_af": "0.65",
+            "--skip_ani_screen": "true"
+          },
+          "extraParams": ""
+        },
+        "prodigal": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-p": "meta",
+            "-f": "gff"
+          },
+          "extraParams": ""
+        },
+        "eggnog": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--itype": "proteins",
+            "--tax_scope": "auto",
+            "--go_evidence": "non-electronic",
+            "--target_orthologs": "all",
+            "--pfam_realign": "none"
+          },
+          "extraParams": ""
+        },
+        "abricate": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--db": "vfdb",
+            "--minid": "80.0",
+            "--mincov": "80.0"
+          },
+          "extraParams": ""
+        },
+        "amrfinderplus": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--ident_min": "-1.0",
+            "--coverage_min": "0.5",
+            "--plus": "true"
+          },
+          "extraParams": ""
+        },
+        "barrnap": {
+          "enabledFlags": [
+            "--kingdom"
+          ],
+          "flagValues": {
+            "--kingdom": "bac",
+            "--evalue": "1e-06",
+            "--lencutoff": "0.8",
+            "--reject": "0.25"
+          },
+          "extraParams": ""
+        },
+        "trnascan": {
+          "enabledFlags": [
+            "-B"
+          ],
+          "flagValues": {
+            "-B": "true",
+            "-A": "true",
+            "-E": "true",
+            "--score": "20.0"
+          },
+          "extraParams": ""
+        },
+        "checkv": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--restart": "true"
+          },
+          "extraParams": ""
+        },
+        "virsorter2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.5",
+            "--min-length": "0",
+            "--viral-gene-enrich-off": "true",
+            "--include-groups": "dsDNAphage,ssDNA,NCLDV,RNA,lavidaviridae"
+          },
+          "extraParams": ""
+        },
+        "genomad": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.7",
+            "--min-plasmid-marker-enrichment": "0.0",
+            "--min-virus-marker-enrichment": "0.0",
+            "--relaxed": "true"
+          },
+          "extraParams": ""
+        },
+        "vibrant": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-t": "1",
+            "-l": "1000",
+            "-o": "4",
+            "-virome": "true"
+          },
+          "extraParams": ""
+        },
+        "isescan": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "minced": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-minNR": "3",
+            "-minRL": "23",
+            "-maxRL": "47",
+            "-minSL": "26",
+            "-maxSL": "50"
+          },
+          "extraParams": ""
+        },
+        "mobsuite": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_length": "1000",
+            "--run_typer": "true",
+            "--plasmid_identity": "0.8"
+          },
+          "extraParams": ""
+        },
+        "vfdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "antismash": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--taxon": "bacteria",
+            "--genefinding-tool": "prodigal",
+            "--hm-similarity-metric": "jaccard",
+            "--cb-general": "true",
+            "--cb-knownclusters": "true",
+            "--cb-subclusters": "true",
+            "--asf": "true",
+            "--pfam2go": "true",
+            "--smcog-trees": "true"
+          },
+          "extraParams": ""
+        },
+        "bigscape": {
+          "enabledFlags": [
+            "--mix",
+            "--classify"
+          ],
+          "flagValues": {
+            "--mix": "true",
+            "--classify": "none",
+            "--cutoffs": "0.3 0.5",
+            "--clan_cutoff": "0.5 0.8",
+            "--include_gbk_str": "cluster region"
+          },
+          "extraParams": ""
+        }
+      }
+    },
+    "sigma": {
+      "input_dirs": {
+        "short_reads_dir": "/home/angelo/Downloads/run01",
+        "long_reads_dir": "/home/angelo/Downloads/run01"
+      },
+      "toggled_input_dirs": [],
+      "output_dir": "/home/angelo/Downloads/run01",
+      "reference_mode": "none",
+      "reference_file": null,
+      "reference_overrides": {},
+      "reference_skipped": [],
+      "ram_gb": "32",
+      "cores": "8",
+      "long_read_platform": "nano_hq",
+      "thread_overrides": {},
+      "active_tools": [
+        "fastp",
+        "filtlong",
+        "ragtag",
+        "bowtie2",
+        "minimap2",
+        "samtools_index",
+        "quast",
+        "checkm2",
+        "gunc",
+        "gtdbtk",
+        "coverm",
+        "isescan",
+        "mobsuite",
+        "abricate",
+        "vfdb",
+        "antismash",
+        "bigscape",
+        "mlst",
+        "bakta",
+        "amrfinderplus",
+        "eggnog",
+        "flye",
+        "unicycler",
+        "racon",
+        "medaka",
+        "virsorter2",
+        "genomad",
+        "checkv",
+        "vibrant",
+        "kraken2",
+        "kaiju"
+      ],
+      "active_tracks": {},
+      "tool_params": {
+        "fastp": {
+          "enabledFlags": [
+            "--qualified_quality_phred",
+            "--length_required",
+            "--trim_front2",
+            "--trim_front1"
+          ],
+          "flagValues": {
+            "--qualified_quality_phred": "30",
+            "--length_required": "50",
+            "--trim_front1": "1",
+            "--trim_front2": "1",
+            "--cut_front": "true",
+            "--cut_tail": "true",
+            "--cut_mean_quality": "20",
+            "--detect_adapter_for_pe": "true",
+            "--dedup": "true",
+            "--low_complexity_filter": "true"
+          },
+          "extraParams": ""
+        },
+        "filtlong": {
+          "enabledFlags": [
+            "--min_length",
+            "--keep_percent"
+          ],
+          "flagValues": {
+            "--min_length": "500",
+            "--max_length": "0",
+            "--keep_percent": "90.0",
+            "--target_bases": "0",
+            "--min_mean_q": "0.0"
+          },
+          "extraParams": ""
+        },
+        "kraken2": {
+          "enabledFlags": [
+            "--confidence"
+          ],
+          "flagValues": {
+            "--confidence": "0.05",
+            "--minimum-hit-groups": "2",
+            "--report-zero-counts": "true"
+          },
+          "extraParams": ""
+        },
+        "kaiju": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-a": "greedy",
+            "-e": "3",
+            "-m": "11",
+            "-s": "65",
+            "-E": "0.01",
+            "-X": "true"
+          },
+          "extraParams": ""
+        },
+        "unicycler": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--mode": "normal",
+            "--min_fasta_length": "100",
+            "--linear_seqs": "0",
+            "--no_correct": "true",
+            "--no_pilon": "true"
+          },
+          "extraParams": ""
+        },
+        "flye": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-overlap": "0",
+            "--iterations": "1",
+            "--genome-size": "",
+            "--asm-coverage": "0",
+            "--scaffold": "true"
+          },
+          "extraParams": ""
+        },
+        "racon": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-w": "500",
+            "-e": "0.3",
+            "-q": "10.0"
+          },
+          "extraParams": ""
+        },
+        "medaka": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-m": "",
+            "-b": "100"
+          },
+          "extraParams": ""
+        },
+        "ragtag": {
+          "enabledFlags": [
+            "-u"
+          ],
+          "flagValues": {
+            "-u": "true",
+            "-C": "true",
+            "-r": "true",
+            "-f": "1000",
+            "-q": "10"
+          },
+          "extraParams": ""
+        },
+        "bowtie2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--sensitive": "true",
+            "--no-unal": "true",
+            "--no-discordant": "true"
+          },
+          "extraParams": ""
+        },
+        "minimap2": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "samtools_index": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "quast": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-contig": "500",
+            "--no-check-references": "true"
+          },
+          "extraParams": ""
+        },
+        "checkm2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--remove_intermediates": "true"
+          },
+          "extraParams": ""
+        },
+        "gunc": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--sensitive": "true"
+          },
+          "extraParams": ""
+        },
+        "gtdbtk": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_af": "0.65",
+            "--skip_ani_screen": "true"
+          },
+          "extraParams": ""
+        },
+        "coverm": {
+          "enabledFlags": [
+            "--min-covered-fraction"
+          ],
+          "flagValues": {
+            "--min-covered-fraction": "0"
+          },
+          "extraParams": ""
+        },
+        "bakta": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--genus": "",
+            "--species": "",
+            "--complete": "true",
+            "--skip-trna": "true",
+            "--skip-rrna": "true",
+            "--skip-ncrna": "true",
+            "--skip-crispr": "true"
+          },
+          "extraParams": ""
+        },
+        "eggnog": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--itype": "proteins",
+            "--tax_scope": "auto",
+            "--go_evidence": "non-electronic",
+            "--target_orthologs": "all",
+            "--pfam_realign": "none"
+          },
+          "extraParams": ""
+        },
+        "isescan": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "mobsuite": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_length": "1000",
+            "--run_typer": "true"
+          },
+          "extraParams": ""
+        },
+        "amrfinderplus": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--ident_min": "-1.0",
+            "--coverage_min": "0.5",
+            "--plus": "true"
+          },
+          "extraParams": ""
+        },
+        "abricate": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--minid": "80.0",
+            "--mincov": "80.0"
+          },
+          "extraParams": ""
+        },
+        "vfdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "mlst": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--scheme": "",
+            "--minid": "95.0",
+            "--mincov": "10.0"
+          },
+          "extraParams": ""
+        },
+        "genomad": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.7",
+            "--relaxed": "true"
+          },
+          "extraParams": ""
+        },
+        "virsorter2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.5",
+            "--include-groups": "dsDNAphage,ssDNA,NCLDV,RNA,lavidaviridae"
+          },
+          "extraParams": ""
+        },
+        "checkv": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "vibrant": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-l": "1000",
+            "-o": "4"
+          },
+          "extraParams": ""
+        },
+        "antismash": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--taxon": "bacteria",
+            "--cb-general": "true",
+            "--cb-knownclusters": "true",
+            "--asf": "true",
+            "--pfam2go": "true"
+          },
+          "extraParams": ""
+        },
+        "bigscape": {
+          "enabledFlags": [
+            "--mix",
+            "--classify"
+          ],
+          "flagValues": {
+            "--mix": "true",
+            "--classify": "none",
+            "--cutoffs": "0.3 0.5"
+          },
+          "extraParams": ""
+        }
+      }
+    },
+    "dogma": {
+      "input_dirs": {
+        "short_reads_dir": "/home/angelo/Documentos/OmniOmics/pipelines/magma",
+        "long_reads_dir": "/home/angelo/Documentos/OmniOmics"
+      },
+      "toggled_input_dirs": [],
+      "output_dir": "/home/angelo/Documentos",
+      "reference_mode": "none",
+      "reference_file": null,
+      "reference_overrides": {},
+      "reference_skipped": [],
+      "ram_gb": "32",
+      "cores": "8",
+      "long_read_platform": "nano_hq",
+      "thread_overrides": {},
+      "active_tools": [
+        "fastp",
+        "filtlong",
+        "ribodetector",
+        "kraken2",
+        "kaiju",
+        "domain_filter",
+        "rnaspades",
+        "megahit",
+        "trinity",
+        "transcript_set",
+        "transdecoder",
+        "eggnog",
+        "cazy",
+        "ncycdb",
+        "scycdb",
+        "salmon",
+        "magma_xref",
+        "cat",
+        "eukulele",
+        "fegenie",
+        "canthyd",
+        "mcycdb"
+      ],
+      "active_tracks": {},
+      "tool_params": {
+        "fastp": {
+          "enabledFlags": [
+            "--qualified_quality_phred",
+            "--length_required",
+            "--trim_front1",
+            "--trim_front2"
+          ],
+          "flagValues": {
+            "--qualified_quality_phred": "30",
+            "--length_required": "50",
+            "--trim_front1": "1",
+            "--trim_front2": "1"
+          },
+          "extraParams": ""
+        },
+        "filtlong": {
+          "enabledFlags": [
+            "--min_length",
+            "--keep_percent"
+          ],
+          "flagValues": {
+            "--min_length": "500",
+            "--keep_percent": "90.0"
+          },
+          "extraParams": ""
+        },
+        "ribodetector": {
+          "enabledFlags": [
+            "-e"
+          ],
+          "flagValues": {
+            "-e": "norrna"
+          },
+          "extraParams": ""
+        },
+        "kraken2": {
+          "enabledFlags": [
+            "--confidence"
+          ],
+          "flagValues": {
+            "--confidence": "0.05"
+          },
+          "extraParams": ""
+        },
+        "kaiju": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-a": "greedy"
+          },
+          "extraParams": ""
+        },
+        "domain_filter": {
+          "enabledFlags": [
+            "mode"
+          ],
+          "flagValues": {
+            "mode": "prokaryote"
+          },
+          "extraParams": ""
+        },
+        "rnaspades": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "megahit": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "trinity": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "transcript_set": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "transdecoder": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "eggnog": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--itype": "proteins",
+            "--tax_scope": "auto",
+            "--go_evidence": "non-electronic",
+            "--target_orthologs": "all",
+            "--pfam_realign": "none"
+          },
+          "extraParams": ""
+        },
+        "cazy": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "ncycdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "scycdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "mcycdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "canthyd": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "fegenie": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "eukulele": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "cat": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "magma_xref": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "salmon": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        }
+      }
+    }
+  },
+  "db_base_dir": "/home/angelo/Documentos/databases",
+  "db_amrfinder": "/home/angelo/Downloads/data",
+  "db_checksums": {
+    "/home/angelo/Downloads/data": {
+      "algo": "sha256-manifest",
+      "value": "5aee226ecc2a213827dea3210168af563c707706966b77646773e92af1247eaa",
+      "computed_at": 1783104503.945524
+    }
+  },
+  "db_magma_run": "/tmp/claude-1002/-home-angelo-Documentos-OmniOmics/b57ddc15-f8d3-4188-bd1a-76b308f9dd8d/scratchpad/dogma_mode2_test/fake_magma_run",
+  "runs": [
+    {
+      "id": "2b17877bf7ef",
+      "name": "magma-testrun-12s-9mags",
+      "pipeline_id": "magma",
+      "pipeline_name": "MAGMA",
+      "output_dir": "/home/angelo/omniomics_demo_runs/magma_testrun",
+      "config_path": "/home/angelo/omniomics_demo_runs/magma_testrun/config/config.yaml",
+      "cores": 4,
+      "status": "done",
+      "started_at": 1786369692.48802,
+      "finished_at": 1786369692.4880202
+    }
+  ],
+  "plot_runs": [
+    {
+      "id": "b4e8090ee7d0",
+      "name": "magma_mag_summary_20260810_130505",
+      "parent_run_id": "2b17877bf7ef",
+      "analysis_id": "magma_mag_summary",
+      "started_at": 1786377905.0864308,
+      "finished_at": 1786377907.2437396,
+      "status": "done"
+    }
+  ]
+}
