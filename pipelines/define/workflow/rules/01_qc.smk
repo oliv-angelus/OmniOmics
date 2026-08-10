@@ -16,7 +16,7 @@ rule fastp:
         """
         fastp {params.extra} --thread {threads} \
             -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
-            -h {output.html} -j {output.json()} > {log} 2>&1
+            -h {output.html} -j {output.json} > {log} 2>&1
         """
 
 rule fastqc_raw:
