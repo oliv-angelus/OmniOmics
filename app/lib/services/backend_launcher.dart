@@ -35,13 +35,13 @@ class BackendLauncher {
     if (await bundledBinary.exists()) {
       _process = await Process.start(bundledBinary.path, [], environment: env);
     } else {
-      final repoRoot = _findRepoRoot;
+      final repoRoot = _findRepoRoot();
       final venvPython = File('$repoRoot/.venv/bin/python3');
       final pythonBin = await venvPython.exists() ? venvPython.path: 'python3';
       _process = await Process.start(
         pythonBin,
         ['backend/main.py'],
-        workingDirectory: repoRoot(),
+        workingDirectory: repoRoot,
         environment: env,
       );
     }

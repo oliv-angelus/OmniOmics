@@ -65,7 +65,7 @@ import run_report
 import plots_engine
 import plot_runs_store
 
-app = FastAPI
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -543,7 +543,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
         if force_gunzip or is_gz:
             out = path[:-3]
             await send({"type": "log", "text": f"Decompressing {fname}…\n"})
-            loop = asyncio.get_event_loop
+            loop = asyncio.get_event_loop()
             def _gunzip():
                 with gzip.open(path, "rb") as fi, open(out, "wb") as fo:
                     shutil.copyfileobj(fi, fo)
@@ -1971,9 +1971,9 @@ if os.environ.get("OMNIOMICS_DEV_RELOAD"):
             if event.src_path.endswith("pipeline.yaml"):
                 pipelines.reload_registry()
 
-    _dev_reload_observer = Observer
-    _dev_reload_observer.schedule(_ManifestReloadHandler, pipelines.PIPELINES_DIR, recursive=True)
-    _dev_reload_observer.start
+    _dev_reload_observer = Observer()
+    _dev_reload_observer.schedule(_ManifestReloadHandler(), pipelines.PIPELINES_DIR, recursive=True)
+    _dev_reload_observer.start()
 
 if __name__ == "__main__":
     # Port is chosen by the launcher (BackendLauncher) and passed in, so it can
