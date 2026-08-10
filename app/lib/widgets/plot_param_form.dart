@@ -3,6 +3,7 @@ import '../models/plot_analysis.dart';
 import '../models/plot_loaded_data.dart';
 import '../models/plot_params_state.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Parameter form for a Plots-tab analysis -- same type-dispatch shape as
@@ -37,7 +38,8 @@ class PlotParamForm extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final p in analysis.parameters)
-          _PlotParamRow(param: p, state: state, loadedData: loadedData, onChanged: onChanged),
+          _PlotParamRow(param: p, state: state, loadedData: loadedData,
+              shape: analysis.inputShape, onChanged: onChanged),
       ],
     );
   }
@@ -47,12 +49,15 @@ class _PlotParamRow extends StatelessWidget {
   final PlotParam param;
   final PlotParamsState state;
   final PlotLoadedData loadedData;
+  final String shape;
   final VoidCallback onChanged;
 
-  const _PlotParamRow({required this.param, required this.state, required this.loadedData, required this.onChanged});
+  const _PlotParamRow({required this.param, required this.state, required this.loadedData,
+      required this.shape, required this.onChanged});
 
   String get _label => param.flag.replaceFirst(RegExp(r'^--'), '');
-  bool get _required => param.defaultValue == '' || param.type == 'column' || param.type == 'level' || param.type == 'sample';
+  bool get _required =>
+      param.defaultValue == '' || param.type == 'column' || param.type == 'level' || param.type == 'sample' || param.type == 'samples';
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +85,8 @@ class _PlotParamRow extends StatelessWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: 180,
-            child: _PlotParamValueInput(param: param, state: state, loadedData: loadedData, missing: missing, onChanged: onChanged),
+            child: _PlotParamValueInput(param: param, state: state, loadedData: loadedData,
+                shape: shape, missing: missing, onChanged: onChanged),
           ),
         ],
       ),
@@ -92,6 +98,7 @@ class _PlotParamValueInput extends StatelessWidget {
   final PlotParam param;
   final PlotParamsState state;
   final PlotLoadedData loadedData;
+  final String shape;
   final bool missing;
   final VoidCallback onChanged;
 
@@ -99,6 +106,7 @@ class _PlotParamValueInput extends StatelessWidget {
     required this.param,
     required this.state,
     required this.loadedData,
+    required this.shape,
     required this.missing,
     required this.onChanged,
   });
@@ -122,7 +130,25 @@ class _PlotParamValueInput extends StatelessWidget {
     }
 
     if (param.type == 'column') {
-      return _dropdown(current, loadedData.columns, hintOnEmpty: true);
+      return _dropdown(current, loadedData.columnsFor(shape), hintOnEmpty: true);
+    }
+
+    if (param.type == 'samples') {
+      // Multi-select sibling of "sample": a run can yield dozens of genomes
+      // and the interesting ones are usually a handful, so several are picked
+      // at once and sent as one comma-separated value. Rendered as a button
+      // opening a checkbox dialog rather than an inline list, because the
+      // parameter column is only as wide as a dropdown.
+      final picked = current.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      return _MultiSampleField(
+        options: loadedData.samples,
+        selected: picked,
+        missing: missing,
+        onDone: (values) {
+          state.values[param.flag] = values.join(',');
+          onChanged();
+        },
+      );
     }
 
     if (param.type == 'sample') {
@@ -135,7 +161,7 @@ class _PlotParamValueInput extends StatelessWidget {
 
     if (param.type == 'level') {
       final dependsOnValue = param.dependsOn != null ? state.values[param.dependsOn]: null;
-      final levels = (dependsOnValue != null ? loadedData.columnLevels[dependsOnValue]: null) ?? const <String>[];
+      final levels = (dependsOnValue != null ? loadedData.levelsFor(shape)[dependsOnValue] : null) ?? const <String>[];
       // A previously-picked level survives in `state.values` even after its
       // depended-on column changes underneath it (e.g. group_var edited in
       // the "Personalizar" panel) -- _dropdown below already shows this as
@@ -210,6 +236,92 @@ class _PlotParamValueInput extends StatelessWidget {
                 onChanged();
               }
             },
+    );
+  }
+}
+
+/// Compact multi-select for PlotParam's "samples" type: shows how many are
+/// currently picked and opens a checkbox dialog to change the selection.
+/// Kept local to this file because it exists only to serve that one parameter
+/// type -- the single-select "sample" case is a plain dropdown above.
+class _MultiSampleField extends ConsumerWidget {
+  final List<String> options;
+  final List<String> selected;
+  final bool missing;
+  final ValueChanged<List<String>> onDone;
+
+  const _MultiSampleField({
+    required this.options,
+    required this.selected,
+    required this.missing,
+    required this.onDone,
+  });
+
+  Future<void> _open(BuildContext context, WidgetRef ref) async {
+    final working = <String>{...selected};
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setLocalState) => AlertDialog(
+          title: Text(ref.t('plots_pick_items'), style: const TextStyle(fontSize: 15)),
+          content: SizedBox(
+            width: 380,
+            child: options.isEmpty
+                ? Text(ref.t('plots_no_items'), style: const TextStyle(fontSize: 12))
+                : ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final o in options)
+                        CheckboxListTile(
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          value: working.contains(o),
+                          title: Text(o, style: const TextStyle(fontSize: 12.5)),
+                          onChanged: (v) => setLocalState(() {
+                            if (v == true) {
+                              working.add(o);
+                            } else {
+                              working.remove(o);
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(ref.t('cancel')),
+            ),
+            ElevatedButton(
+              // Preserve the run's own order rather than click order, so the
+              // exported figure's panels stay in a stable, predictable layout.
+              onPressed: () => Navigator.of(dialogContext)
+                  .pop(options.where(working.contains).toList()),
+              child: Text(ref.t('confirm')),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null) onDone(result);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final label = selected.isEmpty
+        ? ref.t('plots_pick_items')
+        : (selected.length == 1 ? selected.first : '${selected.length} ${ref.t('plots_selected_suffix')}');
+    return OutlinedButton(
+      onPressed: () => _open(context, ref),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        side: BorderSide(color: missing ? colors.statusError : colors.border),
+        alignment: Alignment.centerLeft,
+      ),
+      child: Text(label,
+          style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }
 }

@@ -1613,28 +1613,25 @@ plot_finished: dict = {}     # run_id -> bool
 # used by /api/plots/{analysis_id}/run (tells each analysis script which
 # CLI flag name to expect the cached object's path under -- matches
 # whatever that script's own parse_cli_args reads).
-def _merge_columns_data(acc: dict, incoming: dict, primary: bool) -> None:
-    """Merges one loader's metadata_columns.json into the accumulated view.
+def _merge_columns_data(acc: dict, incoming: dict, shape: str, primary: bool) -> None:
+    """Folds one loader's metadata_columns.json into the accumulated view.
 
-    The shapes describe different rows (community taxa vs. assembled genomes),
-    so their `columns`/`column_levels` are unioned rather than replaced -- a
-    MAGMA run offers both its metadata columns and its per-MAG groupings in
-    one dropdown set. `tax_ranks` and `samples` come from whichever shape
-    actually reports them (only one does, per shape), and the primary shape
-    wins any genuine key collision so existing single-shape pipelines keep
-    byte-identical behavior.
+    Shapes describe different ROWS -- a community table's rows are samples,
+    a MAG table's rows are assembled genomes -- so their groupable columns are
+    kept apart under `columns_by_shape` rather than pooled: offering a MAG
+    property like `mimag_quality` as the group_var of a sample-level community
+    analysis would be meaningless. `columns`/`column_levels` still carry the
+    primary shape's own lists so a single-shape pipeline sees exactly what it
+    saw before. `tax_ranks`/`samples`/`annotation_columns` come from whichever
+    shape reports them, since only one does.
     """
-    for key in ("columns",):
-        merged = list(acc.get(key, []))
-        for v in incoming.get(key, []) or []:
-            if v not in merged:
-                merged.append(v)
-        acc[key] = merged
-    levels = dict(acc.get("column_levels", {}))
-    for k, v in (incoming.get("column_levels") or {}).items():
-        if primary or k not in levels:
-            levels[k] = v
-    acc["column_levels"] = levels
+    by_shape = acc.setdefault("columns_by_shape", {})
+    by_shape[shape] = incoming.get("columns", []) or []
+    levels_by_shape = acc.setdefault("column_levels_by_shape", {})
+    levels_by_shape[shape] = incoming.get("column_levels", {}) or {}
+    if primary:
+        acc["columns"] = incoming.get("columns", []) or []
+        acc["column_levels"] = incoming.get("column_levels", {}) or {}
     for key in ("tax_ranks", "samples", "annotation_columns"):
         if incoming.get(key):
             acc[key] = incoming[key]
@@ -1734,7 +1731,7 @@ async def load_plot_data(data: dict):
         columns_path = os.path.join(out_dir, "metadata_columns.json")
         with open(columns_path, encoding="utf-8") as f:
             shape_columns = json.load(f)
-        _merge_columns_data(columns_data, shape_columns, primary=(shape == primary_shape))
+        _merge_columns_data(columns_data, shape_columns, shape, primary=(shape == primary_shape))
 
     # Restore the merged view, so a later reader of this folder sees every
     # shape's columns rather than only the last loader's.
@@ -1745,6 +1742,11 @@ async def load_plot_data(data: dict):
         "data_rds": os.path.join(out_dir, rds_filename),
         "columns": columns_data["columns"],
         "column_levels": columns_data["column_levels"],
+        # Per-shape lists so an analysis only offers groupings that describe
+        # its own rows (see _merge_columns_data). Single-shape pipelines get a
+        # one-entry map that matches "columns" exactly.
+        "columns_by_shape": columns_data.get("columns_by_shape", {}),
+        "column_levels_by_shape": columns_data.get("column_levels_by_shape", {}),
         "tax_ranks": columns_data.get("tax_ranks", []),
         # DOGMA-only, not read by anything yet -- same "report it now, wire
         # a dynamic dropdown later if wanted" forward-compat pattern as

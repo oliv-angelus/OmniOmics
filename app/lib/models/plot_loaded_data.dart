@@ -35,6 +35,18 @@ class PlotLoadedData {
   /// every pipeline that doesn't need a "which one of several run outputs"
   /// picker (MAGMA/PRISM/DOGMA/DEFINE all analyze every sample together).
   final List<String> samples;
+  /// Groupable columns per input_shape, and their detected values. A pipeline
+  /// whose analyses need more than one shape (MAGMA: the read-level community
+  /// table plus the assembled MAGs) has different ROWS per shape -- samples in
+  /// one, genomes in the other -- so a MAG property must not be offered as the
+  /// group_var of a sample-level analysis. [columnsFor]/[levelsFor] pick the
+  /// right list; both fall back to [columns]/[columnLevels] for runs loaded
+  /// before this existed.
+  final Map<String, List<String>> columnsByShape;
+  final Map<String, Map<String, List<String>>> columnLevelsByShape;
+
+  List<String> columnsFor(String shape) => columnsByShape[shape] ?? columns;
+  Map<String, List<String>> levelsFor(String shape) => columnLevelsByShape[shape] ?? columnLevels;
 
   PlotLoadedData({
     required this.dataRds,
@@ -42,6 +54,8 @@ class PlotLoadedData {
     required this.columnLevels,
     required this.taxRanks,
     this.samples = const [],
+    this.columnsByShape = const {},
+    this.columnLevelsByShape = const {},
   });
 
   factory PlotLoadedData.fromJson(Map<String, dynamic> json) => PlotLoadedData(
@@ -52,5 +66,16 @@ class PlotLoadedData {
         ),
         taxRanks: (json['tax_ranks'] as List? ?? const []).map((e) => e.toString()).toList(),
         samples: (json['samples'] as List? ?? const []).map((e) => e.toString()).toList(),
+        columnsByShape: (json['columns_by_shape'] as Map<String, dynamic>? ?? const {}).map(
+          (k, v) => MapEntry(k, (v as List).map((e) => e.toString()).toList()),
+        ),
+        columnLevelsByShape: (json['column_levels_by_shape'] as Map<String, dynamic>? ?? const {}).map(
+          (k, v) => MapEntry(
+            k,
+            (v as Map<String, dynamic>).map(
+              (ck, cv) => MapEntry(ck, (cv as List).map((e) => e.toString()).toList()),
+            ),
+          ),
+        ),
       );
 }
