@@ -1,0 +1,7 @@
+.venv/
+app/build/
+app/linux/flutter/ephemeral/
+app/.dart_tool/
+**/__pycache__/
+.snakemake/
+*.pyc

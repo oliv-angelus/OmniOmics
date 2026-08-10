@@ -1,0 +1,101 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+SAMPLES = samples.index.tolist
+LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]
+# De novo transcript assembly (Phase 2, mode 3) uses short-read assemblers, so
+# it applies to samples that have short reads (short/hybrid). Long-read-only
+# metatranscriptome assembly has no validated tool as of 2026 (real WebSearch
+# confirmed this is a genuine literature gap -- every actively maintained de
+# novo long-read transcript assembler is built/benchmarked for single-organism
+# transcriptomes, not mixed-community environmental data) and is deliberately
+# not implemented -- see DOGMA.
+SHORT_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["short", "hybrid"]]
+
+# domain_filter wiring: the entire Phase 2 chain (assembly onward)
+# carries a {domain} wildcard so it can read the 02_SCREENING domain-split
+# reads instead of the plain ribodetector-clean reads when domain_filter is
+# active -- see 03_assembly.smk's header for the full design rationale. DOMAINS
+# is computed once here from config, same way active_tools/params already are:
+# - domain_filter inactive -> ["all"] (unfiltered reads, identical behavior
+# to before this wiring existed)
+# - active, mode=prokaryote or eukaryote -> that single domain
+# - active, mode=both -> ["prokaryote", "eukaryote"], and the *entire*
+# downstream chain (assembly, ORF calling, every annotation extra) runs
+# twice per sample, fully separately -- the user's explicit choice over
+# the simpler "both only affects screening" alternative.
+if "domain_filter" not in config.get("active_tools", []):
+    DOMAINS = ["all"]
+else:
+    _domain_filter_mode = config.get("params", {}).get("domain_filter", {}).get("mode", "prokaryote")
+    DOMAINS = ["prokaryote", "eukaryote"] if _domain_filter_mode == "both" else [_domain_filter_mode]
+
+wildcard_constraints:
+    sample="[^/]+"
+
+rule all:
+    input:
+        # Nanopore QC (before and after Filtlong)
+        expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=LONG_SAMPLES),
+        expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=LONG_SAMPLES),
+
+        # Contamination/activity screening (Kraken2 and/or Kaiju, independent)
+        expand("results/02_SCREENING/{sample}/{sample}_kraken2.kreport", sample=SAMPLES),
+        expand("results/02_SCREENING/{sample}/{sample}_kaiju_species.tsv", sample=SAMPLES),
+
+        # Optional prokaryote/eukaryote read-domain split (requires Kraken2) -- # nothing downstream consumes these yet (assembly is Phase 2), so they
+        # need to be explicit rule-all targets rather than pulled in transitively.
+        expand("results/02_SCREENING/{sample}/{sample}_R1_prokaryote.fastq.gz", sample=SAMPLES),
+        expand("results/02_SCREENING/{sample}/{sample}_R1_eukaryote.fastq.gz", sample=SAMPLES),
+        expand("results/02_SCREENING/{sample}/{sample}_prokaryote.fastq.gz", sample=SAMPLES),
+        expand("results/02_SCREENING/{sample}/{sample}_eukaryote.fastq.gz", sample=SAMPLES),
+
+        # De novo transcript assembly (Phase 2, mode 3): the multi-assembler
+        # MMseqs2-deduplicated "MAD" transcript set, per short-read sample x
+        # domain. Optional (disabling transcript_set --omit-from's it away);
+        # listed unconditionally here, same as MAGMA lists its optional tool
+        # targets.
+        expand("results/03_ASSEMBLY/{sample}/{domain}/{sample}_transcripts_mad.fasta", sample=SHORT_SAMPLES, domain=DOMAINS),
+
+        # ORF calling (Phase 2, step 2): TransDecoder on the MAD transcript set.
+        expand("results/04_ORF_CALLING/{sample}/{domain}/{sample}_transdecoder.pep", sample=SHORT_SAMPLES, domain=DOMAINS),
+
+        # Functional annotation (Phase 2, step 3): eggNOG-mapper (default) on
+        # the TransDecoder proteins, + CAZy/NCycDB/SCycDB/MCycDB/CANT-HYD/
+        # FeGenie as optional soil/sediment-relevant extras (carbon/nitrogen/
+        # sulfur/methane/hydrocarbon/iron cycling genes).
+        expand("results/05_ANNOTATION/{sample}/{domain}/eggnog/{sample}_annotations.emapper.annotations", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/cazy/overview.tsv", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/ncycdb/{sample}_ncycdb_annotations.tsv", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/scycdb/{sample}_scycdb_annotations.tsv", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/mcycdb/{sample}_mcycdb_annotations.tsv", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/canthyd/{sample}_canthyd_hmmsearch.tblout", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/fegenie/FeGenie-geneSummary.csv", sample=SHORT_SAMPLES, domain=DOMAINS),
+
+        # Taxonomic assignment (Phase 2, step 4): EUKulele on the eukaryotic
+        # path, CAT/BAT on the prokaryotic path.
+        expand("results/05_ANNOTATION/{sample}/{domain}/eukulele/taxonomy_estimation/{sample}-estimated-taxonomy.out", sample=SHORT_SAMPLES, domain=DOMAINS),
+        expand("results/05_ANNOTATION/{sample}/{domain}/cat/{sample}.contig2classification.txt", sample=SHORT_SAMPLES, domain=DOMAINS),
+
+        # Taxonomic assignment, mode 2 (Phase 2, step 4 continued): MAGMA
+        # Cross-Reference -- optional, classifies this sample's transcripts
+        # against a companion MAGMA run's dereplicated MAGs instead of a
+        # generic public reference. No-ops with an empty result if
+        # config["databases"]["magma_run"] isn't configured, same as every
+        # other optional tool relies on --omit-from to skip when inactive.
+        expand("results/08_MAGMA_XREF/{sample}/{domain}/{sample}_magma_mag_annotations.tsv", sample=SHORT_SAMPLES, domain=DOMAINS),
+
+        # Quantification (Phase 2, step 5): Salmon, per sample x domain
+        # against that sample's own MAD assembly.
+        expand("results/06_QUANTIFICATION/{sample}/{domain}/{sample}_quant/quant.sf", sample=SHORT_SAMPLES, domain=DOMAINS),
+
+include: "workflow/rules/01_qc.smk"
+include: "workflow/rules/02_screening.smk"
+include: "workflow/rules/03_assembly.smk"
+include: "workflow/rules/04_orf_calling.smk"
+include: "workflow/rules/05_annotation.smk"
+include: "workflow/rules/06_taxonomy.smk"
+include: "workflow/rules/07_quantification.smk"
+include: "workflow/rules/08_magma_xref.smk"

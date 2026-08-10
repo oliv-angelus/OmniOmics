@@ -1,0 +1,49 @@
+OmniOmics — pacote de transferência
+====================================
+
+O que tem aqui:
+- OmniOmics/        projeto completo (código Flutter, backend, pipelines, notes/)
+- claude-memory/    cópia das memórias do Claude Code para este projeto (MEMORY.md +
+                     os arquivos individuais), de ~/.claude/projects/.../memory/
+
+O que foi DELIBERADAMENTE excluído do OmniOmics/ (tudo regenerável, não é código-fonte):
+- .venv/                          venv do backend Python
+- app/build/, app/.dart_tool/,
+  app/.flutter-plugins-dependencies  cache/build do Flutter
+- app/linux/flutter/ephemeral/    gerado pelo `flutter pub get`
+- app/.idea/                      config do IntelliJ (já ignorado pelo próprio .gitignore do Flutter)
+- dist/, backend/dist/            builds empacotados (.deb / PyInstaller)
+- backend/__pycache__/            bytecode Python
+- .claude/scheduled_tasks.lock    lock de processo, específico da máquina
+
+Como reconstruir no notebook depois de extrair:
+1. Backend:
+     cd OmniOmics
+     python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+2. App Flutter (precisa do Flutter SDK instalado — ver notes/Known Issues and Next Steps.md
+   se precisar instalar do zero):
+     cd app && flutter pub get
+   Depois use ./run_dev.sh (repo root) pra rodar em modo dev, ou `flutter build linux --debug`.
+3. Pacote .deb (opcional, só se for distribuir): ./build.sh
+
+Conda e bancos de dados NÃO estão nesse pacote (não ficam dentro da pasta OmniOmics):
+- Conda: o próprio app oferece instalar (Miniforge, ~/miniforge3) na primeira execução,
+  na tela de dependências.
+- Bancos de dados de referência (Kraken2, GTDB-Tk, etc.): baixáveis pela aba Databases
+  do app, ou ver notes/MAGMA.md / notes/SIGMA.md / notes/DOGMA.md pra saber quais cada
+  pipeline usa.
+
+Como restaurar as memórias do Claude Code no notebook:
+O Claude Code guarda memória por caminho absoluto do projeto (a pasta em
+~/.claude/projects/ é o caminho com "/" trocado por "-"). Só funciona automático se você
+colocar o projeto exatamente no mesmo caminho (/home/angelo/Downloads/OmniOmics) no
+notebook. Nesse caso, copie o conteúdo de claude-memory/ para:
+  ~/.claude/projects/-home-angelo-Downloads-OmniOmics/memory/
+
+Se o caminho no notebook for diferente, o Claude vai criar uma pasta de memória nova e
+vazia automaticamente na primeira conversa — nesse caso os arquivos em claude-memory/
+ficam só como referência pra você colar o conteúdo manualmente se quiser, ou pra você
+me pedir pra reconstruir com base neles.
+
+O notes/ (dentro de OmniOmics/) é a fonte de verdade do projeto e já vai junto
+normalmente, sem passo nenhum extra.

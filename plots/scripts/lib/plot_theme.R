@@ -1,0 +1,189 @@
+# The Plots tab's one visual "design system", extracted ONCE from
+# microbiome.R (the user's own validated thesis script) and reused by every
+# analysis in scripts/analyses/ -- this is deliberately the single place that
+# defines what "looks like an OmniOmics figure" means, so nothing drifts
+# panel-by-panel the way copy-pasted ggplot theme blocks would.
+suppressMessages({
+  library(ggplot2)
+  library(patchwork)
+  library(RColorBrewer)
+})
+
+#' The shared panel look: serif font by default, gray90 panel with white
+#' gridlines, black axis text -- present in every plot in microbiome.R
+#' regardless of plot type. `bg`/`font_family` are overridable (the Plots
+#' tab's "Personalizar" panel writes a style.json with these, see
+#' style_io.R's read_style_from_path) so a user can pick a different
+#' background/font without touching this file -- everything else
+#' (legend.position, axis text angle, facet strip styling,...) is still
+#' added with `+ theme(...)` on top of this by the calling script.
+#'
+#' `font_scale` uniformly multiplies the base axis text/title sizes below
+#' (1.0 = every analysis's original hardcoded size) -- a user-facing "Tamanho
+#' da fonte" slider in the Personalizar panel. It only scales THIS base size;
+#' a script's own later `+ theme(axis.text.y = element_text(size = 11,...))`
+#' override (e.g. differential_abundance_deseq2's italic genus labels) still
+#' wins for that specific element, same as any other layered theme call --
+#' a deliberate, minimal scope, not every hardcoded size in every script.
+base_theme <- function(bg = "gray90", font_family = "serif", font_scale = 1.0) {
+  theme(
+    text = element_text(family = font_family),
+    axis.text = element_text(size = 12 * font_scale, color = "black"),
+    axis.title = element_text(size = 13 * font_scale, face = "bold", color = "black"),
+    panel.background = element_rect(fill = bg),
+    panel.grid.major = element_line(color = "white", linewidth = 0.5),
+    panel.grid.minor = element_line(color = "white", linewidth = 0.25),
+    plot.margin = unit(c(0, 0.5, 0.5, 0.5), "cm")
+  )
+}
+
+#' Blanks out one or both cartesian axes (title + tick text + ticks)
+#' entirely -- the Personalizar panel's "Ocultar eixo X"/"Ocultar eixo Y"
+#' toggles. Applied as its own final `+ theme(...)` layer AFTER a script's
+#' complete plot (base_theme + every other `+ theme(...)` call), not
+#' folded into base_theme itself -- several callers add their own
+#' axis.text.x/axis.text.y overrides after base_theme (e.g.
+#' taxonomic_composition's/core_microbiome's rotated sample labels), and
+#' ggplot2 themes merge with "last one wins" per element, so a hide baked
+#' into base_theme would just get silently undone by those later calls.
+#' Calling this last, on the fully-built plot, guarantees it always wins
+#' regardless of what came before. Only meaningful for the 9 analyses that
+#' use base_theme at all -- cooccurrence_network (theme_void, no
+#' cartesian axes), venn_diagram, and upset_plot (ComplexUpset's own
+#' internally-composed sub-plots) don't call this; the Personalizar panel
+#' hides these two controls for those three rather than offering a checkbox
+#' that would silently do nothing (see plot_style_panel.dart's
+#' _kNoAxisControlAnalyses).
+apply_axis_visibility <- function(plot, hide_x_axis = FALSE, hide_y_axis = FALSE) {
+  if (isTRUE(hide_x_axis)) {
+    plot <- plot + theme(axis.text.x = element_blank, axis.title.x = element_blank, axis.ticks.x = element_blank)
+  }
+  if (isTRUE(hide_y_axis)) {
+    plot <- plot + theme(axis.text.y = element_blank, axis.title.y = element_blank, axis.ticks.y = element_blank)
+  }
+  plot
+}
+
+#' The bold gray70 title-bar panel every figure in microbiome.R stacks on top
+#' of itself via patchwork (see e.g. section 8's `label_beta`). A plain
+#' ggplot object, not text alone, because that's what lets it sit in a
+#' patchwork layout next to the real plot. The gray70 accent itself is a
+#' fixed design choice, not user-customizable (only the plot panel's own
+#' background is) -- font_family still applies, since it's text.
+title_bar <- function(label, size = 10, font_family = "serif") {
+  ggplot +
+    annotate("text", x = 1, y = 1, label = label, size = size,
+              fontface = "bold", family = font_family, hjust = 0.5, lineheight = 0.9) +
+    xlim(0, 2) + ylim(0.5, 1.5) +
+    theme_void +
+    theme(panel.background = element_rect(fill = "gray70", color = NA))
+}
+
+#' Real rendered width (inches) of `label` at `size`/bold/`font_family` --
+#' measured via grid's own text metrics (a real device-independent text
+#' grob), not a guessed characters-per-inch heuristic (font/weight/size all
+#' change how many characters fit per inch, so a fixed guess is wrong for
+#' some combination of them). `size` here is a ggplot2 "size" unit (as
+#' passed to `annotate("text", size =...)`), converted to points via
+#' ggplot2's own `.pt` constant, matching exactly what title_bar actually
+#' renders.
+title_text_width_in <- function(label, size, font_family) {
+  grid::convertWidth(
+    grid::grobWidth(grid::textGrob(label, gp = grid::gpar(fontsize = size *.pt, fontface = "bold", fontfamily = font_family))),
+    "inches", valueOnly = TRUE
+  )
+}
+
+#' Wraps `title` onto as many lines as needed so no line exceeds
+#' `max_width_in` inches when actually rendered -- fixes a real reported bug:
+#' `annotate("text",...)` (what title_bar uses) never wraps or shrinks on
+#' its own, so a long title (e.g. de_heatmap's "Top N DE Genes (VST, row
+#' z-score): X vs Y") visibly overflowed past the gray70 title bar's left AND
+#' right edges on any plot narrow enough that the title's real rendered width
+#' exceeded the plot's own width -- worse on real (often small) RNA-seq
+#' sample counts than on the wider synthetic fixtures this was mostly
+#' verified against before. Returns `title` unchanged (one line) if it
+#' already fits -- the common case, so most plots render identically to
+#' before this fix.
+wrap_title_to_width <- function(title, max_width_in, size, font_family) {
+  if (title_text_width_in(title, size, font_family) <= max_width_in) return(title)
+  wrap_chars <- max(10, nchar(title) - 1)
+  repeat {
+    wrapped_lines <- strwrap(title, width = wrap_chars)
+    widest_in <- max(vapply(wrapped_lines, title_text_width_in, numeric(1), size = size, font_family = font_family))
+    if (widest_in <= max_width_in || wrap_chars <= 10) break
+    wrap_chars <- wrap_chars - 2
+  }
+  paste(wrapped_lines, collapse = "\n")
+}
+
+#' Stacks `plot` under a title_bar(title), same plot_layout(heights=...)
+#' proportion used throughout microbiome.R (title gets ~10-15% of the height).
+#' `plot_width_in`, when given, MUST be the same width the caller is about
+#' to pass to `ggsave` -- lets the title auto-wrap (see
+#' wrap_title_to_width) to actually fit that real output width instead of
+#' silently overflowing it. Optional and backward-compatible: omitting it
+#' (NULL) keeps the exact old one-line-always behavior, for any call site
+#' not yet retrofitted to pass its own width through.
+with_title_bar <- function(plot, title, size = 10, title_height = 0.1, font_family = "serif", plot_width_in = NULL) {
+  if (!is.null(plot_width_in)) {
+    # 0.65, not a small margin like 0.94: patchwork aligns the title bar's
+    # panel to the PLOT panel below it, not the full figure width -- a
+    # heatmap's y-axis gene-name labels and its color-scale legend both eat
+    # into that shared width before the title bar ever sees it. Confirmed
+    # empirically: the real measured title-text width for the
+    # bug's own reproduction case (6.4in) still visibly overflowed an 8in-
+    # wide figure, meaning the actual available panel width was well under
+    # 8in despite the figure itself being 8in -- 0.65 was the smallest
+    # factor that consistently stopped clipping across the plots checked
+    # (de_heatmap with a legend + long y-axis labels being the tightest
+    # case). Errs toward wrapping a little more than strictly necessary on
+    # plots with less chrome (e.g. no legend) -- a harmless extra line beats
+    # clipped text.
+    title <- wrap_title_to_width(title, plot_width_in * 0.65, size, font_family)
+  }
+  n_lines <- length(strsplit(title, "\n", fixed = TRUE)1)
+  title_height <- title_height * n_lines
+  title_bar(title, size = size, font_family = font_family) / plot + patchwork::plot_layout(heights = c(title_height, 1))
+}
+
+#' colorRampPalette(brewer.pal(8, "Dark2"))(n) named by `labels` -- the exact
+#' group-coloring recipe reused for every categorical grouping variable
+#' (alpha/beta diversity groups, DESeq2 enrichment direction, network
+#' phyla, RDA groups,...) throughout microbiome.R.
+dark2_palette <- function(labels) {
+  labels <- unique(labels)
+  stats::setNames(grDevices::colorRampPalette(RColorBrewer::brewer.pal(8, "Dark2"))(length(labels)), labels)
+}
+
+#' Layers a style's saved `palette` overrides (user hex-picked colors from
+#' the Plots tab's "Personalizar" panel, see style_io.R) on top of an
+#' already-computed named color vector -- for palettes that aren't the
+#' plain Dark2 ramp (e.g. taxonomic_composition's Paired+Dark2+Set2 ramp
+#' with a fixed black "Others"). A key the style doesn't cover (a new level
+#' that didn't exist when the style was first saved, or no style at all)
+#' keeps its computed color -- overrides layer on top, they never leave a
+#' label uncolored.
+apply_palette_overrides <- function(base_colors, style = NULL) {
+  overrides <- style$palette
+  if (is.null(overrides)) return(base_colors)
+  for (name in names(overrides)) {
+    if (name %in% names(base_colors)) base_colorsname <- overridesname
+  }
+  base_colors
+}
+
+#' Same coloring recipe as dark2_palette, with a style's overrides applied
+#' -- the common case (alpha/beta diversity groups, DESeq2 enrichment
+#' direction, RDA groups, IndVal indicated groups, Venn sets,...).
+resolve_palette <- function(labels, style = NULL) {
+  apply_palette_overrides(dark2_palette(labels), style)
+}
+
+#' Formats a p-value the same way every analysis in microbiome.R does:
+#' "p < 0.001" below that threshold, otherwise "p = 0.0123" (4 decimals).
+format_p_value <- function(p) {
+  if (is.na(p)) return("p = NA (not enough samples/permutations to test)")
+  if (p < 0.001) return("p < 0.001")
+  paste("p =", format(round(p, 4), nsmall = 4))
+}

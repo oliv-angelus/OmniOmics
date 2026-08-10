@@ -1,0 +1,2736 @@
+{
+  "id": "sigma",
+  "name": "SIGMA",
+  "description": "Single Isolate Genome, Multi-platform Assembly",
+  "category": "genomics",
+  "tags": [
+    "prokaryote",
+    "isolate",
+    "hybrid"
+  ],
+  "icon": "assets/pipeline_icons/sigma.png",
+  "snakefile": "Snakefile",
+  "categories": [
+    "QC & Trimming",
+    "Contamination Screening",
+    "Assembly",
+    "Polishing",
+    "Read Mapping",
+    "Genome Quality",
+    "Taxonomy",
+    "Coverage",
+    "Gene Prediction & Annotation",
+    "Mobile Genetic Elements",
+    "AMR & Virulence",
+    "Strain Typing",
+    "Viral Analysis",
+    "Secondary Metabolites"
+  ],
+  "sample_sheet": {
+    "columns": [
+      "sample",
+      "read_type",
+      "fq1",
+      "fq2",
+      "fq_long",
+      "assembler",
+      "reference"
+    ],
+    "read_type_values": [
+      "short",
+      "long",
+      "hybrid"
+    ],
+    "input_dirs": [
+      {
+        "key": "short_reads_dir",
+        "label": "Pasta de reads curtas"
+      },
+      {
+        "key": "long_reads_dir",
+        "label": "Pasta de reads longas"
+      },
+      {
+        "key": "reference_dir",
+        "label": "Pasta de genomas de referência (opcional)"
+      }
+    ],
+    "assembler_for_read_type": {
+      "short": "unicycler",
+      "long": "flye",
+      "hybrid": "unicycler"
+    }
+  },
+  "long_read_platforms": [
+    {
+      "id": "nano_raw",
+      "label": "Nanopore (raw)",
+      "flye_flag": "--nano-raw",
+      "spades_flag": "--nanopore",
+      "minimap2_preset": "map-ont"
+    },
+    {
+      "id": "nano_hq",
+      "label": "Nanopore (HQ / Guppy5+ SUP, Q20+)",
+      "flye_flag": "--nano-hq",
+      "spades_flag": "--nanopore",
+      "minimap2_preset": "map-ont"
+    },
+    {
+      "id": "pacbio_raw",
+      "label": "PacBio (CLR)",
+      "flye_flag": "--pacbio-raw",
+      "spades_flag": "--pacbio",
+      "minimap2_preset": "map-pb"
+    },
+    {
+      "id": "pacbio_hifi",
+      "label": "PacBio (HiFi)",
+      "flye_flag": "--pacbio-hifi",
+      "spades_flag": "--pacbio",
+      "minimap2_preset": "map-hifi"
+    }
+  ],
+  "default_long_read_platform": "nano_hq",
+  "tools": {
+    "fastp": {
+      "name": "fastp",
+      "description": {
+        "en": "Fast all-in-one FASTQ preprocessor for short reads",
+        "pt": "Pré-processador FASTQ rápido e completo para reads curtas"
+      },
+      "citation": [
+        {
+          "text": "Chen S, Zhou Y, Chen Y, Gu J. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics. 2018;34(17):i884-i890.",
+          "doi": "10.1093/bioinformatics/bty560"
+        }
+      ],
+      "category": "QC & Trimming",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--qualified_quality_phred",
+          "type": "int",
+          "default": 30,
+          "enabled": true,
+          "description": {
+            "en": "Minimum Phred quality score for a base to be considered qualified",
+            "pt": "Escore de qualidade Phred mínimo para uma base ser considerada qualificada"
+          },
+          "min": 0,
+          "max": 40
+        },
+        {
+          "flag": "--length_required",
+          "type": "int",
+          "default": 50,
+          "enabled": true,
+          "description": {
+            "en": "Minimum read length after trimming; shorter reads are discarded",
+            "pt": "Comprimento mínimo da read após o trimming; reads mais curtas são descartadas"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--trim_front1",
+          "type": "int",
+          "default": 1,
+          "enabled": true,
+          "description": {
+            "en": "Number of bases to trim from the 5' end of read 1",
+            "pt": "Número de bases a cortar da extremidade 5' da read 1"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--trim_front2",
+          "type": "int",
+          "default": 1,
+          "enabled": true,
+          "description": {
+            "en": "Number of bases to trim from the 5' end of read 2",
+            "pt": "Número de bases a cortar da extremidade 5' da read 2"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--cut_front",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Enable sliding window quality trimming from the 5' end",
+            "pt": "Ativa o trimming de qualidade por janela deslizante a partir da extremidade 5'"
+          }
+        },
+        {
+          "flag": "--cut_tail",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Enable sliding window quality trimming from the 3' end",
+            "pt": "Ativa o trimming de qualidade por janela deslizante a partir da extremidade 3'"
+          }
+        },
+        {
+          "flag": "--cut_mean_quality",
+          "type": "int",
+          "default": 20,
+          "enabled": false,
+          "description": {
+            "en": "Mean quality threshold for the sliding window cut",
+            "pt": "Limiar de qualidade média para o corte por janela deslizante"
+          },
+          "min": 0,
+          "max": 40
+        },
+        {
+          "flag": "--detect_adapter_for_pe",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Automatically detect adapter sequences for paired-end reads",
+            "pt": "Detecta automaticamente sequências de adaptador em reads paired-end"
+          }
+        },
+        {
+          "flag": "--dedup",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Enable deduplication to remove duplicate reads",
+            "pt": "Ativa a deduplicação para remover reads duplicadas"
+          }
+        },
+        {
+          "flag": "--low_complexity_filter",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Filter low-complexity reads (e.g. poly-A/T)",
+            "pt": "Filtra reads de baixa complexidade (ex.: poli-A/T)"
+          }
+        }
+      ],
+      "requires": [],
+      "rule_names": [
+        "fastp"
+      ]
+    },
+    "filtlong": {
+      "name": "Filtlong",
+      "description": {
+        "en": "Quality filtering for long reads (Nanopore/PacBio)",
+        "pt": "Filtragem de qualidade para reads longas (Nanopore/PacBio)"
+      },
+      "citation": [
+        {
+          "text": "Wick RR. Filtlong [software]. https://github.com/rrwick/Filtlong",
+          "doi": null
+        }
+      ],
+      "category": "QC & Trimming",
+      "read_type": "long",
+      "flags": [
+        {
+          "flag": "--min_length",
+          "type": "int",
+          "default": 500,
+          "enabled": true,
+          "description": {
+            "en": "Minimum read length to keep (bp)",
+            "pt": "Comprimento mínimo da read a manter (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--max_length",
+          "type": "int",
+          "default": 0,
+          "enabled": false,
+          "description": {
+            "en": "Maximum read length to keep; 0 = no limit (bp)",
+            "pt": "Comprimento máximo da read a manter; 0 = sem limite (pb)"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--keep_percent",
+          "type": "float",
+          "default": 90.0,
+          "enabled": true,
+          "description": {
+            "en": "Keep only the best X% of bases by quality",
+            "pt": "Mantém apenas os X% melhores das bases por qualidade"
+          },
+          "min": 1.0,
+          "max": 100.0
+        },
+        {
+          "flag": "--target_bases",
+          "type": "int",
+          "default": 0,
+          "enabled": false,
+          "description": {
+            "en": "Target total number of output bases; 0 = no limit",
+            "pt": "Número total alvo de bases na saída; 0 = sem limite"
+          }
+        },
+        {
+          "flag": "--min_mean_q",
+          "type": "float",
+          "default": 0.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum mean quality score for a read to pass",
+            "pt": "Escore de qualidade média mínimo para uma read passar"
+          },
+          "min": 0.0
+        }
+      ],
+      "requires": [],
+      "rule_names": [
+        "filtlong"
+      ]
+    },
+    "kraken2": {
+      "name": "Kraken2",
+      "description": {
+        "en": "Pre-assembly contamination screening -- flags whether the clean reads look like a pure culture of one organism before spending time assembling/annotating them",
+        "pt": "Triagem de contaminação antes da montagem -- sinaliza se as reads limpas parecem uma cultura pura de um único organismo antes de gastar tempo montando/anotando"
+      },
+      "citation": [
+        {
+          "text": "Wood DE, Lu J, Langmead B. Improved metagenomic analysis with Kraken 2. Genome Biology. 2019;20:257.",
+          "doi": "10.1186/s13059-019-1891-0"
+        }
+      ],
+      "category": "Contamination Screening",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--confidence",
+          "type": "float",
+          "default": 0.05,
+          "enabled": true,
+          "description": {
+            "en": "Confidence score threshold (0-1); higher values increase precision",
+            "pt": "Limiar de escore de confiança (0-1); valores maiores aumentam a precisão"
+          },
+          "min": 0.0,
+          "max": 1.0
+        },
+        {
+          "flag": "--minimum-hit-groups",
+          "type": "int",
+          "default": 2,
+          "enabled": false,
+          "description": {
+            "en": "Minimum number of hit groups required for classification",
+            "pt": "Número mínimo de grupos de hits exigido para classificação"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--report-zero-counts",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Include taxa with zero read counts in the report",
+            "pt": "Inclui táxons com contagem zero de reads no relatório"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp",
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "kraken2"
+      ]
+    },
+    "kaiju": {
+      "name": "Kaiju",
+      "description": {
+        "en": "Protein-level pre-assembly contamination screening -- independent alternative or complement to Kraken2, only needs the same clean reads",
+        "pt": "Triagem de contaminação em nível de proteína antes da montagem -- alternativa ou complemento independente ao Kraken2, só precisa das mesmas reads limpas"
+      },
+      "citation": [
+        {
+          "text": "Menzel P, Ng KL, Krogh A. Fast and sensitive taxonomic classification for metagenomics with Kaiju. Nature Communications. 2016;7:11257.",
+          "doi": "10.1038/ncomms11257"
+        }
+      ],
+      "category": "Contamination Screening",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "-a",
+          "type": "choice",
+          "default": "greedy",
+          "enabled": false,
+          "description": {
+            "en": "Classification run mode",
+            "pt": "Modo de execução da classificação"
+          },
+          "choices": [
+            "greedy",
+            "mem"
+          ]
+        },
+        {
+          "flag": "-e",
+          "type": "int",
+          "default": 3,
+          "enabled": false,
+          "description": {
+            "en": "Mismatches allowed in Greedy mode",
+            "pt": "Mismatches permitidos no modo Greedy"
+          },
+          "min": 0
+        },
+        {
+          "flag": "-m",
+          "type": "int",
+          "default": 11,
+          "enabled": false,
+          "description": {
+            "en": "Minimum match length",
+            "pt": "Comprimento mínimo do match"
+          },
+          "min": 1
+        },
+        {
+          "flag": "-s",
+          "type": "int",
+          "default": 65,
+          "enabled": false,
+          "description": {
+            "en": "Minimum match score in Greedy mode",
+            "pt": "Escore mínimo do match no modo Greedy"
+          },
+          "min": 1
+        },
+        {
+          "flag": "-E",
+          "type": "float",
+          "default": 0.01,
+          "enabled": false,
+          "description": {
+            "en": "Minimum E-value in Greedy mode",
+            "pt": "E-value mínimo no modo Greedy"
+          },
+          "min": 0.0
+        },
+        {
+          "flag": "-X",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Disable the SEG low-complexity filter (enabled by default)",
+            "pt": "Desativa o filtro de baixa complexidade SEG (ativado por padrão)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp",
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "kaiju_classify",
+        "kaiju_table"
+      ]
+    },
+    "unicycler": {
+      "name": "Unicycler",
+      "description": {
+        "en": "Isolate genome assembler for short-only or short+long hybrid data; wraps SPAdes for the short-read graph and bridges repeats with long reads when given. Used instead of MEGAHIT, which is tuned for large, uneven-coverage metagenomic assemblies rather than single isolate genomes.",
+        "pt": "Montador de genoma de isolado para dados apenas de reads curtas ou híbridos (curtas+longas); usa o SPAdes para o grafo de reads curtas e conecta repetições com reads longas quando fornecidas. Usado em vez do MEGAHIT, que é ajustado para montagens metagenômicas grandes e de cobertura desigual, não para genomas de isolados únicos."
+      },
+      "citation": [
+        {
+          "text": "Wick RR, Judd LM, Gorrie CL, Holt KE. Unicycler: resolving bacterial genome assemblies from short and long sequencing reads. PLOS Computational Biology. 2017;13(6):e1005595.",
+          "doi": "10.1371/journal.pcbi.1005595"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--mode",
+          "type": "choice",
+          "default": "normal",
+          "enabled": false,
+          "description": {
+            "en": "Assembly effort/optimization level",
+            "pt": "Nível de esforço/otimização da montagem"
+          },
+          "choices": [
+            "conservative",
+            "normal",
+            "bold"
+          ]
+        },
+        {
+          "flag": "--min_fasta_length",
+          "type": "int",
+          "default": 100,
+          "enabled": false,
+          "description": {
+            "en": "Exclude contigs shorter than this from the output (bp)",
+            "pt": "Exclui da saída contigs mais curtos que este valor (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--linear_seqs",
+          "type": "int",
+          "default": 0,
+          "enabled": false,
+          "description": {
+            "en": "Expected number of linear (non-circular) sequences, e.g. for organisms with linear chromosomes/plasmids",
+            "pt": "Número esperado de sequências lineares (não circulares), ex.: para organismos com cromossomos/plasmídeos lineares"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--no_correct",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip short-read error correction before assembly",
+            "pt": "Pula a correção de erros das reads curtas antes da montagem"
+          }
+        },
+        {
+          "flag": "--no_pilon",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip Pilon polishing of the final assembly",
+            "pt": "Pula o polimento com Pilon da montagem final"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp"
+          ],
+          "min": 1
+        },
+        {
+          "tools": [
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "unicycler"
+      ]
+    },
+    "flye": {
+      "name": "Flye",
+      "description": {
+        "en": "De novo assembler for long reads only (Nanopore / PacBio)",
+        "pt": "Montador de novo apenas para reads longas (Nanopore / PacBio)"
+      },
+      "citation": [
+        {
+          "text": "Kolmogorov M, Yuan J, Lin Y, Pevzner PA. Assembly of long, error-prone reads using repeat graphs. Nature Biotechnology. 2019;37:540-546.",
+          "doi": "10.1038/s41587-019-0072-8"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "long",
+      "flags": [
+        {
+          "flag": "--min-overlap",
+          "type": "int",
+          "default": 0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum read overlap in bp (0 = auto)",
+            "pt": "Sobreposição mínima entre reads em pb (0 = automático)"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--iterations",
+          "type": "int",
+          "default": 1,
+          "enabled": false,
+          "description": {
+            "en": "Number of polishing iterations after assembly",
+            "pt": "Número de iterações de polimento após a montagem"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--genome-size",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Estimated genome size (e.g. 5m for a typical bacterial genome); optional",
+            "pt": "Tamanho estimado do genoma (ex.: 5m para um genoma bacteriano típico); opcional"
+          }
+        },
+        {
+          "flag": "--asm-coverage",
+          "type": "int",
+          "default": 0,
+          "enabled": false,
+          "description": {
+            "en": "Sub-sample to this coverage for initial assembly (0 = use all)",
+            "pt": "Subamostra até esta cobertura para a montagem inicial (0 = usa tudo)"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--scaffold",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Enable scaffolding of unresolved repeats",
+            "pt": "Ativa o scaffolding de repetições não resolvidas"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "flye"
+      ]
+    },
+    "racon": {
+      "name": "Racon",
+      "description": {
+        "en": "Long-read-based polishing of long-only (Flye) assemblies; not run for short/hybrid samples since Unicycler already self-polishes",
+        "pt": "Polimento baseado em reads longas para montagens apenas-longas (Flye); não roda para amostras curtas/híbridas pois o Unicycler já se autopolimenta"
+      },
+      "citation": [
+        {
+          "text": "Vaser R, Sović I, Nagarajan N, Šikić M. Fast and accurate de novo genome assembly from long uncorrected reads. Genome Research. 2017;27(5):737-746.",
+          "doi": "10.1101/gr.214270.116"
+        }
+      ],
+      "category": "Polishing",
+      "read_type": "long",
+      "flags": [
+        {
+          "flag": "-w",
+          "type": "int",
+          "default": 500,
+          "enabled": false,
+          "description": {
+            "en": "Window length for the partial-order alignment consensus",
+            "pt": "Comprimento da janela para o consenso de alinhamento por ordem parcial (POA)"
+          },
+          "min": 50
+        },
+        {
+          "flag": "-e",
+          "type": "float",
+          "default": 0.3,
+          "enabled": false,
+          "description": {
+            "en": "Error threshold for the POA graph",
+            "pt": "Limiar de erro para o grafo POA"
+          },
+          "min": 0.0,
+          "max": 1.0
+        },
+        {
+          "flag": "-q",
+          "type": "float",
+          "default": 10.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum average base quality for a window to be polished",
+            "pt": "Qualidade média mínima de base para uma janela ser polida"
+          },
+          "min": 0.0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "racon_polish"
+      ]
+    },
+    "medaka": {
+      "name": "Medaka",
+      "description": {
+        "en": "Neural-net polishing of Racon output for Nanopore assemblies; skipped for PacBio (models are ONT-specific)",
+        "pt": "Polimento com rede neural da saída do Racon para montagens Nanopore; pulado para PacBio (os modelos são específicos do ONT)"
+      },
+      "citation": [
+        {
+          "text": "Oxford Nanopore Technologies. Medaka. https://github.com/nanoporetech/medaka",
+          "doi": null
+        }
+      ],
+      "category": "Polishing",
+      "read_type": "long",
+      "flags": [
+        {
+          "flag": "-m",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Medaka model name (empty = auto-detect from basecaller info)",
+            "pt": "Nome do modelo do Medaka (vazio = detecta automaticamente pela info do basecaller)"
+          }
+        },
+        {
+          "flag": "-b",
+          "type": "int",
+          "default": 100,
+          "enabled": false,
+          "description": {
+            "en": "Batch size for neural-network inference",
+            "pt": "Tamanho do batch para a inferência da rede neural"
+          },
+          "min": 1
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "racon"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "medaka_polish"
+      ]
+    },
+    "ragtag": {
+      "name": "RagTag",
+      "description": {
+        "en": "De novo vs reference-based assembly: orders/orients contigs against a reference genome (homology-based scaffolding, not variant calling) -- only runs for samples with a matching folder under the reference genomes input",
+        "pt": "De novo vs. montagem baseada em referência: ordena/orienta contigs contra um genoma de referência (scaffolding por homologia, não chamada de variantes) -- só roda para amostras com pasta correspondente na entrada de genomas de referência"
+      },
+      "citation": [
+        {
+          "text": "Alonge M, Lebeigle L, Kirsche M, Jenike K, Ou S, Aganezov S, Wang X, Lippman ZB, Schatz MC, Soyk S. Automated assembly scaffolding using RagTag elevates a new tomato system for high-throughput genome editing. Genome Biology. 2022;23:258.",
+          "doi": "10.1186/s13059-022-02823-7"
+        }
+      ],
+      "category": "Polishing",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "-u",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Add a suffix to unplaced sequence headers (avoids duplicate IDs some downstream tools reject)",
+            "pt": "Adiciona um sufixo aos cabeçalhos das sequências não posicionadas (evita IDs duplicados que algumas ferramentas seguintes rejeitam)"
+          }
+        },
+        {
+          "flag": "-C",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Concatenate unplaced contigs into a single 'chr0' sequence",
+            "pt": "Concatena os contigs não posicionados em uma única sequência 'chr0'"
+          }
+        },
+        {
+          "flag": "-r",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Infer gap sizes instead of using a fixed 100 bp gap",
+            "pt": "Infere o tamanho dos gaps em vez de usar um gap fixo de 100 pb"
+          }
+        },
+        {
+          "flag": "-f",
+          "type": "int",
+          "default": 1000,
+          "enabled": false,
+          "description": {
+            "en": "Minimum unique alignment length (bp)",
+            "pt": "Comprimento mínimo de alinhamento único (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "-q",
+          "type": "int",
+          "default": 10,
+          "enabled": false,
+          "description": {
+            "en": "Minimum mapping quality",
+            "pt": "Qualidade mínima de mapeamento"
+          },
+          "min": 0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "ragtag_scaffold"
+      ]
+    },
+    "bowtie2": {
+      "name": "Bowtie2",
+      "description": {
+        "en": "Short read aligner, self-mapping reads back to their own assembly for coverage assessment",
+        "pt": "Alinhador de reads curtas, mapeando as reads de volta contra sua própria montagem para avaliação de cobertura"
+      },
+      "citation": [
+        {
+          "text": "Langmead B, Salzberg SL. Fast gapped-read alignment with Bowtie 2. Nature Methods. 2012;9(4):357-359.",
+          "doi": "10.1038/nmeth.1923"
+        }
+      ],
+      "category": "Read Mapping",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--sensitive",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Use sensitive alignment preset (default)",
+            "pt": "Usa o preset de alinhamento sensível (padrão)"
+          }
+        },
+        {
+          "flag": "--no-unal",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Suppress unaligned reads in output",
+            "pt": "Omite reads não alinhadas na saída"
+          }
+        },
+        {
+          "flag": "--no-discordant",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Suppress discordant alignments",
+            "pt": "Omite alinhamentos discordantes"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp"
+          ],
+          "min": 1
+        },
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "bowtie2_index",
+        "map_reads"
+      ]
+    },
+    "minimap2": {
+      "name": "minimap2",
+      "description": {
+        "en": "Long read aligner, self-mapping reads back to their own assembly for coverage assessment and Racon polishing",
+        "pt": "Alinhador de reads longas, mapeando as reads de volta contra sua própria montagem para avaliação de cobertura e polimento com Racon"
+      },
+      "citation": [
+        {
+          "text": "Li H. Minimap2: pairwise alignment for nucleotide sequences. Bioinformatics. 2018;34(18):3094-3100.",
+          "doi": "10.1093/bioinformatics/bty191"
+        }
+      ],
+      "category": "Read Mapping",
+      "read_type": "long",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "filtlong"
+          ],
+          "min": 1
+        },
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "map_reads"
+      ]
+    },
+    "samtools_index": {
+      "name": "samtools index",
+      "description": {
+        "en": "Indexes sorted BAM files",
+        "pt": "Indexa arquivos BAM ordenados"
+      },
+      "citation": [
+        {
+          "text": "Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H. Twelve years of SAMtools and BCFtools. GigaScience. 2021;10(2):giab008.",
+          "doi": "10.1093/gigascience/giab008"
+        }
+      ],
+      "category": "Read Mapping",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "bowtie2",
+            "minimap2"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "index_bam"
+      ]
+    },
+    "quast": {
+      "name": "QUAST",
+      "description": {
+        "en": "Assembly quality assessment (N50, contig counts, misassemblies) for isolate genomes",
+        "pt": "Avaliação de qualidade da montagem (N50, número de contigs, misassemblies) para genomas de isolados"
+      },
+      "citation": [
+        {
+          "text": "Gurevich A, Saveliev V, Vyahhi N, Tesler G. QUAST: quality assessment tool for genome assemblies. Bioinformatics. 2013;29(8):1072-1075.",
+          "doi": "10.1093/bioinformatics/btt086"
+        }
+      ],
+      "category": "Genome Quality",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--min-contig",
+          "type": "int",
+          "default": 500,
+          "enabled": false,
+          "description": {
+            "en": "Minimum contig size to consider in analysis (bp)",
+            "pt": "Tamanho mínimo de contig a considerar na análise (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--no-check-references",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip reference genome validation",
+            "pt": "Pula a validação do genoma de referência"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "quast"
+      ]
+    },
+    "checkm2": {
+      "name": "CheckM2",
+      "description": {
+        "en": "Machine-learning based assessment of genome completeness and contamination",
+        "pt": "Avaliação de completude e contaminação do genoma baseada em machine learning"
+      },
+      "citation": [
+        {
+          "text": "Chklovski A, Parks DH, Woodcroft BJ, Tyson GW. CheckM2: a rapid, scalable and accurate tool for assessing microbial genome quality using machine learning. Nature Methods. 2023;20:1203-1212.",
+          "doi": "10.1038/s41592-023-01940-w"
+        }
+      ],
+      "category": "Genome Quality",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--remove_intermediates",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Remove intermediate files after analysis",
+            "pt": "Remove arquivos intermediários após a análise"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "checkm2"
+      ]
+    },
+    "gunc": {
+      "name": "GUNC",
+      "description": {
+        "en": "Detection of chimerism and contamination in prokaryotic genomes",
+        "pt": "Detecção de quimerismo e contaminação em genomas procarióticos"
+      },
+      "citation": [
+        {
+          "text": "Orakov A, Fullam A, Coelho LP, Khedkar S, Szklarczyk D, Mende DR, Schmidt TSB, Bork P. GUNC: detection of chimerism and contamination in prokaryotic genomes. Genome Biology. 2021;22:178.",
+          "doi": "10.1186/s13059-021-02393-0"
+        }
+      ],
+      "category": "Genome Quality",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--sensitive",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Use sensitive (slower) gene calling",
+            "pt": "Usa predição gênica sensível (mais lenta)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "gunc"
+      ]
+    },
+    "gtdbtk": {
+      "name": "GTDB-Tk",
+      "description": {
+        "en": "Taxonomic classification of the isolate genome using the GTDB reference tree",
+        "pt": "Classificação taxonômica do genoma do isolado usando a árvore de referência do GTDB"
+      },
+      "citation": [
+        {
+          "text": "Chaumeil PA, Mussig AJ, Hugenholtz P, Parks DH. GTDB-Tk v2: memory friendly classification with the genome taxonomy database. Bioinformatics. 2022;38(23):5315-5316.",
+          "doi": "10.1093/bioinformatics/btac672"
+        },
+        {
+          "text": "Chaumeil PA, Mussig AJ, Hugenholtz P, Parks DH. GTDB-Tk: a toolkit to classify genomes with the Genome Taxonomy Database. Bioinformatics. 2020;36(6):1925-1927.",
+          "doi": "10.1093/bioinformatics/btz848"
+        }
+      ],
+      "category": "Taxonomy",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--min_af",
+          "type": "float",
+          "default": 0.65,
+          "enabled": false,
+          "description": {
+            "en": "Minimum alignment fraction for RED value calculation",
+            "pt": "Fração de alinhamento mínima para o cálculo do valor RED"
+          },
+          "min": 0.0,
+          "max": 1.0
+        },
+        {
+          "flag": "--skip_ani_screen",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip the ANI screening step",
+            "pt": "Pula a etapa de triagem por ANI"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "gtdbtk"
+      ]
+    },
+    "coverm": {
+      "name": "CoverM",
+      "description": {
+        "en": "Self-coverage depth/uniformity of the assembly from its own reads",
+        "pt": "Profundidade/uniformidade de autocobertura da montagem a partir de suas próprias reads"
+      },
+      "citation": [
+        {
+          "text": "Aroney STN, Newell RJP, Nissen JN, Camargo AP, Tyson GW, Woodcroft BJ. CoverM: read alignment statistics for metagenomics. Bioinformatics. 2025;41(4):btaf147.",
+          "doi": "10.1093/bioinformatics/btaf147"
+        }
+      ],
+      "category": "Coverage",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--min-covered-fraction",
+          "type": "float",
+          "default": 0,
+          "enabled": true,
+          "description": {
+            "en": "Minimum fraction of the genome covered to report abundance (0 = no filter)",
+            "pt": "Fração mínima do genoma coberta para reportar abundância (0 = sem filtro)"
+          },
+          "min": 0.0,
+          "max": 100.0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "bowtie2",
+            "minimap2"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "coverm"
+      ]
+    },
+    "bakta": {
+      "name": "Bakta",
+      "description": {
+        "en": "All-in-one bacterial isolate genome annotation: gene calling, tRNA/tmRNA/rRNA/ncRNA/CRISPR detection, and functional annotation",
+        "pt": "Anotação completa de genoma de isolado bacteriano: predição de genes, detecção de tRNA/tmRNA/rRNA/ncRNA/CRISPR e anotação funcional"
+      },
+      "citation": [
+        {
+          "text": "Schwengers O, Jelonek L, Dieckmann MA, Beyvers S, Blom J, Goesmann A. Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification. Microbial Genomics. 2021;7(11):000685.",
+          "doi": "10.1099/mgen.0.000685"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--genus",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Genus name, improves annotation specificity (optional)",
+            "pt": "Nome do gênero, melhora a especificidade da anotação (opcional)"
+          }
+        },
+        {
+          "flag": "--species",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Species name, improves annotation specificity (optional)",
+            "pt": "Nome da espécie, melhora a especificidade da anotação (opcional)"
+          }
+        },
+        {
+          "flag": "--complete",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Assume all contigs are complete replicons (chromosome/plasmid), not draft fragments",
+            "pt": "Assume que todos os contigs são replicons completos (cromossomo/plasmídeo), não fragmentos draft"
+          }
+        },
+        {
+          "flag": "--skip-trna",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip tRNA detection",
+            "pt": "Pula a detecção de tRNA"
+          }
+        },
+        {
+          "flag": "--skip-rrna",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip rRNA detection",
+            "pt": "Pula a detecção de rRNA"
+          }
+        },
+        {
+          "flag": "--skip-ncrna",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip ncRNA (Rfam) detection",
+            "pt": "Pula a detecção de ncRNA (Rfam)"
+          }
+        },
+        {
+          "flag": "--skip-crispr",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip CRISPR array detection",
+            "pt": "Pula a detecção de arranjos CRISPR"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "bakta"
+      ]
+    },
+    "eggnog": {
+      "name": "eggNOG-mapper",
+      "description": {
+        "en": "Optional deeper functional annotation (KEGG/COG/GO) on top of Bakta's own annotation -- worthwhile for comparative/pathway-level analysis, not needed for standard genome annotation",
+        "pt": "Anotação funcional mais aprofundada e opcional (KEGG/COG/GO) além da anotação própria do Bakta -- vale a pena para análises comparativas/de vias, mas não é necessária para anotação padrão de genoma"
+      },
+      "citation": [
+        {
+          "text": "Cantalapiedra CP, Hernandez-Plaza A, Letunic I, Bork P, Huerta-Cepas J. eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular Biology and Evolution. 2021;38(12):5825-5829.",
+          "doi": "10.1093/molbev/msab293"
+        },
+        {
+          "text": "Huerta-Cepas J, Szklarczyk D, Heller D, et al. eggNOG 5.0: a hierarchical, functionally and phylogenetically annotated orthology resource based on 5090 organisms and 2502 viruses. Nucleic Acids Research. 2019;47(D1):D309-D314.",
+          "doi": "10.1093/nar/gky1085"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--itype",
+          "type": "choice",
+          "default": "proteins",
+          "enabled": false,
+          "description": {
+            "en": "Type of input sequences",
+            "pt": "Tipo das sequências de entrada"
+          },
+          "choices": [
+            "CDS",
+            "proteins",
+            "genome",
+            "metagenome"
+          ]
+        },
+        {
+          "flag": "--tax_scope",
+          "type": "str",
+          "default": "auto",
+          "enabled": false,
+          "description": {
+            "en": "Taxonomic scope for annotation narrowing",
+            "pt": "Escopo taxonômico para restringir a anotação"
+          }
+        },
+        {
+          "flag": "--go_evidence",
+          "type": "choice",
+          "default": "non-electronic",
+          "enabled": false,
+          "description": {
+            "en": "GO evidence filter",
+            "pt": "Filtro de evidência do GO"
+          },
+          "choices": [
+            "experimental",
+            "non-electronic",
+            "all"
+          ]
+        },
+        {
+          "flag": "--target_orthologs",
+          "type": "choice",
+          "default": "all",
+          "enabled": false,
+          "description": {
+            "en": "Which orthologs to use",
+            "pt": "Quais ortólogos usar"
+          },
+          "choices": [
+            "all",
+            "one2one",
+            "many2one",
+            "one2many",
+            "many2many"
+          ]
+        },
+        {
+          "flag": "--pfam_realign",
+          "type": "choice",
+          "default": "none",
+          "enabled": false,
+          "description": {
+            "en": "Realign against Pfam",
+            "pt": "Realinha contra o Pfam"
+          },
+          "choices": [
+            "none",
+            "realign",
+            "denovo"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "bakta"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "eggnog_sample"
+      ]
+    },
+    "amrfinderplus": {
+      "name": "AMRFinderPlus",
+      "description": {
+        "en": "Identification of antimicrobial resistance genes using the NCBI database",
+        "pt": "Identificação de genes de resistência antimicrobiana usando o banco de dados do NCBI"
+      },
+      "citation": [
+        {
+          "text": "Feldgarden M, Brover V, Gonzalez-Escalona N, et al. AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence. Scientific Reports. 2021;11:12728.",
+          "doi": "10.1038/s41598-021-91456-0"
+        }
+      ],
+      "category": "AMR & Virulence",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--ident_min",
+          "type": "float",
+          "default": -1.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum identity (-1 = use curated thresholds)",
+            "pt": "Identidade mínima (-1 = usa limiares curados)"
+          },
+          "min": -1.0,
+          "max": 1.0
+        },
+        {
+          "flag": "--coverage_min",
+          "type": "float",
+          "default": 0.5,
+          "enabled": false,
+          "description": {
+            "en": "Minimum coverage of reference protein",
+            "pt": "Cobertura mínima da proteína de referência"
+          },
+          "min": 0.0,
+          "max": 1.0
+        },
+        {
+          "flag": "--plus",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Include plus genes (stress, virulence, etc.)",
+            "pt": "Inclui genes \"plus\" (estresse, virulência, etc.)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "bakta"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "amrfinder_sample"
+      ]
+    },
+    "abricate": {
+      "name": "ABRicate",
+      "description": {
+        "en": "Mass screening of contigs for antimicrobial resistance genes",
+        "pt": "Triagem em massa de contigs em busca de genes de resistência antimicrobiana"
+      },
+      "citation": [
+        {
+          "text": "Seemann T. ABRicate. https://github.com/tseemann/abricate",
+          "doi": null
+        }
+      ],
+      "category": "AMR & Virulence",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--minid",
+          "type": "float",
+          "default": 80.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum DNA identity percentage (%)",
+            "pt": "Percentual mínimo de identidade de DNA (%)"
+          },
+          "min": 0.0,
+          "max": 100.0
+        },
+        {
+          "flag": "--mincov",
+          "type": "float",
+          "default": 80.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum coverage of the reference gene (%)",
+            "pt": "Cobertura mínima do gene de referência (%)"
+          },
+          "min": 0.0,
+          "max": 100.0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "abricate_sample"
+      ]
+    },
+    "vfdb": {
+      "name": "VFDB (via ABRicate)",
+      "description": {
+        "en": "Virulence factor screening using the VFDB database",
+        "pt": "Triagem de fatores de virulência usando o banco de dados VFDB"
+      },
+      "citation": [
+        {
+          "text": "Zhou S, Liu B, Zheng D, Chen L, Yang J. VFDB 2025: an integrated resource for exploring anti-virulence compounds. Nucleic Acids Research. 2025;53(D1):D871-D877.",
+          "doi": "10.1093/nar/gkae968"
+        }
+      ],
+      "category": "AMR & Virulence",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "vfdb_sample"
+      ]
+    },
+    "isescan": {
+      "name": "ISEScan",
+      "description": {
+        "en": "Identification of insertion sequences (IS elements)",
+        "pt": "Identificação de sequências de inserção (elementos IS)"
+      },
+      "citation": [
+        {
+          "text": "Xie Z, Tang H. ISEScan: automated identification of insertion sequence elements in prokaryotic genomes. Bioinformatics. 2017;33(21):3340-3347.",
+          "doi": "10.1093/bioinformatics/btx433"
+        }
+      ],
+      "category": "Mobile Genetic Elements",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "isescan_sample"
+      ]
+    },
+    "mobsuite": {
+      "name": "MOB-suite",
+      "description": {
+        "en": "Reconstruction and typing of plasmids from the assembly",
+        "pt": "Reconstrução e tipagem de plasmídeos a partir da montagem"
+      },
+      "citation": [
+        {
+          "text": "Robertson J, Nash JHE. MOB-suite: software tools for clustering, reconstruction and typing of plasmids from draft assemblies. Microbial Genomics. 2018;4(8):e000206.",
+          "doi": "10.1099/mgen.0.000206"
+        },
+        {
+          "text": "Robertson J, Bessonov K, Schonfeld J, Nash JHE. Universal whole-sequence-based plasmid typing and its utility to prediction of host range and epidemiological surveillance. Microbial Genomics. 2020;6(10):mgen000435.",
+          "doi": "10.1099/mgen.0.000435"
+        }
+      ],
+      "category": "Mobile Genetic Elements",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--min_length",
+          "type": "int",
+          "default": 1000,
+          "enabled": false,
+          "description": {
+            "en": "Minimum plasmid sequence length (bp)",
+            "pt": "Comprimento mínimo da sequência do plasmídeo (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--run_typer",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Run plasmid typer module",
+            "pt": "Executa o módulo de tipagem de plasmídeos"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "mobsuite_sample"
+      ]
+    },
+    "mlst": {
+      "name": "MLST",
+      "description": {
+        "en": "Multi-locus sequence typing against PubMLST schemes -- strain-level typing for epidemiology/surveillance",
+        "pt": "Tipagem multilocus de sequências (MLST) contra esquemas do PubMLST -- tipagem em nível de cepa para epidemiologia/vigilância"
+      },
+      "citation": [
+        {
+          "text": "Jolley KA, Maiden MCJ. BIGSdb: scalable analysis of bacterial genome variation at the population level. BMC Bioinformatics. 2010;11:595.",
+          "doi": "10.1186/1471-2105-11-595"
+        }
+      ],
+      "category": "Strain Typing",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--scheme",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Force a specific PubMLST scheme instead of auto-detecting (optional)",
+            "pt": "Força um esquema específico do PubMLST em vez de detectar automaticamente (opcional)"
+          }
+        },
+        {
+          "flag": "--minid",
+          "type": "float",
+          "default": 95.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum DNA identity to consider an allele match (%)",
+            "pt": "Identidade mínima de DNA para considerar um alelo compatível (%)"
+          },
+          "min": 0.0,
+          "max": 100.0
+        },
+        {
+          "flag": "--mincov",
+          "type": "float",
+          "default": 10.0,
+          "enabled": false,
+          "description": {
+            "en": "Minimum coverage to report a partial allele match (%)",
+            "pt": "Cobertura mínima para reportar um alelo parcialmente compatível (%)"
+          },
+          "min": 0.0,
+          "max": 100.0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "mlst"
+      ]
+    },
+    "genomad": {
+      "name": "geNomad",
+      "description": {
+        "en": "Identification of viruses and plasmids using a geNomad database",
+        "pt": "Identificação de vírus e plasmídeos usando um banco de dados do geNomad"
+      },
+      "citation": [
+        {
+          "text": "Camargo AP, Roux S, Schulz F, et al. Identification of mobile genetic elements with geNomad. Nature Biotechnology. 2024;42:1303-1312.",
+          "doi": "10.1038/s41587-023-01953-y"
+        }
+      ],
+      "category": "Viral Analysis",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--min-score",
+          "type": "float",
+          "default": 0.7,
+          "enabled": false,
+          "description": {
+            "en": "Minimum classification score threshold",
+            "pt": "Limiar mínimo de escore de classificação"
+          },
+          "min": 0.0,
+          "max": 1.0
+        },
+        {
+          "flag": "--relaxed",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Use relaxed classification criteria (more sensitive)",
+            "pt": "Usa critérios de classificação relaxados (mais sensível)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "genomad"
+      ]
+    },
+    "virsorter2": {
+      "name": "VirSorter2",
+      "description": {
+        "en": "Multi-classifier identification of viral sequences (prophages)",
+        "pt": "Identificação de sequências virais (prófagos) por múltiplos classificadores"
+      },
+      "citation": [
+        {
+          "text": "Guo J, Bolduc B, Zayed AA, et al. VirSorter2: a multi-classifier, expert-guided approach to detect diverse DNA and RNA viruses. Microbiome. 2021;9:37.",
+          "doi": "10.1186/s40168-020-00990-y"
+        }
+      ],
+      "category": "Viral Analysis",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--min-score",
+          "type": "float",
+          "default": 0.5,
+          "enabled": false,
+          "description": {
+            "en": "Minimum score threshold for viral classification",
+            "pt": "Limiar mínimo de escore para classificação viral"
+          },
+          "min": 0.0,
+          "max": 1.0
+        },
+        {
+          "flag": "--include-groups",
+          "type": "str",
+          "default": "dsDNAphage,ssDNA,NCLDV,RNA,lavidaviridae",
+          "enabled": false,
+          "description": {
+            "en": "Comma-separated list of viral groups to detect",
+            "pt": "Lista de grupos virais a detectar, separados por vírgula"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "virsorter2"
+      ]
+    },
+    "checkv": {
+      "name": "CheckV",
+      "description": {
+        "en": "Quality assessment of viral/prophage sequences found by VirSorter2",
+        "pt": "Avaliação de qualidade das sequências virais/de prófagos encontradas pelo VirSorter2"
+      },
+      "citation": [
+        {
+          "text": "Nayfach S, Camargo AP, Schulz F, Eloe-Fadrosh E, Roux S, Kyrpides NC. CheckV assesses the quality and completeness of metagenome-assembled viral genomes. Nature Biotechnology. 2021;39:578-585.",
+          "doi": "10.1038/s41587-020-00774-7"
+        }
+      ],
+      "category": "Viral Analysis",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "virsorter2"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "checkv"
+      ]
+    },
+    "vibrant": {
+      "name": "VIBRANT",
+      "description": {
+        "en": "Automated recovery and annotation of phages/prophages",
+        "pt": "Recuperação e anotação automatizada de fagos/prófagos"
+      },
+      "citation": [
+        {
+          "text": "Kieft K, Zhou Z, Anantharaman K. VIBRANT: automated recovery, annotation and curation of microbial viruses, and evaluation of viral community function from genomic sequences. Microbiome. 2020;8:90.",
+          "doi": "10.1186/s40168-020-00867-0"
+        }
+      ],
+      "category": "Viral Analysis",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "-l",
+          "type": "int",
+          "default": 1000,
+          "enabled": false,
+          "description": {
+            "en": "Minimum contig length (bp)",
+            "pt": "Comprimento mínimo do contig (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "-o",
+          "type": "int",
+          "default": 4,
+          "enabled": false,
+          "description": {
+            "en": "Minimum number of ORFs per scaffold",
+            "pt": "Número mínimo de ORFs por scaffold"
+          },
+          "min": 1
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "vibrant"
+      ]
+    },
+    "antismash": {
+      "name": "antiSMASH",
+      "description": {
+        "en": "Mining of biosynthetic gene clusters (BGCs) for secondary metabolites",
+        "pt": "Mineração de clusters de genes biossintéticos (BGCs) de metabólitos secundários"
+      },
+      "citation": [
+        {
+          "text": "Blin K, Shaw S, Augustijn HE, et al. antiSMASH 7.0: new and improved predictions for detection, regulation, chemical structures and visualisation. Nucleic Acids Research. 2023;51(W1):W46-W50.",
+          "doi": "10.1093/nar/gkad344"
+        }
+      ],
+      "category": "Secondary Metabolites",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--taxon",
+          "type": "choice",
+          "default": "bacteria",
+          "enabled": false,
+          "description": {
+            "en": "Taxon to use for BGC prediction",
+            "pt": "Táxon a usar na predição de BGCs"
+          },
+          "choices": [
+            "bacteria",
+            "fungi"
+          ]
+        },
+        {
+          "flag": "--cb-general",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Compare clusters to the MIBiG general database",
+            "pt": "Compara clusters com o banco geral do MIBiG"
+          }
+        },
+        {
+          "flag": "--cb-knownclusters",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Compare to known clusters in MIBiG",
+            "pt": "Compara com clusters conhecidos no MIBiG"
+          }
+        },
+        {
+          "flag": "--asf",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Enable active site finder module",
+            "pt": "Ativa o módulo de busca de sítio ativo"
+          }
+        },
+        {
+          "flag": "--pfam2go",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Map Pfam domains to GO terms",
+            "pt": "Mapeia domínios Pfam para termos do GO"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler",
+            "flye"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "antismash"
+      ]
+    },
+    "bigscape": {
+      "name": "BiG-SCAPE",
+      "description": {
+        "en": "Clustering of BGCs into gene cluster families (GCFs)",
+        "pt": "Agrupamento de BGCs em famílias de clusters gênicos (GCFs)"
+      },
+      "citation": [
+        {
+          "text": "Navarro-Muñoz JC, Selem-Mojica N, Mullowney MW, et al. A computational framework to explore large-scale biosynthetic diversity. Nature Chemical Biology. 2020;16(1):60-68.",
+          "doi": "10.1038/s41589-019-0400-9"
+        }
+      ],
+      "category": "Secondary Metabolites",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--mix",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Create a mixed network with all BGC classes combined",
+            "pt": "Cria uma rede mista combinando todas as classes de BGC"
+          }
+        },
+        {
+          "flag": "--classify",
+          "type": "choice",
+          "default": "none",
+          "enabled": true,
+          "description": {
+            "en": "Classify BGCs by product class",
+            "pt": "Classifica BGCs por classe de produto"
+          },
+          "choices": [
+            "none",
+            "auto"
+          ]
+        },
+        {
+          "flag": "--cutoffs",
+          "type": "str",
+          "default": "0.3 0.5",
+          "enabled": false,
+          "description": {
+            "en": "Distance cutoffs for GCF clustering (space-separated)",
+            "pt": "Cortes de distância para o clustering de GCFs (separados por espaço)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "antismash"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "bigscape"
+      ]
+    }
+  },
+  "databases": {
+    "kraken2": {
+      "name": "Kraken2 / Bracken",
+      "description": {
+        "en": "Taxonomic classification of reads and contigs",
+        "pt": "Classificação taxonômica de reads e contigs"
+      },
+      "citation": [
+        {
+          "text": "Wood DE, Lu J, Langmead B. Improved metagenomic analysis with Kraken 2. Genome Biology. 2019;20:257.",
+          "doi": "10.1186/s13059-019-1891-0"
+        },
+        {
+          "text": "Lu J, Breitwieser FP, Thielen P, Salzberg SL. Bracken: estimating species abundance in metagenomics data. PeerJ Computer Science. 2017;3:e104.",
+          "doi": "10.7717/peerj-cs.104"
+        }
+      ],
+      "setting_key": "db_kraken2",
+      "size_gb": 16,
+      "detect_files": [
+        "hash.k2d",
+        "opts.k2d"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "k2_std_8",
+          "label": "Standard-8 (5.5 GB)",
+          "description": {
+            "en": "Bacteria, archaea, viruses, plasmid, human — compact",
+            "pt": "Bactérias, archaea, vírus, plasmídeo, humano — compacto"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_std_16",
+          "label": "Standard-16 (11 GB)",
+          "description": {
+            "en": "Standard capped at 16 GB",
+            "pt": "Padrão limitado a 16 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_16_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_std",
+          "label": "Standard Full (75 GB)",
+          "description": {
+            "en": "Full — bacteria, archaea, viruses, plasmid, human",
+            "pt": "Completo — bactérias, archaea, vírus, plasmídeo, humano"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pf_8",
+          "label": "PlusPF-8 (5.5 GB)",
+          "description": {
+            "en": "Standard + protozoa & fungi — 8 GB capped",
+            "pt": "Padrão + protozoários e fungos — limitado a 8 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_08_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pf_16",
+          "label": "PlusPF-16 (11 GB) ★ Recommended",
+          "description": {
+            "en": "Standard + protozoa & fungi — best balance size/coverage",
+            "pt": "Padrão + protozoários e fungos — melhor equilíbrio entre tamanho e cobertura"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pf",
+          "label": "PlusPF Full (80 GB)",
+          "description": {
+            "en": "Complete PlusPF — maximum sensitivity",
+            "pt": "PlusPF completo — sensibilidade máxima"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pfp_8",
+          "label": "PlusPFP-8 (5.2 GB)",
+          "description": {
+            "en": "Standard + protozoa, fungi & plants — 8 GB capped",
+            "pt": "Padrão + protozoários, fungos e plantas — limitado a 8 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_08_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pfp_16",
+          "label": "PlusPFP-16 (10.5 GB)",
+          "description": {
+            "en": "Standard + protozoa, fungi & plants — 16 GB capped",
+            "pt": "Padrão + protozoários, fungos e plantas — limitado a 16 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_16_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pfp",
+          "label": "PlusPFP Full (164 GB)",
+          "description": {
+            "en": "Standard + protozoa, fungi & plants — full index",
+            "pt": "Padrão + protozoários, fungos e plantas — índice completo"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_eupathdb",
+          "label": "EuPathDB (~6 GB)",
+          "description": {
+            "en": "Eukaryotic pathogen genomes from VEuPathDB",
+            "pt": "Genomas de patógenos eucarióticos do VEuPathDB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_eupathdb48_20230407.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "kraken2"
+    },
+    "kaiju": {
+      "name": "Kaiju",
+      "description": {
+        "en": "Protein-level reference database for Kaiju classification",
+        "pt": "Banco de referência em nível de proteína para classificação com Kaiju"
+      },
+      "citation": [
+        {
+          "text": "Menzel P, Ng KL, Krogh A. Fast and sensitive taxonomic classification for metagenomics with Kaiju. Nature Communications. 2016;7:11257.",
+          "doi": "10.1038/ncomms11257"
+        }
+      ],
+      "citation_by_option": {
+        "kaiju_progenomes": [
+          {
+            "text": "Mende DR, Letunic I, Maistrenko OM, et al. proGenomes2: an improved database for accurate and consistent habitat, taxonomic and functional annotations of prokaryotic genomes. Nucleic Acids Research. 2020;48(D1):D621-D625.",
+            "doi": "10.1093/nar/gkz1002"
+          }
+        ]
+      },
+      "setting_key": "db_kaiju",
+      "size_gb": 37,
+      "detect_files": [
+        "*.fmi"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "kaiju_refseq",
+          "label": "RefSeq (37 GB) ★ Recommended",
+          "description": {
+            "en": "Archaea/bacteria complete-genome assemblies + viral sequences",
+            "pt": "Montagens de genomas completos de archaea/bactérias + sequências virais"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_refseq_2024-08-14.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_refseq_ref",
+          "label": "RefSeq representative (34 GB)",
+          "description": {
+            "en": "Archaea/bacteria representative assemblies + viral sequences — smaller, less redundant",
+            "pt": "Montagens representativas de archaea/bactérias + sequências virais — menor, menos redundante"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_refseq_ref_2024-08-14.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_progenomes",
+          "label": "proGenomes (66 GB)",
+          "description": {
+            "en": "Representative proteins from proGenomes v3 + viral sequences",
+            "pt": "Proteínas representativas do proGenomes v3 + sequências virais"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_progenomes_2023-05-25.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_nr",
+          "label": "nr — Archaea/bacteria/viruses (81 GB)",
+          "description": {
+            "en": "Subset of NCBI BLAST nr — maximum sensitivity",
+            "pt": "Subconjunto do NCBI BLAST nr — sensibilidade máxima"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_nr_2024-08-25.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_fungi",
+          "label": "Fungi (4.1 GB)",
+          "description": {
+            "en": "Fungi + virus sequences from NCBI RefSeq",
+            "pt": "Sequências de fungos e vírus do NCBI RefSeq"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_fungi_2024-08-16.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_viruses",
+          "label": "Viruses only (0.27 GB)",
+          "description": {
+            "en": "Viral protein sequences from NCBI RefSeq — tiny, for viral-focused screening",
+            "pt": "Sequências de proteínas virais do NCBI RefSeq — pequeno, para triagem focada em vírus"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_viruses_2024-08-15.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_plasmids",
+          "label": "Plasmids only (1.4 GB)",
+          "description": {
+            "en": "Plasmid protein sequences from NCBI RefSeq",
+            "pt": "Sequências de proteínas de plasmídeos do NCBI RefSeq"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_plasmids_2024-08-15.tgz",
+          "extract": true
+        }
+      ],
+      "config_key": "kaiju"
+    },
+    "checkm2": {
+      "name": "CheckM2",
+      "description": {
+        "en": "Genome completeness and contamination assessment",
+        "pt": "Avaliação de completude e contaminação de genomas"
+      },
+      "citation": [
+        {
+          "text": "Chklovski A, Parks DH, Woodcroft BJ, Tyson GW. CheckM2: a rapid, scalable and accurate tool for assessing microbial genome quality using machine learning. Nature Methods. 2023;20:1203-1212.",
+          "doi": "10.1038/s41592-023-01940-w"
+        }
+      ],
+      "setting_key": "db_checkm2",
+      "size_gb": 3,
+      "detect_files": [
+        "uniref100.KO.1.dmnd",
+        "uniref100.KO.v3.dmnd"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "checkm2_v3",
+          "label": "CheckM2 DB v3 (1.7 GB) ★",
+          "description": {
+            "en": "UniRef100 KO DIAMOND database -- DIAMOND v2.1.11 compatible",
+            "pt": "Banco DIAMOND UniRef100 KO -- compatível com DIAMOND v2.1.11"
+          },
+          "url": "https://zenodo.org/records/14897628/files/checkm2_database.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "checkm2"
+    },
+    "gtdbtk": {
+      "name": "GTDB-Tk",
+      "description": {
+        "en": "Phylogenetic classification using GTDB",
+        "pt": "Classificação filogenética usando o GTDB"
+      },
+      "citation": [
+        {
+          "text": "Parks DH, Chuvochina M, Waite DW, et al. A standardized bacterial taxonomy based on genome phylogeny substantially revises the tree of life. Nature Biotechnology. 2018;36:996-1004.",
+          "doi": "10.1038/nbt.4229"
+        },
+        {
+          "text": "Parks DH, Chuvochina M, Chaumeil PA, Rinke C, Mussig AJ, Hugenholtz P. A complete domain-to-species taxonomy for Bacteria and Archaea. Nature Biotechnology. 2020;38:1079-1086.",
+          "doi": "10.1038/s41587-020-0501-8"
+        }
+      ],
+      "setting_key": "db_gtdbtk",
+      "size_gb": 100,
+      "detect_files": [],
+      "detect_dirs": [
+        "metadata",
+        "msa_files",
+        "pplacer",
+        "markers"
+      ],
+      "download_options": [
+        {
+          "id": "gtdbtk_r232",
+          "label": "GTDB r232 (~100 GB) ★ Latest",
+          "description": {
+            "en": "Latest GTDB release -- R232 (2026)",
+            "pt": "Versão mais recente do GTDB -- R232 (2026)"
+          },
+          "url": "https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "gtdbtk_r220",
+          "label": "GTDB r220 (~85 GB)",
+          "description": {
+            "en": "Previous stable release -- R220",
+            "pt": "Versão estável anterior -- R220"
+          },
+          "url": "https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "gtdbtk"
+    },
+    "amrfinder": {
+      "name": "AMRFinderPlus",
+      "description": {
+        "en": "NCBI antimicrobial resistance gene database",
+        "pt": "Banco de genes de resistência antimicrobiana do NCBI"
+      },
+      "citation": [
+        {
+          "text": "Feldgarden M, Brover V, Gonzalez-Escalona N, et al. AMRFinderPlus and the Reference Gene Catalog facilitate examination of the genomic links among antimicrobial resistance, stress response, and virulence. Scientific Reports. 2021;11:12728.",
+          "doi": "10.1038/s41598-021-91456-0"
+        }
+      ],
+      "setting_key": "db_amrfinder",
+      "size_gb": 0.2,
+      "detect_files": [
+        "AMR.LIB",
+        "AMRProt.fa",
+        "ReferenceGeneCatalog.txt"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "amrfinder_4_2",
+          "label": "AMRFinderPlus DB 4.2 (2026-05-15) ★",
+          "description": {
+            "en": "Latest NCBI AMR database -- downloads all essential files",
+            "pt": "Banco AMR mais recente do NCBI -- baixa todos os arquivos essenciais"
+          },
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/AMRProt.fa",
+          "extract": false,
+          "extra_files": [
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/AMR_CDS.fa",
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/AMR.LIB",
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/ReferenceGeneCatalog.txt",
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/ReferenceGeneHierarchy.txt",
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/amr_targets.fa",
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/fam.tsv",
+            "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-05-15.1/AMRProt-mutation.tsv"
+          ]
+        }
+      ],
+      "config_key": "amrfinderplus"
+    },
+    "bakta": {
+      "name": "Bakta",
+      "description": {
+        "en": "Bakta reference database for gene/functional annotation",
+        "pt": "Banco de referência do Bakta para anotação gênica/funcional"
+      },
+      "citation": [
+        {
+          "text": "Schwengers O, Jelonek L, Dieckmann MA, Beyvers S, Blom J, Goesmann A. Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification. Microbial Genomics. 2021;7(11):000685.",
+          "doi": "10.1099/mgen.0.000685"
+        }
+      ],
+      "setting_key": "db_bakta",
+      "size_gb": 32,
+      "detect_files": [
+        "bakta.db"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "bakta_full",
+          "label": "Bakta DB full (31.9 GB) ★",
+          "description": {
+            "en": "Full database -- best annotation coverage, recommended when disk space allows",
+            "pt": "Banco completo -- melhor cobertura de anotação, recomendado quando há espaço em disco suficiente"
+          },
+          "url": "https://zenodo.org/records/14916843/files/db.tar.xz?download=1",
+          "extract": true
+        },
+        {
+          "id": "bakta_light",
+          "label": "Bakta DB light (1.3 GB)",
+          "description": {
+            "en": "Lightweight database -- skips some reference sets (e.g. PLSDB plasmids); faster to download, slightly less complete annotation",
+            "pt": "Banco leve -- pula alguns conjuntos de referência (ex.: plasmídeos PLSDB); baixa mais rápido, anotação um pouco menos completa"
+          },
+          "url": "https://zenodo.org/records/14916843/files/db-light.tar.xz?download=1",
+          "extract": true
+        }
+      ],
+      "config_key": "bakta"
+    },
+    "eggnog": {
+      "name": "EggNOG-mapper",
+      "description": {
+        "en": "Functional annotation using eggNOG orthology database",
+        "pt": "Anotação funcional usando o banco de ortologia eggNOG"
+      },
+      "citation": [
+        {
+          "text": "Cantalapiedra CP, Hernandez-Plaza A, Letunic I, Bork P, Huerta-Cepas J. eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular Biology and Evolution. 2021;38(12):5825-5829.",
+          "doi": "10.1093/molbev/msab293"
+        },
+        {
+          "text": "Huerta-Cepas J, Szklarczyk D, Heller D, et al. eggNOG 5.0: a hierarchical, functionally and phylogenetically annotated orthology resource based on 5090 organisms and 2502 viruses. Nucleic Acids Research. 2019;47(D1):D309-D314.",
+          "doi": "10.1093/nar/gky1085"
+        }
+      ],
+      "setting_key": "db_eggnog",
+      "size_gb": 50,
+      "detect_files": [
+        "eggnog.db",
+        "eggnog_proteins.dmnd"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "eggnog_all",
+          "label": "eggnog.db + proteins.dmnd (~14 GB compressed) ★",
+          "description": {
+            "en": "Main annotation DB (SQLite) + DIAMOND protein index",
+            "pt": "Banco de anotação principal (SQLite) + índice de proteínas DIAMOND"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz",
+          "extract": false,
+          "gunzip": true,
+          "extra_files": [
+            "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz",
+            "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz"
+          ]
+        },
+        {
+          "id": "eggnog_db",
+          "label": "eggnog.db only (~3.4 GB compressed)",
+          "description": {
+            "en": "SQLite annotation database only (no DIAMOND search)",
+            "pt": "Apenas o banco de anotação SQLite (sem busca DIAMOND)"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz",
+          "extract": false,
+          "gunzip": true
+        },
+        {
+          "id": "eggnog_diamond",
+          "label": "eggnog_proteins.dmnd only (~11 GB compressed)",
+          "description": {
+            "en": "DIAMOND protein index only",
+            "pt": "Apenas o índice de proteínas DIAMOND"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        }
+      ],
+      "config_key": "eggnog"
+    },
+    "genomad": {
+      "name": "GeNomad",
+      "description": {
+        "en": "Virus and plasmid identification",
+        "pt": "Identificação de vírus e plasmídeos"
+      },
+      "citation": [
+        {
+          "text": "Camargo AP, Roux S, Schulz F, et al. Identification of mobile genetic elements with geNomad. Nature Biotechnology. 2024;42:1303-1312.",
+          "doi": "10.1038/s41587-023-01953-y"
+        }
+      ],
+      "setting_key": "db_genomad",
+      "size_gb": 5,
+      "detect_files": [
+        "virus_hallmark_annotation.txt",
+        "plasmid_hallmark_annotation.txt"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "genomad_v1_9_full",
+          "label": "GeNomad DB v1.9 full (~4.3 GB) ★",
+          "description": {
+            "en": "MMseqs2 profiles + HMM models (recommended)",
+            "pt": "Perfis MMseqs2 + modelos HMM (recomendado)"
+          },
+          "url": "https://zenodo.org/records/14886553/files/genomad_db_v1.9.tar.gz",
+          "extract": true,
+          "extra_files": [
+            "https://zenodo.org/records/14886553/files/genomad_hmm_v1.9.tar.gz"
+          ]
+        },
+        {
+          "id": "genomad_v1_9_light",
+          "label": "GeNomad DB v1.9 light (~840 MB)",
+          "description": {
+            "en": "MMseqs2 profiles only -- faster, no HMM step",
+            "pt": "Apenas perfis MMseqs2 -- mais rápido, sem etapa de HMM"
+          },
+          "url": "https://zenodo.org/records/14886553/files/genomad_db_v1.9.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "genomad"
+    },
+    "virsorter2": {
+      "name": "VirSorter2",
+      "description": {
+        "en": "Multi-classifier viral sequence identification",
+        "pt": "Identificação de sequências virais por múltiplos classificadores"
+      },
+      "citation": [
+        {
+          "text": "Guo J, Bolduc B, Zayed AA, et al. VirSorter2: a multi-classifier, expert-guided approach to detect diverse DNA and RNA viruses. Microbiome. 2021;9:37.",
+          "doi": "10.1186/s40168-020-00990-y"
+        }
+      ],
+      "setting_key": "db_virsorter2",
+      "size_gb": 2,
+      "detect_files": [
+        "rbs-calib.tsv"
+      ],
+      "detect_dirs": [
+        "group"
+      ],
+      "download_options": [
+        {
+          "id": "vs2_db",
+          "label": "VirSorter2 DB (1.5 GB) ★",
+          "description": {
+            "en": "Official VirSorter2 database (OSF)",
+            "pt": "Banco oficial do VirSorter2 (OSF)"
+          },
+          "url": "https://osf.io/download/v46sc/",
+          "filename": "db.tgz",
+          "extract": true
+        }
+      ],
+      "config_key": "virsorter2"
+    },
+    "checkv": {
+      "name": "CheckV",
+      "description": {
+        "en": "Quality assessment of viral genomes",
+        "pt": "Avaliação de qualidade de genomas virais"
+      },
+      "citation": [
+        {
+          "text": "Nayfach S, Camargo AP, Schulz F, Eloe-Fadrosh E, Roux S, Kyrpides NC. CheckV assesses the quality and completeness of metagenome-assembled viral genomes. Nature Biotechnology. 2021;39:578-585.",
+          "doi": "10.1038/s41587-020-00774-7"
+        }
+      ],
+      "setting_key": "db_checkv",
+      "size_gb": 2,
+      "detect_files": [],
+      "detect_dirs": [
+        "genome_db",
+        "hmm_db"
+      ],
+      "download_options": [
+        {
+          "id": "checkv_v1_5",
+          "label": "CheckV-DB v1.5 (1.6 GB) ★",
+          "description": {
+            "en": "CheckV reference database -- genome_db + hmm_db",
+            "pt": "Banco de referência do CheckV -- genome_db + hmm_db"
+          },
+          "url": "https://portal.nersc.gov/CheckV/checkv-db-v1.5.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "checkv"
+    },
+    "vibrant": {
+      "name": "VIBRANT",
+      "description": {
+        "en": "Phage identification and metabolic annotation database",
+        "pt": "Banco para identificação de fagos e anotação metabólica"
+      },
+      "citation": [
+        {
+          "text": "Kieft K, Zhou Z, Anantharaman K. VIBRANT: automated recovery, annotation and curation of microbial viruses, and evaluation of viral community function from genomic sequences. Microbiome. 2020;8:90.",
+          "doi": "10.1186/s40168-020-00867-0"
+        }
+      ],
+      "setting_key": "db_vibrant",
+      "size_gb": 11,
+      "detect_files": [
+        "*.HMM.h3i"
+      ],
+      "detect_dirs": [
+        "profile_names"
+      ],
+      "download_options": [
+        {
+          "id": "vibrant_full",
+          "label": "VIBRANT databases full setup (~11 GB) ★",
+          "description": {
+            "en": "Downloads VOG, Pfam, KEGG HMMs and runs full setup via VIBRANT_setup.py. Requires wget, hmmfetch, hmmpress.",
+            "pt": "Baixa os HMMs de VOG, Pfam e KEGG e executa a configuração completa via VIBRANT_setup.py. Requer wget, hmmfetch e hmmpress."
+          },
+          "vibrant_setup": true
+        }
+      ],
+      "config_key": "vibrant_files"
+    },
+    "antismash": {
+      "name": "antiSMASH",
+      "description": {
+        "en": "Biosynthetic gene cluster (BGC) databases",
+        "pt": "Bancos de clusters de genes biossintéticos (BGC)"
+      },
+      "citation": [
+        {
+          "text": "Blin K, Shaw S, Augustijn HE, et al. antiSMASH 7.0: new and improved predictions for detection, regulation, chemical structures and visualisation. Nucleic Acids Research. 2023;51(W1):W46-W50.",
+          "doi": "10.1093/nar/gkad344"
+        }
+      ],
+      "setting_key": "db_antismash",
+      "size_gb": 9,
+      "detect_files": [],
+      "detect_dirs": [
+        "clusterblast",
+        "pfam",
+        "resfam"
+      ],
+      "download_options": [
+        {
+          "id": "antismash_v7",
+          "label": "antiSMASH v7.1.0 databases (4.2 GB) ★",
+          "description": {
+            "en": "All antiSMASH databases -- clusterblast, pfam, resfam, etc. (community mirror)",
+            "pt": "Todos os bancos do antiSMASH -- clusterblast, pfam, resfam, etc. (espelho da comunidade)"
+          },
+          "url": "https://zenodo.org/records/15132672/files/antiSMASH.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "antismash"
+    },
+    "pfam": {
+      "name": "Pfam",
+      "description": {
+        "en": "Protein family HMM profiles (used by BiG-SCAPE, antiSMASH, EggNOG)",
+        "pt": "Perfis HMM de famílias de proteínas (usado por BiG-SCAPE, antiSMASH, EggNOG)"
+      },
+      "citation": [
+        {
+          "text": "Paysan-Lafosse T, Andreeva A, Blum M, et al. The Pfam protein families database: embracing AI/ML. Nucleic Acids Research. 2025;53(D1):D523-D534.",
+          "doi": "10.1093/nar/gkae997"
+        }
+      ],
+      "setting_key": "db_pfam",
+      "size_gb": 2,
+      "detect_files": [
+        "Pfam-A.hmm",
+        "Pfam-A.hmm.h3i"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "pfam_current",
+          "label": "Pfam current release (~400 MB compressed) ★",
+          "description": {
+            "en": "Pfam-A HMM profiles -- hmmpress is run automatically after download",
+            "pt": "Perfis HMM do Pfam-A -- o hmmpress roda automaticamente após o download"
+          },
+          "url": "https://ftp.ebi.ac.uk/pub/databases/Pfam/current_release/Pfam-A.hmm.gz",
+          "extract": false,
+          "gunzip": true,
+          "post_cmd": "hmmpress {dest_dir}/Pfam-A.hmm"
+        }
+      ],
+      "config_key": "pfam"
+    }
+  },
+  "defaults": {
+    "fastp": "--qualified_quality_phred 30 --length_required 50 --trim_front1 1 --trim_front2 1",
+    "filtlong": "--min_length 500 --keep_percent 90",
+    "kraken2": "--confidence 0.05",
+    "kaiju": "",
+    "unicycler": "",
+    "flye": "",
+    "racon": "",
+    "medaka": "",
+    "ragtag": "-u",
+    "bowtie2": "",
+    "minimap2": "",
+    "samtools_index": "",
+    "quast": "",
+    "checkm2": "",
+    "gunc": "",
+    "gtdbtk": "",
+    "coverm": "--min-covered-fraction 0",
+    "bakta": "",
+    "eggnog": "",
+    "amrfinderplus": "",
+    "abricate": "",
+    "vfdb": "",
+    "isescan": "",
+    "mobsuite": "",
+    "mlst": "",
+    "genomad": "",
+    "virsorter2": "",
+    "checkv": "",
+    "vibrant": "",
+    "antismash": "",
+    "bigscape": "--mix --classify none"
+  },
+  "special_overrides": {},
+  "default_threads": {
+    "fastp": 4,
+    "kraken2": 8,
+    "kaiju": 8,
+    "unicycler": 32,
+    "flye": 64,
+    "racon": 16,
+    "medaka": 16,
+    "ragtag": 8,
+    "bowtie2": 16,
+    "minimap2": 16,
+    "samtools_index": 4,
+    "quast": 4,
+    "checkm2": 8,
+    "gunc": 8,
+    "gtdbtk": 24,
+    "coverm": 8,
+    "bakta": 16,
+    "eggnog": 16,
+    "amrfinderplus": 8,
+    "abricate": 8,
+    "vfdb": 8,
+    "isescan": 8,
+    "mobsuite": 8,
+    "mlst": 4,
+    "genomad": 16,
+    "virsorter2": 16,
+    "checkv": 16,
+    "vibrant": 16,
+    "antismash": 16,
+    "bigscape": 16
+  }
+}

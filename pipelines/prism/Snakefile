@@ -1,0 +1,53 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+SAMPLES = samples.index.tolist
+
+# PRISM is long-read-only by deliberate scope decision -- every sample is read_type "long", unlike MAGMA/SIGMA/
+# DOGMA which branch short/long/hybrid per sample. Kept as a real check
+# rather than assumed, since a stray short-read sample would otherwise fail
+# silently deep in the DAG instead of at the point samples are loaded.
+_bad = [s for s in SAMPLES if samples.loc[s, "read_type"] != "long"]
+if _bad:
+    raise ValueError(f"PRISM only accepts long reads; non-long samples found: {_bad}")
+
+# Long-read platform (Nanopore vs PacBio HiFi) is one run-wide choice (same
+# mechanism DOGMA's long_read_platform already uses for Flye/SPAdes flags --
+# see config_engine.py) -- it picks which denoising engine's rule actually
+# runs (dada2_pacbio vs emu_ont); the other one's rule no-ops (touches empty
+# outputs), the same if/else-touch idiom fastp/filtlong already use for their
+# own short/long branching.
+PLATFORM = config.get("long_read_platform", {}).get("id", "ont")
+
+wildcard_constraints:
+    sample="[^/]+"
+
+rule all:
+    input:
+        expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=SAMPLES),
+        expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=SAMPLES),
+        expand("results/02_PRIMER_TRIM/{sample}/{sample}_trimmed.fastq.gz", sample=SAMPLES),
+        expand("results/03_CHIMERA/{sample}/{sample}_nonchimeric.fastq.gz", sample=SAMPLES),
+        "results/05_ABUNDANCE_TABLE/prism_abundance_table.tsv",
+        # ONT/Emu path's closed-reference phylogenetic tree (see
+        # 04_denoise_classify.smk's emu_tree rule) -- listed unconditionally
+        # like every other optional-per-platform target; the rule itself
+        # no-ops on the PacBio branch (its own tree is built inline by
+        # dada2_pacbio.R instead, see that rule's own comment).
+        "results/04_DENOISE/emu/tree_done.flag",
+        # Functional inference (PICRUSt2) -- optional (disabling it
+        # --omit-from's it away like every other optional PRISM tool), only
+        # ever real for the PacBio+16S path (see 05_functional_inference.smk
+        # for why), listed unconditionally here the same way every other
+        # optional tool's target is.
+        "results/06_FUNCTIONAL/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz",
+        "results/06_FUNCTIONAL/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz",
+        "results/06_FUNCTIONAL/pathways_out/path_abun_unstrat.tsv.gz",
+
+include: "workflow/rules/01_qc.smk"
+include: "workflow/rules/02_primer_trim.smk"
+include: "workflow/rules/03_chimera.smk"
+include: "workflow/rules/04_denoise_classify.smk"
+include: "workflow/rules/05_functional_inference.smk"

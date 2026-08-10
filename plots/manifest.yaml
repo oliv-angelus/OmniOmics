@@ -1,0 +1,1321 @@
+# Plots tab analysis manifest. One entry per analysis, mirroring pipeline.yaml's
+# tools/flags schema (type/default/min/max/choices/description{en,pt}) so the
+# existing form-building logic can be reused rather than reinvented.
+#
+# applies_to: which pipelines' outputs this analysis can run against (filters
+#   the analysis list once a run is picked in the app). This whole
+#   community-ecology set (phyloseq-based: alpha/beta diversity, composition,
+#   core microbiome, DESeq2, RDA, network, IndVal, Venn) is MAGMA-only for
+#   now, by explicit user decision -- DOGMA/other omics need their own
+#   analysis sets designed separately later, not just added to this list,
+#   since each omics track has genuinely different questions/shapes.
+# input_shape: "phyloseq" (abundance.tsv with a ';'-separated `tax` lineage
+#   column, e.g. MAGMA's abundance_table_final_RAW.tsv) or "count_matrix"
+#   (gene/feature x sample counts, e.g. DEFINE's contagem_anotada.tsv). Only
+#   phyloseq-shaped analyses are wired for Phase 1; DESeq2's count_matrix path
+#   (DEFINE) is future work -- see notes/Known Issues and Next Steps.md.
+# script: path relative to plots/scripts/, source of the real R computation.
+#   All 9 analyses below are real (built incrementally, one at a time --
+#   see notes/Known Issues and Next Steps.md for the order and how each was
+#   verified against real data). _stub_common.R still exists as the shared
+#   body for any *future* analysis added here before its real statistics
+#   are written.
+# implemented: false marks an analysis as still a stub (no real statistics,
+#   no preview.png) -- the app shows these visibly de-emphasized/"Em breve",
+#   same visual treatment the Hub already uses for not-yet-built pipelines,
+#   so picking one doesn't read as a broken result. Defaults to true when
+#   omitted -- every analysis here currently omits it.
+#
+# Parameter types beyond the pipeline.yaml-shared int/float/bool/str/choice:
+#   "column": the user picks one of the loaded metadata table's real column
+#     names -- populated by POST /api/plots/load (see plots_screen.dart), not
+#     typed freehand. No `default`: a dropdown starts unselected and is
+#     always required.
+#   "level": the user picks one of the *values* found in whichever column is
+#     currently selected for another "column"-type parameter, named by
+#     `depends_on` (that parameter's own flag). E.g. reference_group below
+#     depends_on group_var -- its choices are group_var's column's own
+#     detected levels, recomputed client-side whenever group_var changes.
+#   "tax_rank": the user picks one of the *real taxonomic ranks the loaded
+#     data actually has* (PlotLoadedData.taxRanks, from load_phyloseq.R's
+#     build_phyloseq() call -- Domain/Phylum/.../Species for GTDB-derived
+#     data, or with Kingdom too for Kraken2/NCBI-derived data, detected
+#     dynamically, not a fixed list -- see build_phyloseq.R's own comment on
+#     why 7 vs. 8 ranks isn't a fixed "GTDB vs. Kraken" rule). A hardcoded
+#     `choices: [...]` list here previously left Domain/Kingdom/Species
+#     unselectable even when the user's own data genuinely had them -- a
+#     real reported gap, not a deliberate scope cut. Two optional flags add
+#     synthetic, non-taxonomic choices some analyses offer alongside the
+#     real ranks: `include_all: true` prepends "all" (one figure per rank at
+#     once -- taxonomic_composition's own default), `include_asv: true`
+#     appends "ASV" (skip aggregation, plot at the raw ASV/OTU level).
+#
+# List order below is deliberate, not alphabetical/insertion-order -- it's
+# the order the analyses cards render in (plots_engine.get_analysis_list
+# preserves this list's order verbatim, see plot_workspace_screen.dart's
+# _buildAnalysesList), and a real reported complaint was that the previous
+# order (goods_coverage, upset_plot, rarefaction_curve, alpha_diversity, ...)
+# read as arbitrary/insertion-order (new analyses had each been appended or
+# slotted in wherever was most convenient to edit at the time). Grouped now
+# into the natural order a real analysis session actually goes through: QC
+# (sequencing depth adequacy) -> diversity -> composition -> statistical
+# comparisons -> set-overlap. Keep new entries grouped with their nearest
+# conceptual neighbor, not just appended at the end.
+
+analyses:
+  # --- QC: sequencing depth adequacy, before trusting anything downstream ---
+  - id: goods_coverage
+    name:
+      en: "Good's Coverage"
+      pt: "Good's Coverage"
+    description:
+      en: "Per-sample Good's Coverage (sequencing depth adequacy) as a sorted bar chart, with a reference cutoff line."
+      pt: "Good's Coverage por amostra (adequação da profundidade de sequenciamento) em gráfico de barras ordenado, com linha de referência do limiar."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/goods_coverage.R
+    parameters:
+      - flag: "--cutoff"
+        type: float
+        default: 0.98
+        enabled: true
+        description:
+          en: "Reference coverage cutoff drawn as a dashed line (0.98 = 98%)"
+          pt: "Limiar de cobertura de referência desenhado como linha tracejada (0,98 = 98%)"
+        min: 0.0
+        max: 1.0
+
+  - id: rarefaction_curve
+    name:
+      en: "Rarefaction Curve"
+      pt: "Curva de Rarefação"
+    description:
+      en: "Observed richness vs. sequencing depth per sample, with a reference line at the shallowest sample's depth."
+      pt: "Riqueza observada em função da profundidade de sequenciamento por amostra, com linha de referência na profundidade da amostra mais rasa."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/rarefaction_curve.R
+    parameters:
+      - flag: "--step"
+        type: int
+        default: 100
+        enabled: true
+        description:
+          en: "Subsampling step size for the rarefaction curve"
+          pt: "Tamanho do passo de subamostragem para a curva de rarefação"
+        min: 1
+
+  # --- Diversity ---
+  - id: alpha_diversity
+    name:
+      en: "Alpha Diversity"
+      pt: "Alfa Diversidade"
+    description:
+      en: "Observed richness, Chao1, ACE, Shannon, Simpson, and Pielou's evenness per sample, grouped and Kruskal-Wallis-tested by a chosen metadata variable."
+      pt: "Riqueza observada, Chao1, ACE, Shannon, Simpson e equitabilidade de Pielou por amostra, agrupados e testados por Kruskal-Wallis segundo uma variável de metadados escolhida."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/alpha_diversity.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to group samples by (also used for the Kruskal-Wallis test)"
+          pt: "Coluna de metadados para agrupar as amostras (também usada no teste de Kruskal-Wallis)"
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed for rarefaction (reproducibility)"
+          pt: "Semente aleatória para a rarefação (reprodutibilidade)"
+        min: 0
+
+  - id: beta_diversity
+    name:
+      en: "Beta Diversity (PCoA)"
+      pt: "Beta Diversidade (PCoA)"
+    description:
+      en: "Ordination (PCoA by default) of a chosen distance metric between samples, with a PERMANOVA test against a metadata grouping variable."
+      pt: "Ordenação (PCoA por padrão) de uma métrica de distância escolhida entre amostras, com teste PERMANOVA contra uma variável de agrupamento dos metadados."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/beta_diversity.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to color/group samples by and test with PERMANOVA"
+          pt: "Coluna de metadados para colorir/agrupar amostras e testar com PERMANOVA"
+      - flag: "--ordination_method"
+        type: choice
+        default: "PCoA"
+        enabled: true
+        description:
+          en: "Ordination method"
+          pt: "Método de ordenação"
+        choices: ["PCoA", "NMDS", "CAP"]
+      - flag: "--distance_method"
+        type: choice
+        default: "bray"
+        enabled: true
+        description:
+          en: "Distance/dissimilarity metric. unifrac/wunifrac need a real phylogenetic tree (PRISM runs only, when >=3 taxa were detected -- see prism_tree.nwk in the run's output; MAGMA/DOGMA classify taxa by lineage name, not placed ASV sequences, so they never have one) -- picking them without a tree gives a clear error instead of a result."
+          pt: "Métrica de distância/dissimilaridade. unifrac/wunifrac exigem uma árvore filogenética real (apenas em execuções do PRISM, quando >=3 táxons foram detectados -- veja prism_tree.nwk na saída da execução; MAGMA/DOGMA classificam táxons por nome de linhagem, não por sequências de ASV posicionadas, então nunca têm uma) -- escolhê-las sem uma árvore retorna um erro claro em vez de um resultado."
+        choices: ["bray", "jaccard", "unifrac", "wunifrac"]
+      - flag: "--permutations"
+        type: int
+        default: 999
+        enabled: true
+        description:
+          en: "Number of PERMANOVA permutations"
+          pt: "Número de permutações do PERMANOVA"
+        min: 99
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed (reproducibility)"
+          pt: "Semente aleatória (reprodutibilidade)"
+        min: 0
+
+  # --- Composition ---
+  - id: taxonomic_composition
+    name:
+      en: "Taxonomic Composition"
+      pt: "Composição Taxonômica"
+    description:
+      en: "Stacked relative-abundance bar chart per sample, one figure per taxonomic rank, collapsing everything outside the top N taxa into 'Others'."
+      pt: "Gráfico de barras empilhadas de abundância relativa por amostra, uma figura por nível taxonômico, agrupando tudo fora dos N táxons mais abundantes em 'Others'."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/taxonomic_composition.R
+    parameters:
+      - flag: "--rank"
+        type: tax_rank
+        default: "all"
+        include_all: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to plot ('all' generates one figure per rank); options reflect the ranks available in your data"
+          pt: "Nível taxonômico a plotar ('all' gera uma figura por nível); as opções refletem os níveis disponíveis nos seus dados"
+      - flag: "--top_n"
+        type: int
+        default: 20
+        enabled: true
+        description:
+          en: "Number of top taxa to show individually before collapsing the rest into 'Others'"
+          pt: "Número de táxons mais abundantes a mostrar individualmente antes de agrupar o resto em 'Others'"
+        min: 1
+        max: 50
+
+  - id: core_microbiome
+    name:
+      en: "Core Microbiome Heatmap"
+      pt: "Heatmap do Core Microbiome"
+    description:
+      en: "Heatmap of taxa present above a minimum relative abundance in a minimum fraction of samples, faceted by a metadata grouping variable."
+      pt: "Heatmap dos táxons presentes acima de uma abundância relativa mínima em uma fração mínima das amostras, dividido em painéis por uma variável de agrupamento dos metadados."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/core_microbiome.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to facet the heatmap by"
+          pt: "Coluna de metadados para dividir o heatmap em painéis"
+      - flag: "--rank"
+        type: tax_rank
+        default: "Family"
+        include_asv: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to aggregate at ('ASV' skips aggregation); options reflect the ranks available in your data"
+          pt: "Nível taxonômico para agregação ('ASV' pula a agregação); as opções refletem os níveis disponíveis nos seus dados"
+      - flag: "--prevalence"
+        type: float
+        default: 0.90
+        enabled: true
+        description:
+          en: "Minimum fraction of samples a taxon must appear in to count as 'core'"
+          pt: "Fração mínima de amostras em que um táxon deve aparecer para contar como 'core'"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_abundance"
+        type: float
+        default: 0.001
+        enabled: true
+        description:
+          en: "Minimum relative abundance for a taxon to count as present in a sample"
+          pt: "Abundância relativa mínima para um táxon contar como presente em uma amostra"
+        min: 0.0
+        max: 1.0
+
+  # --- Statistical comparisons ---
+  - id: differential_abundance_deseq2
+    name:
+      en: "Differential Abundance (DESeq2)"
+      pt: "Abundância Diferencial (DESeq2)"
+    description:
+      en: "DESeq2 Wald test between the levels of a metadata grouping variable, filtered to significant biomarkers by adjusted p-value and minimum log2 fold change."
+      pt: "Teste de Wald do DESeq2 entre os níveis de uma variável de agrupamento dos metadados, filtrado a biomarcadores significativos por p-valor ajustado e log2 fold change mínimo."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/differential_abundance_deseq2.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
+          pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--alpha"
+        type: float
+        default: 0.01
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff for significance"
+          pt: "Limiar de p-valor ajustado (padj) para significância"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_lfc"
+        type: float
+        default: 7
+        enabled: true
+        description:
+          en: "Minimum absolute log2 fold change for a biomarker to be reported"
+          pt: "Log2 fold change absoluto mínimo para um biomarcador ser reportado"
+        min: 0
+
+  - id: rda_environmental_drivers
+    name:
+      en: "RDA — Environmental Drivers"
+      pt: "RDA — Fatores Ambientais"
+    description:
+      en: "Redundancy analysis of Hellinger-transformed abundances against every numeric metadata column, with automatic forward selection of the statistically significant drivers."
+      pt: "Análise de redundância das abundâncias transformadas por Hellinger contra toda coluna numérica dos metadados, com seleção automática (forward) dos fatores estatisticamente significativos."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/rda_environmental_drivers.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column used only to color sample points (not part of the RDA model itself)"
+          pt: "Coluna de metadados usada apenas para colorir os pontos das amostras (não faz parte do modelo RDA em si)"
+      - flag: "--permutations"
+        type: int
+        default: 999
+        enabled: true
+        description:
+          en: "Number of permutations for forward selection and the model significance test"
+          pt: "Número de permutações para a seleção forward e o teste de significância do modelo"
+        min: 99
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed (reproducibility)"
+          pt: "Semente aleatória (reprodutibilidade)"
+        min: 0
+
+  - id: cooccurrence_network
+    name:
+      en: "Co-occurrence Network"
+      pt: "Rede de Co-ocorrência"
+    description:
+      en: "Spearman correlation network of the top N taxa within each group of a metadata variable, thresholded by correlation strength and significance."
+      pt: "Rede de correlação de Spearman dos N táxons mais abundantes dentro de cada grupo de uma variável de metadados, filtrada por força de correlação e significância."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/cooccurrence_network.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the groups a separate network is built for"
+          pt: "Coluna de metadados que define os grupos para os quais uma rede separada é construída"
+      - flag: "--rank"
+        type: tax_rank
+        default: "Genus"
+        enabled: true
+        description:
+          en: "Taxonomic rank to aggregate at before building the network (options reflect the ranks available in your data)"
+          pt: "Nível taxonômico para agregação antes de construir a rede (opções refletem os níveis disponíveis nos seus dados)"
+      - flag: "--top_n"
+        type: int
+        default: 25
+        enabled: true
+        description:
+          en: "Number of top taxa (by abundance) to include in the network"
+          pt: "Número de táxons mais abundantes a incluir na rede"
+        min: 2
+        max: 100
+      - flag: "--cor_cutoff"
+        type: float
+        default: 0.6
+        enabled: true
+        description:
+          en: "Minimum absolute Spearman correlation (rho) for an edge to be kept"
+          pt: "Correlação de Spearman (rho) absoluta mínima para uma aresta ser mantida"
+        min: 0.0
+        max: 1.0
+      - flag: "--p_cutoff"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Maximum p-value for an edge to be kept"
+          pt: "P-valor máximo para uma aresta ser mantida"
+        min: 0.0
+        max: 1.0
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed for the network layout (reproducibility)"
+          pt: "Semente aleatória para o layout da rede (reprodutibilidade)"
+        min: 0
+
+  - id: indicator_species
+    name:
+      en: "Indicator Species Analysis (IndVal)"
+      pt: "Análise de Espécies Indicadoras (IndVal)"
+    description:
+      en: "Multi-level pattern analysis (indicspecies::multipatt) identifying taxa that significantly indicate a single level of a metadata grouping variable."
+      pt: "Análise de padrões multiníveis (indicspecies::multipatt) identificando táxons que indicam significativamente um único nível de uma variável de agrupamento dos metadados."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/indicator_species.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the groups tested as indicator targets"
+          pt: "Coluna de metadados que define os grupos testados como alvo de indicação"
+      - flag: "--rank"
+        type: tax_rank
+        default: "Genus"
+        enabled: true
+        description:
+          en: "Taxonomic rank to aggregate at before testing (options reflect the ranks available in your data)"
+          pt: "Nível taxonômico para agregação antes do teste (opções refletem os níveis disponíveis nos seus dados)"
+      - flag: "--p_cutoff"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Maximum p-value for a taxon to be reported as a significant indicator"
+          pt: "P-valor máximo para um táxon ser reportado como indicador significativo"
+        min: 0.0
+        max: 1.0
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed for the permutation test (reproducibility)"
+          pt: "Semente aleatória para o teste de permutação (reprodutibilidade)"
+        min: 0
+
+  # --- Set overlap (Venn caps at 4 sets; UpSet is the many-groups alternative) ---
+  - id: venn_diagram
+    name:
+      en: "Venn Diagram — Shared/Unique Taxa"
+      pt: "Diagrama de Venn — Táxons Compartilhados/Exclusivos"
+    description:
+      en: "Venn diagram of taxa present (above a minimum relative abundance) in each level of a metadata grouping variable -- works best with up to 4 groups."
+      pt: "Diagrama de Venn dos táxons presentes (acima de uma abundância relativa mínima) em cada nível de uma variável de agrupamento dos metadados -- funciona melhor com até 4 grupos."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/venn_diagram.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the (up to 4) sets compared"
+          pt: "Coluna de metadados que define os (até 4) conjuntos comparados"
+      - flag: "--rank"
+        type: tax_rank
+        default: "Genus"
+        include_asv: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to aggregate at before comparing sets (options reflect the ranks available in your data)"
+          pt: "Nível taxonômico para agregação antes de comparar os conjuntos (opções refletem os níveis disponíveis nos seus dados)"
+      - flag: "--min_abundance"
+        type: float
+        default: 0.0
+        enabled: true
+        description:
+          en: "Minimum relative abundance for a taxon to count as present in a group"
+          pt: "Abundância relativa mínima para um táxon contar como presente em um grupo"
+        min: 0.0
+        max: 1.0
+
+  - id: upset_plot
+    name:
+      en: "UpSet Plot — Shared/Unique Taxa"
+      pt: "Diagrama UpSet — Táxons Compartilhados/Exclusivos"
+    description:
+      en: "Set-intersection plot of taxa present (above a minimum relative abundance) in each level of a metadata grouping variable -- the alternative to the Venn diagram for more than 4 groups."
+      pt: "Gráfico de interseção de conjuntos dos táxons presentes (acima de uma abundância relativa mínima) em cada nível de uma variável de agrupamento dos metadados -- a alternativa ao diagrama de Venn para mais de 4 grupos."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/upset_plot.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the sets compared (any number of levels)"
+          pt: "Coluna de metadados que define os conjuntos comparados (qualquer número de níveis)"
+      - flag: "--rank"
+        type: tax_rank
+        default: "Genus"
+        include_asv: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to aggregate at before comparing sets (options reflect the ranks available in your data)"
+          pt: "Nível taxonômico para agregação antes de comparar os conjuntos (opções refletem os níveis disponíveis nos seus dados)"
+      - flag: "--min_abundance"
+        type: float
+        default: 0.0
+        enabled: true
+        description:
+          en: "Minimum relative abundance for a taxon to count as present in a group"
+          pt: "Abundância relativa mínima para um táxon contar como presente em um grupo"
+        min: 0.0
+        max: 1.0
+
+  # =========================================================================
+  # DEFINE (bacterial isolate RNA-seq): count_matrix-shaped, standard DESeq2
+  # workflow visualizations, real citations logged in notes/Scientific
+  # References.md. Own scripts throughout (plots/scripts/analyses/sample_pca.R
+  # etc. + plots/scripts/lib/build_count_matrix.R/deseq_helpers.R) -- never
+  # shared with MAGMA's phyloseq-shaped scripts above, by design (separate
+  # pipelines get separate scripts).
+  # =========================================================================
+  - id: sample_pca
+    name:
+      en: "Sample PCA"
+      pt: "PCA das Amostras"
+    description:
+      en: "Principal component analysis of variance-stabilized gene counts, colored by a metadata grouping variable -- the standard first exploratory/QC check before trusting any differential expression result."
+      pt: "Análise de componentes principais das contagens gênicas estabilizadas por variância, coloridas por uma variável de agrupamento dos metadados -- a primeira checagem exploratória/QC padrão antes de confiar em qualquer resultado de expressão diferencial."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/sample_pca.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to color samples by"
+          pt: "Coluna de metadados para colorir as amostras"
+
+  - id: sample_distance_heatmap
+    name:
+      en: "Sample Distance Heatmap"
+      pt: "Heatmap de Distância entre Amostras"
+    description:
+      en: "Pairwise Euclidean distance between samples on variance-stabilized counts, hierarchically clustered -- spots outlier samples or unexpected clustering before trusting downstream results."
+      pt: "Distância euclidiana par a par entre amostras nas contagens estabilizadas por variância, agrupadas hierarquicamente -- identifica amostras discrepantes ou agrupamentos inesperados antes de confiar em resultados posteriores."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/sample_distance_heatmap.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to group samples by"
+          pt: "Coluna de metadados para agrupar as amostras"
+
+  - id: ma_plot
+    name:
+      en: "MA Plot"
+      pt: "Gráfico MA"
+    description:
+      en: "Mean expression vs. log2 fold change for every tested gene, with shrunk fold-change estimates -- DESeq2's own standard summary of a differential expression comparison."
+      pt: "Expressão média vs. log2 fold change para cada gene testado, com estimativas de fold change contraídas (shrunk) -- o resumo padrão do DESeq2 para uma comparação de expressão diferencial."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/ma_plot.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
+          pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff for significance"
+          pt: "Limiar de p-valor ajustado (padj) para significância"
+        min: 0.0
+        max: 1.0
+
+  - id: volcano_plot
+    name:
+      en: "Volcano Plot"
+      pt: "Gráfico Vulcão"
+    description:
+      en: "Log2 fold change vs. -log10 adjusted p-value for every tested gene -- the canonical differential expression result figure, with top hits labeled by gene name."
+      pt: "Log2 fold change vs. -log10 do p-valor ajustado para cada gene testado -- a figura canônica de resultado de expressão diferencial, com os principais genes rotulados pelo nome."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/volcano_plot.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
+          pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff for significance"
+          pt: "Limiar de p-valor ajustado (padj) para significância"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_lfc"
+        type: float
+        default: 1
+        enabled: true
+        description:
+          en: "Minimum absolute log2 fold change for a gene to count as significant"
+          pt: "Log2 fold change absoluto mínimo para um gene contar como significativo"
+        min: 0
+      - flag: "--label_top_n"
+        type: int
+        default: 15
+        enabled: true
+        description:
+          en: "Number of top significant genes to label by name"
+          pt: "Número de genes significativos a rotular pelo nome"
+        min: 0
+        max: 50
+
+  - id: de_heatmap
+    name:
+      en: "DE Genes Heatmap"
+      pt: "Heatmap de Genes Diferencialmente Expressos"
+    description:
+      en: "Heatmap of the top significant genes (variance-stabilized, row z-scored), hierarchically clustered on both axes."
+      pt: "Heatmap dos principais genes significativos (estabilizados por variância, com z-score por linha), agrupados hierarquicamente nos dois eixos."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/de_heatmap.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
+          pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff for a gene to be considered"
+          pt: "Limiar de p-valor ajustado (padj) para um gene ser considerado"
+        min: 0.0
+        max: 1.0
+      - flag: "--top_n"
+        type: int
+        default: 30
+        enabled: true
+        description:
+          en: "Maximum number of top genes (by padj) to show"
+          pt: "Número máximo de genes principais (por padj) a mostrar"
+        min: 2
+        max: 200
+
+  - id: functional_enrichment
+    name:
+      en: "Functional Enrichment"
+      pt: "Enriquecimento Funcional"
+    description:
+      en: "Over-representation analysis of the differentially expressed genes against COG categories, GO terms, or KEGG pathways already annotated by DEFINE's own eggNOG-mapper step -- no external database lookup needed."
+      pt: "Análise de sobre-representação dos genes diferencialmente expressos contra categorias COG, termos GO ou vias KEGG já anotados pela própria etapa eggNOG-mapper do DEFINE -- sem necessidade de consulta a banco de dados externo."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/functional_enrichment.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
+          pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff to select the differentially expressed gene set"
+          pt: "Limiar de p-valor ajustado (padj) para selecionar o conjunto de genes diferencialmente expressos"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_lfc"
+        type: float
+        default: 1
+        enabled: true
+        description:
+          en: "Minimum absolute log2 fold change to select the differentially expressed gene set"
+          pt: "Log2 fold change absoluto mínimo para selecionar o conjunto de genes diferencialmente expressos"
+        min: 0
+      - flag: "--term_source"
+        type: choice
+        default: "COG_category"
+        enabled: true
+        description:
+          en: "Functional annotation to test enrichment against"
+          pt: "Anotação funcional contra a qual testar o enriquecimento"
+        choices: ["COG_category", "GOs", "KEGG_Pathway"]
+      - flag: "--p_cutoff"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Maximum adjusted p-value for a term to be reported as enriched"
+          pt: "P-valor ajustado máximo para um termo ser reportado como enriquecido"
+        min: 0.0
+        max: 1.0
+
+  - id: de_upset
+    name:
+      en: "Multi-Comparison DE Overlap (UpSet)"
+      pt: "Sobreposição de DE Multi-Comparação (UpSet)"
+    description:
+      en: "For every non-reference level of a grouping variable, finds its own up-/down-regulated genes vs. the same reference, then shows the overlap across all comparisons as two UpSet plots -- including the 'core' gene list shared by every comparison."
+      pt: "Para cada nível não-referência de uma variável de agrupamento, encontra seus próprios genes up-/down-regulados vs. a mesma referência, e mostra a sobreposição entre todas as comparações em dois diagramas UpSet -- incluindo a lista 'core' de genes compartilhados por todas as comparações."
+    applies_to: [define]
+    input_shape: count_matrix
+    script: analyses/de_upset.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining every condition to compare (needs at least 3 levels: the reference plus 2+ others to overlap)"
+          pt: "Coluna de metadados que define cada condição a comparar (precisa de pelo menos 3 níveis: a referência mais 2+ outras para sobrepor)"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var used as the common reference (baseline) for every comparison"
+          pt: "Nível de group_var usado como referência (linha de base) comum para todas as comparações"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff to select each comparison's differentially expressed genes"
+          pt: "Limiar de p-valor ajustado (padj) para selecionar os genes diferencialmente expressos de cada comparação"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_lfc"
+        type: float
+        default: 1
+        enabled: true
+        description:
+          en: "Minimum absolute log2 fold change to select each comparison's differentially expressed genes"
+          pt: "Log2 fold change absoluto mínimo para selecionar os genes diferencialmente expressos de cada comparação"
+        min: 0
+
+  # =========================================================================
+  # DOGMA (metatranscriptomics): dogma_annotated-shaped. DOGMA's own pipeline
+  # deliberately stops at ~10 separate per-tool tables per sample x domain,
+  # never merged (see notes/DOGMA.md's "deliberately NOT one merged table"
+  # decision) -- these two analyses ARE that merge + the statistics DOGMA's
+  # own scope explicitly defers to here. plots/scripts/lib/build_dogma_table.R
+  # does the real per-ORF join (TransDecoder spine, LEFT JOIN every
+  # annotation table); own scripts throughout, never shared with MAGMA/
+  # PRISM's phyloseq scripts or DEFINE's single-reference count_matrix ones
+  # (DOGMA has no shared gene-ID space across samples at all -- see that
+  # file's own header for why a third shape was unavoidable).
+  # =========================================================================
+  - id: dogma_functional_composition
+    name:
+      en: "Functional Composition"
+      pt: "Composição Funcional"
+    description:
+      en: "Stacked relative-abundance bar chart per sample, by a chosen functional/taxonomic annotation category (e.g. KEGG ortholog, COG category, a cycling-gene family) -- the functional analogue of taxonomic composition, since DOGMA's own per-sample de novo assemblies have no shared taxon/gene ID to plot by directly."
+      pt: "Gráfico de barras empilhadas de abundância relativa por amostra, por uma categoria de anotação funcional/taxonômica escolhida (ex: ortólogo KEGG, categoria COG, uma família de genes de ciclagem) -- o análogo funcional da composição taxonômica, já que as montagens de novo por amostra do DOGMA não têm um ID de táxon/gene compartilhado para plotar diretamente."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_functional_composition.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to group reads by. Only columns from tools actually active in this run have real data -- picking one that wasn't run gives a clear error naming what's actually available. eggNOG (KEGG_ko/COG_category) is the only always-on default annotator; the rest are DOGMA's optional soil/sediment-cycling extras."
+          pt: "Qual categoria de qual tabela de anotação usar para agrupar as leituras. Só colunas de ferramentas realmente ativas nesta execução têm dados reais -- escolher uma que não rodou retorna um erro claro indicando o que está disponível. eggNOG (KEGG_ko/COG_category) é o único anotador padrão sempre ativo; o resto são os extras opcionais de ciclagem do solo/sedimento do DOGMA."
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--top_n"
+        type: int
+        default: 20
+        enabled: true
+        description:
+          en: "Number of top gene families to show individually before collapsing the rest into 'Others'"
+          pt: "Número de famílias gênicas mais abundantes a mostrar individualmente antes de agrupar o resto em 'Others'"
+
+  - id: dogma_functional_differential
+    name:
+      en: "Functional Differential Abundance"
+      pt: "Abundância Diferencial Funcional"
+    description:
+      en: "DESeq2 differential-abundance test between two metadata groups, on read counts aggregated by a chosen functional annotation category -- the statistics DOGMA's own pipeline deliberately stops short of (see notes/DOGMA.md). Aggregation by shared functional vocabulary (not raw per-sample transcript/ORF ID) is what makes cross-sample comparison possible at all here, the same real approach CoMW (cited in notes/DOGMA.md) uses."
+      pt: "Teste de abundância diferencial via DESeq2 entre dois grupos de metadados, sobre contagens de leituras agregadas por uma categoria de anotação funcional escolhida -- a estatística que o próprio pipeline do DOGMA deliberadamente não faz (ver notes/DOGMA.md). A agregação por vocabulário funcional compartilhado (não pelo ID bruto de transcrito/ORF por amostra) é o que torna a comparação entre amostras possível aqui, a mesma abordagem real usada pelo CoMW (citado em notes/DOGMA.md)."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_functional_differential.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before testing. Same availability caveat as Functional Composition's."
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de testar. Mesma ressalva de disponibilidade da Composição Funcional."
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
+          pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff for significance"
+          pt: "Limiar de p-valor ajustado (padj) para significância"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_lfc"
+        type: float
+        default: 1
+        enabled: true
+        description:
+          en: "Minimum absolute log2 fold change for significance"
+          pt: "Log2 fold change absoluto mínimo para significância"
+        min: 0
+      - flag: "--label_top_n"
+        type: int
+        default: 15
+        enabled: true
+        description:
+          en: "Number of top significant gene families to label on the plot"
+          pt: "Número de famílias gênicas significativas mais importantes a rotular no gráfico"
+
+  - id: dogma_sample_pca
+    name:
+      en: "Sample PCA (Functional)"
+      pt: "PCA das Amostras (Funcional)"
+    description:
+      en: "Principal component analysis of variance-stabilized, gene-family-aggregated counts, colored by a metadata grouping variable -- the standard first exploratory/QC check before trusting any differential-abundance result, adapted for DOGMA's per-sample assemblies."
+      pt: "Análise de componentes principais das contagens agregadas por família gênica e estabilizadas por variância, coloridas por uma variável de agrupamento dos metadados -- a primeira checagem exploratória/QC padrão antes de confiar em qualquer resultado de abundância diferencial, adaptada para as montagens por amostra do DOGMA."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_sample_pca.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before computing PCA"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de calcular o PCA"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to color samples by"
+          pt: "Coluna de metadados para colorir as amostras"
+
+  - id: dogma_sample_distance_heatmap
+    name:
+      en: "Sample Distance Heatmap (Functional)"
+      pt: "Heatmap de Distância entre Amostras (Funcional)"
+    description:
+      en: "Pairwise Euclidean distance between samples on variance-stabilized, gene-family-aggregated counts, hierarchically clustered -- spots outlier samples or unexpected clustering before trusting downstream results."
+      pt: "Distância euclidiana par a par entre amostras nas contagens agregadas por família gênica e estabilizadas por variância, agrupadas hierarquicamente -- identifica amostras discrepantes ou agrupamentos inesperados antes de confiar em resultados posteriores."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_sample_distance_heatmap.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before computing distances"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de calcular as distâncias"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to group samples by"
+          pt: "Coluna de metadados para agrupar as amostras"
+
+  - id: dogma_ma_plot
+    name:
+      en: "MA Plot (Functional)"
+      pt: "Gráfico MA (Funcional)"
+    description:
+      en: "Mean normalized abundance vs. shrunk log2 fold change for every tested gene family -- DESeq2's own standard differential-abundance result summary, adapted to DOGMA's gene-family-aggregated counts."
+      pt: "Abundância normalizada média vs. log2 fold change encolhido para cada família gênica testada -- o resumo padrão de resultado de abundância diferencial do DESeq2, adaptado para as contagens agregadas por família gênica do DOGMA."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_ma_plot.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before testing"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de testar"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference"
+          pt: "Nível de group_var a testar contra a referência"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff for significance"
+          pt: "Limiar de p-valor ajustado (padj) para significância"
+        min: 0.0
+        max: 1.0
+
+  - id: dogma_de_heatmap
+    name:
+      en: "Differential Gene Family Heatmap"
+      pt: "Heatmap de Famílias Gênicas Diferenciais"
+    description:
+      en: "Heatmap of the top N differentially abundant gene families (variance-stabilized, row z-scored, hierarchically clustered) for a chosen comparison -- standard DESeq2-workflow visualization, adapted to DOGMA's gene-family-aggregated counts."
+      pt: "Heatmap das N famílias gênicas mais diferencialmente abundantes (estabilizadas por variância, z-score por linha, agrupadas hierarquicamente) para uma comparação escolhida -- visualização padrão do fluxo de trabalho do DESeq2, adaptada para as contagens agregadas por família gênica do DOGMA."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_de_heatmap.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before testing"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de testar"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining the two (or more) groups to compare"
+          pt: "Coluna de metadados que define os dois (ou mais) grupos a comparar"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to use as the reference (baseline) for the comparison"
+          pt: "Nível de group_var a usar como referência (linha de base) para a comparação"
+      - flag: "--test_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var to test against the reference"
+          pt: "Nível de group_var a testar contra a referência"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff to select the top gene families"
+          pt: "Limiar de p-valor ajustado (padj) para selecionar as famílias gênicas do topo"
+        min: 0.0
+        max: 1.0
+      - flag: "--top_n"
+        type: int
+        default: 30
+        enabled: true
+        description:
+          en: "Maximum number of top significant gene families to show"
+          pt: "Número máximo de famílias gênicas significativas do topo a mostrar"
+
+  - id: dogma_de_upset
+    name:
+      en: "Multi-Comparison Functional Overlap (UpSet)"
+      pt: "Sobreposição Funcional Multi-Comparação (UpSet)"
+    description:
+      en: "For every non-reference level of a grouping variable, finds its own up-/down-regulated gene families vs. the same reference, then shows the overlap across all comparisons as two UpSet plots -- including the 'core' gene family list shared by every comparison."
+      pt: "Para cada nível não-referência de uma variável de agrupamento, encontra suas próprias famílias gênicas up-/down-reguladas vs. a mesma referência, e mostra a sobreposição entre todas as comparações em dois diagramas UpSet -- incluindo a lista 'core' de famílias gênicas compartilhadas por todas as comparações."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_de_upset.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before testing"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de testar"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column defining every condition to compare (needs at least 3 levels: the reference plus 2+ others to overlap)"
+          pt: "Coluna de metadados que define cada condição a comparar (precisa de pelo menos 3 níveis: a referência mais 2+ outras para sobrepor)"
+      - flag: "--reference_group"
+        type: level
+        depends_on: "--group_var"
+        enabled: true
+        description:
+          en: "Level of group_var used as the common reference (baseline) for every comparison"
+          pt: "Nível de group_var usado como referência (linha de base) comum para todas as comparações"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        description:
+          en: "Adjusted p-value (padj) cutoff to select each comparison's differentially abundant gene families"
+          pt: "Limiar de p-valor ajustado (padj) para selecionar as famílias gênicas diferencialmente abundantes de cada comparação"
+        min: 0.0
+        max: 1.0
+      - flag: "--min_lfc"
+        type: float
+        default: 1
+        enabled: true
+        description:
+          en: "Minimum absolute log2 fold change to select each comparison's differentially abundant gene families"
+          pt: "Log2 fold change absoluto mínimo para selecionar as famílias gênicas diferencialmente abundantes de cada comparação"
+        min: 0
+
+  - id: dogma_functional_diversity
+    name:
+      en: "Functional Diversity"
+      pt: "Diversidade Funcional"
+    description:
+      en: "Observed richness, Chao1, ACE, Shannon, Simpson, and Pielou's evenness of gene-family- (or taxon-, via --annotation_column) aggregated counts per sample, grouped and Kruskal-Wallis-tested by a chosen metadata variable -- answers whether the community's overall functional/taxonomic diversity differs between conditions, complementing Functional Composition/Differential Abundance's gene-family-specific view. DOGMA profiles a whole community (like MAGMA/PRISM), not one isolate (like DEFINE), so this reuses the same community-ecology engine."
+      pt: "Riqueza observada, Chao1, ACE, Shannon, Simpson e equitabilidade de Pielou das contagens agregadas por família gênica (ou táxon, via --annotation_column) por amostra, agrupados e testados por Kruskal-Wallis segundo uma variável de metadados escolhida -- responde se a diversidade funcional/taxonômica geral da comunidade difere entre condições, complementando a visão específica por família gênica da Composição/Abundância Diferencial Funcional. O DOGMA perfila uma comunidade inteira (como MAGMA/PRISM), não um isolado (como o DEFINE), então isso reaproveita o mesmo motor de ecologia de comunidade."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_functional_diversity.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before computing diversity"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de calcular a diversidade"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to group samples by (also used for the Kruskal-Wallis test)"
+          pt: "Coluna de metadados para agrupar as amostras (também usada no teste de Kruskal-Wallis)"
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed for rarefaction (reproducibility)"
+          pt: "Semente aleatória para a rarefação (reprodutibilidade)"
+        min: 0
+
+  - id: dogma_functional_beta_diversity
+    name:
+      en: "Functional Beta Diversity"
+      pt: "Beta Diversidade Funcional"
+    description:
+      en: "Ordination (PCoA by default) of a chosen distance metric between samples on gene-family- (or taxon-, via --annotation_column) aggregated counts, with a PERMANOVA test against a metadata grouping variable -- answers whether the community's overall functional/taxonomic profile differs between conditions."
+      pt: "Ordenação (PCoA por padrão) de uma métrica de distância escolhida entre amostras, sobre contagens agregadas por família gênica (ou táxon, via --annotation_column), com teste PERMANOVA contra uma variável de agrupamento dos metadados -- responde se o perfil funcional/taxonômico geral da comunidade difere entre condições."
+    applies_to: [dogma]
+    input_shape: dogma_annotated
+    script: analyses/dogma_functional_beta_diversity.R
+    parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "eggnog_KEGG_ko"
+        enabled: true
+        description:
+          en: "Which annotation table's category to aggregate read counts by before computing distances"
+          pt: "Qual categoria de qual tabela de anotação usar para agregar as contagens de leituras antes de calcular as distâncias"
+        choices: ["eggnog_KEGG_ko", "eggnog_COG_category", "eggnog_KEGG_Pathway", "eggnog_Preferred_name",
+                  "cazy_dbCAN_hmm", "cazy_Substrate", "ncycdb_gene", "scycdb_gene", "mcycdb_gene",
+                  "canthyd_query_name", "fegenie_category", "fegenie_HMM",
+                  "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"]
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column to color/group samples by and test with PERMANOVA"
+          pt: "Coluna de metadados para colorir/agrupar amostras e testar com PERMANOVA"
+      - flag: "--ordination_method"
+        type: choice
+        default: "PCoA"
+        enabled: true
+        description:
+          en: "Ordination method"
+          pt: "Método de ordenação"
+        choices: ["PCoA", "NMDS", "CAP"]
+      - flag: "--distance_method"
+        type: choice
+        default: "bray"
+        enabled: true
+        description:
+          en: "Distance/dissimilarity metric (no unifrac/wunifrac here -- there is no real phylogeny between arbitrary functional categories to build a tree from)"
+          pt: "Métrica de distância/dissimilaridade (sem unifrac/wunifrac aqui -- não existe uma filogenia real entre categorias funcionais arbitrárias para construir uma árvore)"
+        choices: ["bray", "jaccard"]
+      - flag: "--permutations"
+        type: int
+        default: 999
+        enabled: true
+        description:
+          en: "Number of PERMANOVA permutations"
+          pt: "Número de permutações do PERMANOVA"
+        min: 99
+      - flag: "--seed"
+        type: int
+        default: 123
+        enabled: true
+        description:
+          en: "Random seed for rarefaction (reproducibility)"
+          pt: "Semente aleatória para a rarefação (reprodutibilidade)"
+        min: 0
+
+  # =========================================================================
+  # SIGMA (single isolate genome assembly): sigma_genomes-shaped. Unlike
+  # every other pipeline here, SIGMA has NO cross-sample table anywhere in
+  # its own real output at all -- ~8 incompatible per-tool-per-genome
+  # formats (QUAST, CheckM2, GTDB-Tk, CoverM, MLST, AMRFinderPlus, ABRicate),
+  # confirmed by reading each tool's real installed source/output before
+  # writing lib/build_sigma_table.R's merge (see notes/SIGMA.md). A run can
+  # assemble many genomes at once, so the user's own explicit design
+  # requirement applies here: analyses need a real way to pick WHICH genome
+  # to work with -- --genome uses PlotParam's new "sample" type (a real
+  # dropdown of this run's actual genome names, not a metadata column the
+  # user picked -- see plot_loaded_data.dart's own docstring).
+  # =========================================================================
+  - id: sigma_genome_summary
+    name:
+      en: "Genome Summary"
+      pt: "Resumo do Genoma"
+    description:
+      en: "Real assembly/quality/taxonomy/coverage/typing stats for ONE selected genome from this run, plus its own AMR/virulence gene hits -- the per-genome 'report card' a cross-genome comparison can't give on its own."
+      pt: "Estatísticas reais de montagem/qualidade/taxonomia/cobertura/tipagem de UM genoma selecionado desta execução, mais seus próprios hits de genes de resistência/virulência -- o 'boletim' por genoma que uma comparação entre genomas não consegue dar sozinha."
+    applies_to: [sigma]
+    input_shape: sigma_genomes
+    script: analyses/sigma_genome_summary.R
+    parameters:
+      - flag: "--genome"
+        type: sample
+        enabled: true
+        description:
+          en: "Which of this run's assembled genomes to show"
+          pt: "Qual dos genomas montados nesta execução mostrar"
+
+  - id: sigma_genome_quality_overview
+    name:
+      en: "Genome Quality Overview"
+      pt: "Visão Geral de Qualidade dos Genomas"
+    description:
+      en: "CheckM2 completeness vs. contamination for every genome in the run at once, point size by assembly N50, with the real MIMAG high-quality threshold (Bowers et al. 2017: >=90% complete, <=5% contamination) drawn as a reference region -- 'are all my genomes actually good enough to trust', complementing Genome Summary's single-genome detail."
+      pt: "Completude vs. contaminação (CheckM2) de todos os genomas da execução de uma vez, tamanho do ponto pelo N50 da montagem, com o limiar real de alta qualidade MIMAG (Bowers et al. 2017: >=90% completo, <=5% contaminação) desenhado como região de referência -- 'meus genomas são bons o suficiente para confiar', complementando o detalhe por genoma do Resumo do Genoma."
+    applies_to: [sigma]
+    input_shape: sigma_genomes
+    script: analyses/sigma_genome_quality_overview.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        default: ""
+        enabled: true
+        description:
+          en: "Optional column to color genomes by -- SIGMA's own taxonomy (gtdbtk_genus, ...) and typing (mlst_scheme, mlst_st) columns are available automatically, no metadata.tsv required, alongside any real metadata you provide"
+          pt: "Coluna opcional para colorir os genomas -- as próprias colunas de taxonomia (gtdbtk_genus, ...) e tipagem (mlst_scheme, mlst_st) do SIGMA já estão disponíveis automaticamente, sem precisar de metadata.tsv, além de qualquer metadado real que você forneça"
+
+  - id: sigma_amr_heatmap
+    name:
+      en: "AMR/Virulence Gene Heatmap"
+      pt: "Heatmap de Genes de Resistência/Virulência"
+    description:
+      en: "Presence/absence of AMR and virulence genes (AMRFinderPlus + ABRicate's NCBI/CARD/VFDB databases) across every genome in the run, hierarchically clustered on both axes -- standard comparative genomics/epidemiology output."
+      pt: "Presença/ausência de genes de resistência e virulência (AMRFinderPlus + bancos NCBI/CARD/VFDB do ABRicate) em todos os genomas da execução, agrupados hierarquicamente nos dois eixos -- saída padrão de genômica comparativa/epidemiologia."
+    applies_to: [sigma]
+    input_shape: sigma_genomes
+    script: analyses/sigma_amr_heatmap.R
+    parameters:
+      - flag: "--source_filter"
+        type: choice
+        default: "all"
+        enabled: true
+        description:
+          en: "Restrict to one gene-hit source, or show all combined"
+          pt: "Restringir a uma fonte de hits de genes, ou mostrar todas combinadas"
+        choices: ["all", "amrfinder", "abricate_ncbi", "abricate_card", "abricate_vfdb"]
+      - flag: "--top_n"
+        type: int
+        default: 40
+        enabled: true
+        description:
+          en: "Maximum number of genes to show, ranked by how many genomes carry them"
+          pt: "Número máximo de genes a mostrar, ranqueados por quantos genomas os carregam"

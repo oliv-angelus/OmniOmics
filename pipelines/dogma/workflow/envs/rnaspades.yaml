@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # SPAdes 4.x (not MAGMA's 3.15.5 pin): 3.15.5's Python scripts import the
+  # removed `distutils` module, which fails on the modern conda-forge
+  # python/setuptools this app installs today. 4.3.0 is distutils-free and
+  # verified end-to-end (rnaspades.py assembled the smoke-test data). rnaSPAdes
+  # ships as part of SPAdes.
+  - spades=4.3.0

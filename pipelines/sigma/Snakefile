@@ -1,0 +1,65 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+SAMPLES = samples.index.tolist
+LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]
+
+wildcard_constraints:
+    sample="[^/]+"
+
+rule all:
+    input:
+        # Nanopore QC (before and after Filtlong)
+        expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=LONG_SAMPLES),
+        expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=LONG_SAMPLES),
+
+        # Pre-assembly contamination screening (Kraken2 and/or Kaiju, independent)
+        expand("results/00_SCREENING/{sample}/{sample}_kraken2.kreport", sample=SAMPLES),
+        expand("results/00_SCREENING/{sample}/{sample}_kaiju_species.tsv", sample=SAMPLES),
+
+        # Final (polished) assembly per sample
+        expand("results/03_POLISH/{sample}/final_polished.fa", sample=SAMPLES),
+
+        # Assembly QC, genome quality, taxonomy, coverage
+        expand("results/05_QUALITY/{sample}/quast", sample=SAMPLES),
+        expand("results/05_QUALITY/{sample}/checkm2/quality_report.tsv", sample=SAMPLES),
+        expand("results/05_QUALITY/{sample}/gunc", sample=SAMPLES),
+        expand("results/06_TAXONOMY/{sample}/gtdbtk", sample=SAMPLES),
+        expand("results/07_COVERAGE/{sample}/coverm_coverage.tsv", sample=SAMPLES),
+
+        # Annotation, mobile genetic elements, AMR/virulence
+        expand("results/08_ANNOTATION/{sample}/bakta", sample=SAMPLES),
+        expand("results/08_ANNOTATION/{sample}/eggnog/{sample}_annotations.emapper.annotations", sample=SAMPLES),
+        expand("results/08_ANNOTATION/{sample}/amrfinder/amrfinder_results.tsv", sample=SAMPLES),
+        expand("results/08_ANNOTATION/{sample}/abricate", sample=SAMPLES),
+        expand("results/08_ANNOTATION/{sample}/vfdb/vfdb_results.tab", sample=SAMPLES),
+        expand("results/08_ANNOTATION/{sample}/isescan", sample=SAMPLES),
+        expand("results/08_ANNOTATION/{sample}/mobsuite", sample=SAMPLES),
+
+        # Strain typing
+        expand("results/09_TYPING/{sample}/mlst.tsv", sample=SAMPLES),
+
+        # Viral/prophage analysis
+        expand("results/10_VIRAL/{sample}/genomad", sample=SAMPLES),
+        expand("results/10_VIRAL/{sample}/virsorter2", sample=SAMPLES),
+        expand("results/10_VIRAL/{sample}/checkv/quality_summary.tsv", sample=SAMPLES),
+        expand("results/10_VIRAL/{sample}/vibrant", sample=SAMPLES),
+
+        # Secondary metabolites / BGCs
+        expand("results/11_BGC/{sample}/antismash", sample=SAMPLES),
+        expand("results/11_BGC/{sample}/bigscape", sample=SAMPLES),
+
+include: "workflow/rules/01_qc.smk"
+include: "workflow/rules/12_screening.smk"
+include: "workflow/rules/02_assembly.smk"
+include: "workflow/rules/03_polish.smk"
+include: "workflow/rules/04_mapping.smk"
+include: "workflow/rules/05_quality.smk"
+include: "workflow/rules/06_taxonomy.smk"
+include: "workflow/rules/07_coverage.smk"
+include: "workflow/rules/08_annotation.smk"
+include: "workflow/rules/09_typing.smk"
+include: "workflow/rules/10_viral.smk"
+include: "workflow/rules/11_secondary_metabolites.smk"

@@ -1,0 +1,1487 @@
+{
+  "id": "dogma",
+  "name": "DOGMA",
+  "description": "Diversity Of Gene expression -- Metatranscriptome Analysis",
+  "category": "metatranscriptomics",
+  "tags": [
+    "prokaryote",
+    "eukaryote",
+    "community"
+  ],
+  "icon": "assets/pipeline_icons/dogma.png",
+  "snakefile": "Snakefile",
+  "categories": [
+    "QC & rRNA Removal",
+    "Contamination Screening",
+    "Assembly",
+    "ORF Calling",
+    "Gene Prediction & Annotation",
+    "Taxonomic Assignment",
+    "Quantification"
+  ],
+  "sample_sheet": {
+    "columns": [
+      "sample",
+      "read_type",
+      "fq1",
+      "fq2",
+      "fq_long"
+    ],
+    "read_type_values": [
+      "short",
+      "long",
+      "hybrid"
+    ],
+    "input_dirs": [
+      {
+        "key": "short_reads_dir",
+        "label": "Pasta de reads curtas (RNA)"
+      },
+      {
+        "key": "long_reads_dir",
+        "label": "Pasta de reads longas (RNA)"
+      },
+      {
+        "key": "magma_run_dir",
+        "label": "Run pareado do MAGMA (opcional)",
+        "toggle": true,
+        "config_key": "magma_run"
+      }
+    ]
+  },
+  "long_read_platforms": [
+    {
+      "id": "nano_raw",
+      "label": "Nanopore (raw)",
+      "flye_flag": "--nano-raw",
+      "spades_flag": "--nanopore",
+      "minimap2_preset": "map-ont"
+    },
+    {
+      "id": "nano_hq",
+      "label": "Nanopore (HQ / Guppy5+ SUP, Q20+)",
+      "flye_flag": "--nano-hq",
+      "spades_flag": "--nanopore",
+      "minimap2_preset": "map-ont"
+    },
+    {
+      "id": "pacbio_raw",
+      "label": "PacBio (CLR)",
+      "flye_flag": "--pacbio-raw",
+      "spades_flag": "--pacbio",
+      "minimap2_preset": "map-pb"
+    },
+    {
+      "id": "pacbio_hifi",
+      "label": "PacBio (HiFi)",
+      "flye_flag": "--pacbio-hifi",
+      "spades_flag": "--pacbio",
+      "minimap2_preset": "map-hifi"
+    }
+  ],
+  "default_long_read_platform": "nano_hq",
+  "tools": {
+    "fastp": {
+      "name": "fastp",
+      "description": {
+        "en": "Fast all-in-one FASTQ preprocessor for short reads",
+        "pt": "Pré-processador FASTQ rápido e completo para reads curtas"
+      },
+      "citation": [
+        {
+          "text": "Chen S, Zhou Y, Chen Y, Gu J. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics. 2018;34(17):i884-i890.",
+          "doi": "10.1093/bioinformatics/bty560"
+        }
+      ],
+      "category": "QC & rRNA Removal",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--qualified_quality_phred",
+          "type": "int",
+          "default": 30,
+          "enabled": true,
+          "description": {
+            "en": "Minimum Phred quality score for a base to be considered qualified",
+            "pt": "Escore de qualidade Phred mínimo para uma base ser considerada qualificada"
+          },
+          "min": 0,
+          "max": 40
+        },
+        {
+          "flag": "--length_required",
+          "type": "int",
+          "default": 50,
+          "enabled": true,
+          "description": {
+            "en": "Minimum read length after trimming (bp)",
+            "pt": "Comprimento mínimo da read após o trimming (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--trim_front1",
+          "type": "int",
+          "default": 1,
+          "enabled": true,
+          "description": {
+            "en": "Bases to trim from the 5' end of read 1",
+            "pt": "Bases a cortar da extremidade 5' da read 1"
+          },
+          "min": 0
+        },
+        {
+          "flag": "--trim_front2",
+          "type": "int",
+          "default": 1,
+          "enabled": true,
+          "description": {
+            "en": "Bases to trim from the 5' end of read 2",
+            "pt": "Bases a cortar da extremidade 5' da read 2"
+          },
+          "min": 0
+        }
+      ],
+      "requires": [],
+      "rule_names": [
+        "fastp"
+      ]
+    },
+    "filtlong": {
+      "name": "Filtlong",
+      "description": {
+        "en": "Quality filtering for long reads (Nanopore/PacBio)",
+        "pt": "Filtragem de qualidade para reads longas (Nanopore/PacBio)"
+      },
+      "citation": [
+        {
+          "text": "Wick RR. Filtlong [software]. https://github.com/rrwick/Filtlong",
+          "doi": null
+        }
+      ],
+      "category": "QC & rRNA Removal",
+      "read_type": "long",
+      "flags": [
+        {
+          "flag": "--min_length",
+          "type": "int",
+          "default": 500,
+          "enabled": true,
+          "description": {
+            "en": "Minimum read length to keep (bp)",
+            "pt": "Comprimento mínimo da read a manter (pb)"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--keep_percent",
+          "type": "float",
+          "default": 90.0,
+          "enabled": true,
+          "description": {
+            "en": "Keep only the best X% of bases by quality",
+            "pt": "Mantém apenas os X% melhores das bases por qualidade"
+          },
+          "min": 1.0,
+          "max": 100.0
+        }
+      ],
+      "requires": [],
+      "rule_names": [
+        "filtlong"
+      ]
+    },
+    "ribodetector": {
+      "name": "riboDetector",
+      "description": {
+        "en": "Removes ribosomal RNA reads from the clean reads -- most of the RNA in a total-RNA extraction is rRNA, not mRNA, so this runs right after QC and before anything else",
+        "pt": "Remove reads de RNA ribossômico das reads limpas -- a maior parte do RNA em uma extração de RNA total é rRNA, não mRNA, então isso roda logo após o QC e antes de qualquer outra etapa"
+      },
+      "citation": [
+        {
+          "text": "Deng ZL, Münch PC, Mreches R, McHardy AC. Rapid and accurate identification of ribosomal RNA sequences via deep learning. Nucleic Acids Research. 2022;50(10):e60.",
+          "doi": "10.1093/nar/gkac112"
+        }
+      ],
+      "category": "QC & rRNA Removal",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "-e",
+          "type": "choice",
+          "default": "norrna",
+          "enabled": true,
+          "description": {
+            "en": "Which classification to prioritize for paired reads",
+            "pt": "Qual classificação priorizar para reads paired-end"
+          },
+          "choices": [
+            "norrna",
+            "rrna",
+            "both",
+            "none"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp",
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "ribodetector_short",
+        "ribodetector_long"
+      ]
+    },
+    "kraken2": {
+      "name": "Kraken2",
+      "description": {
+        "en": "Taxonomic screening of the rRNA-depleted reads -- who's active, at a glance",
+        "pt": "Triagem taxonômica das reads depletadas de rRNA -- quem está ativo, num relance"
+      },
+      "citation": [
+        {
+          "text": "Wood DE, Lu J, Langmead B. Improved metagenomic analysis with Kraken 2. Genome Biology. 2019;20:257.",
+          "doi": "10.1186/s13059-019-1891-0"
+        }
+      ],
+      "category": "Contamination Screening",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--confidence",
+          "type": "float",
+          "default": 0.05,
+          "enabled": true,
+          "description": {
+            "en": "Confidence score threshold (0-1); higher values increase precision",
+            "pt": "Limiar de escore de confiança (0-1); valores maiores aumentam a precisão"
+          },
+          "min": 0.0,
+          "max": 1.0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "ribodetector"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "kraken2"
+      ]
+    },
+    "kaiju": {
+      "name": "Kaiju",
+      "description": {
+        "en": "Protein-level taxonomic screening -- independent alternative or complement to Kraken2",
+        "pt": "Triagem taxonômica em nível de proteína -- alternativa ou complemento independente ao Kraken2"
+      },
+      "citation": [
+        {
+          "text": "Menzel P, Ng KL, Krogh A. Fast and sensitive taxonomic classification for metagenomics with Kaiju. Nature Communications. 2016;7:11257.",
+          "doi": "10.1038/ncomms11257"
+        }
+      ],
+      "category": "Contamination Screening",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "-a",
+          "type": "choice",
+          "default": "greedy",
+          "enabled": false,
+          "description": {
+            "en": "Classification run mode",
+            "pt": "Modo de execução da classificação"
+          },
+          "choices": [
+            "greedy",
+            "mem"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "ribodetector"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "kaiju_classify",
+        "kaiju_table"
+      ]
+    },
+    "domain_filter": {
+      "name": "Domain Filter (Prokaryote/Eukaryote)",
+      "description": {
+        "en": "Splits the rRNA-depleted reads by taxonomic domain before assembly -- a soil/sediment metatranscriptome mixes bacterial/archaeal and fungal/protist RNA together, so this lets a run analyze prokaryotes only, eukaryotes only, or both kept separate. Requires Kraken2 (Kaiju's output format doesn't support this).",
+        "pt": "Separa as reads depletadas de rRNA por domínio taxonômico antes da montagem -- um metatranscriptoma de solo/sedimento mistura RNA bacteriano/arqueal com fúngico/protista, então isso permite analisar só procariotos, só eucariotos, ou ambos mantidos separados. Requer o Kraken2 (o formato de saída do Kaiju não suporta isso)."
+      },
+      "citation": [
+        {
+          "text": "Lu J, Rincon N, Wood DE, Breitwieser FP, Pockrandt C, Langmead B, Salzberg SL, Steinegger M. Metagenome analysis using the Kraken software suite. Nature Protocols. 2022;17:2815-2839.",
+          "doi": "10.1038/s41596-022-00738-y"
+        }
+      ],
+      "category": "Contamination Screening",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "mode",
+          "type": "choice",
+          "default": "prokaryote",
+          "enabled": true,
+          "description": {
+            "en": "Which taxonomic domain(s) to extract into separate read sets",
+            "pt": "Qual(is) domínio(s) taxonômico(s) extrair em conjuntos de reads separados"
+          },
+          "choices": [
+            "prokaryote",
+            "eukaryote",
+            "both"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "kraken2"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "extract_domain_short",
+        "extract_domain_long"
+      ]
+    },
+    "rnaspades": {
+      "name": "rnaSPAdes",
+      "description": {
+        "en": "De novo transcript assembler (SPAdes RNA mode) for short reads -- part of the multi-assembler ensemble; its transcripts are pooled and deduplicated by the Transcript set (MMseqs2) step",
+        "pt": "Montador de transcritos de novo (modo RNA do SPAdes) para reads curtas -- parte do ensemble de montadores; seus transcritos são reunidos e deduplicados pela etapa Conjunto de transcritos (MMseqs2)"
+      },
+      "citation": [
+        {
+          "text": "Bushmanova E, Antipov D, Lapidus A, Prjibelski AD. rnaSPAdes: a de novo transcriptome assembler and its application to RNA-Seq data. GigaScience. 2019;8(9):giz100.",
+          "doi": "10.1093/gigascience/giz100"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "short",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "ribodetector"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "rnaspades"
+      ]
+    },
+    "megahit": {
+      "name": "MEGAHIT",
+      "description": {
+        "en": "Fast, memory-efficient de novo assembler for short reads -- part of the multi-assembler ensemble; recovers different transcripts than rnaSPAdes/Trinity, all merged by the Transcript set (MMseqs2) step",
+        "pt": "Montador de novo rápido e econômico em memória para reads curtas -- parte do ensemble de montadores; recupera transcritos diferentes de rnaSPAdes/Trinity, todos unidos pela etapa Conjunto de transcritos (MMseqs2)"
+      },
+      "citation": [
+        {
+          "text": "Li D, Liu CM, Luo R, Sadakane K, Lam TW. MEGAHIT: an ultra-fast single-node solution for large and complex metagenomics assembly via succinct de Bruijn graph. Bioinformatics. 2015;31(10):1674-1676.",
+          "doi": "10.1093/bioinformatics/btv033"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "short",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "ribodetector"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "megahit"
+      ]
+    },
+    "trinity": {
+      "name": "Trinity",
+      "description": {
+        "en": "De novo transcriptome assembler for short reads -- part of the multi-assembler ensemble; deduplicated together with the others by the Transcript set (MMseqs2) step",
+        "pt": "Montador de transcriptoma de novo para reads curtas -- parte do ensemble de montadores; deduplicado junto com os demais pela etapa Conjunto de transcritos (MMseqs2)"
+      },
+      "citation": [
+        {
+          "text": "Grabherr MG, Haas BJ, Yassour M, et al. Full-length transcriptome assembly from RNA-seq data without a reference genome. Nature Biotechnology. 2011;29(7):644-652.",
+          "doi": "10.1038/nbt.1883"
+        },
+        {
+          "text": "Haas BJ, Papanicolaou A, Yassour M, et al. De novo transcript sequence reconstruction from RNA-seq using the Trinity platform for reference generation and analysis. Nature Protocols. 2013;8(8):1494-1512.",
+          "doi": "10.1038/nprot.2013.084"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "short",
+      "active_by_default": false,
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "ribodetector"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "trinity"
+      ]
+    },
+    "transcript_set": {
+      "name": "Transcript set (MMseqs2)",
+      "description": {
+        "en": "Pools the active assemblers' transcripts and deduplicates them with a two-step MMseqs2 clustering (100% identity, then 98%, per PMC9983209) into a single non-redundant \"MAD\" (multi-assembler-deduplicated) transcript set -- the input for downstream ORF calling/annotation/quantification (Phase 2)",
+        "pt": "Reúne os transcritos dos montadores ativos e os deduplica com uma clusterização MMseqs2 em duas etapas (100% de identidade, depois 98%, conforme PMC9983209) em um único conjunto não redundante \"MAD\" (deduplicado de múltiplos montadores) -- a entrada para chamada de ORFs/anotação/quantificação a jusante (Fase 2)"
+      },
+      "citation": [
+        {
+          "text": "Steinegger M, Söding J. MMseqs2 enables sensitive protein sequence searching for the analysis of massive data sets. Nature Biotechnology. 2017;35(11):1026-1028.",
+          "doi": "10.1038/nbt.3988"
+        },
+        {
+          "text": "Steinegger M, Söding J. Clustering huge protein sequence sets in linear time. Nature Communications. 2018;9:2542.",
+          "doi": "10.1038/s41467-018-04964-5"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "rnaspades",
+            "megahit",
+            "trinity"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "transcript_set"
+      ]
+    },
+    "transdecoder": {
+      "name": "TransDecoder",
+      "description": {
+        "en": "Identifies candidate coding regions (ORFs) on the MAD transcript set -- the input for downstream functional annotation, taxonomic assignment, and quantification (Phase 2)",
+        "pt": "Identifica regiões codificantes candidatas (ORFs) no conjunto de transcritos MAD -- a entrada para anotação funcional, atribuição taxonômica e quantificação a jusante (Fase 2)"
+      },
+      "citation": [
+        {
+          "text": "Haas BJ, Papanicolaou A. TransDecoder. https://github.com/TransDecoder/TransDecoder",
+          "doi": null
+        }
+      ],
+      "category": "ORF Calling",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transcript_set"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "transdecoder"
+      ]
+    },
+    "eggnog": {
+      "name": "eggNOG-mapper",
+      "description": {
+        "en": "Default functional annotation of the predicted proteins using the eggNOG orthology database",
+        "pt": "Anotação funcional padrão das proteínas preditas usando o banco de ortologia eggNOG"
+      },
+      "citation": [
+        {
+          "text": "Cantalapiedra CP, Hernandez-Plaza A, Letunic I, Bork P, Huerta-Cepas J. eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular Biology and Evolution. 2021;38(12):5825-5829.",
+          "doi": "10.1093/molbev/msab293"
+        },
+        {
+          "text": "Huerta-Cepas J, Szklarczyk D, Heller D, et al. eggNOG 5.0: a hierarchical, functionally and phylogenetically annotated orthology resource based on 5090 organisms and 2502 viruses. Nucleic Acids Research. 2019;47(D1):D309-D314.",
+          "doi": "10.1093/nar/gky1085"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--itype",
+          "type": "choice",
+          "default": "proteins",
+          "enabled": false,
+          "description": {
+            "en": "Type of input sequences",
+            "pt": "Tipo das sequências de entrada"
+          },
+          "choices": [
+            "CDS",
+            "proteins",
+            "genome",
+            "metagenome"
+          ]
+        },
+        {
+          "flag": "--tax_scope",
+          "type": "str",
+          "default": "auto",
+          "enabled": false,
+          "description": {
+            "en": "Taxonomic scope for annotation narrowing",
+            "pt": "Escopo taxonômico para restringir a anotação"
+          }
+        },
+        {
+          "flag": "--go_evidence",
+          "type": "choice",
+          "default": "non-electronic",
+          "enabled": false,
+          "description": {
+            "en": "GO evidence filter",
+            "pt": "Filtro de evidência do GO"
+          },
+          "choices": [
+            "experimental",
+            "non-electronic",
+            "all"
+          ]
+        },
+        {
+          "flag": "--target_orthologs",
+          "type": "choice",
+          "default": "all",
+          "enabled": false,
+          "description": {
+            "en": "Which orthologs to use",
+            "pt": "Quais ortólogos usar"
+          },
+          "choices": [
+            "all",
+            "one2one",
+            "many2one",
+            "one2many",
+            "many2many"
+          ]
+        },
+        {
+          "flag": "--pfam_realign",
+          "type": "choice",
+          "default": "none",
+          "enabled": false,
+          "description": {
+            "en": "Realign against Pfam",
+            "pt": "Realinha contra o Pfam"
+          },
+          "choices": [
+            "none",
+            "realign",
+            "denovo"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "eggnog_sample"
+      ]
+    },
+    "cazy": {
+      "name": "CAZy (dbCAN)",
+      "description": {
+        "en": "Optional extra: annotates carbohydrate-active enzymes (CAZymes) via run_dbcan/dbCAN3 -- soil/sediment carbon-cycling relevance, on top of eggNOG-mapper's general annotation",
+        "pt": "Extra opcional: anota enzimas ativas em carboidratos (CAZymes) via run_dbcan/dbCAN3 -- relevância para ciclagem de carbono em solo/sedimento, complementando a anotação geral do eggNOG-mapper"
+      },
+      "citation": [
+        {
+          "text": "Zheng J, Ge Q, Yan Y, Zhang X, Huang L, Yin Y. dbCAN3: automated carbohydrate-active enzyme and substrate annotation. Nucleic Acids Research. 2023;51(W1):W115-W121.",
+          "doi": "10.1093/nar/gkad328"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "cazy_annotate"
+      ]
+    },
+    "ncycdb": {
+      "name": "NCycDB",
+      "description": {
+        "en": "Optional extra: annotates nitrogen-cycling genes via DIAMOND blastp against the curated NCycDB reference (Tu et al. 2019) -- soil/sediment nitrogen-cycling relevance, on top of eggNOG-mapper's general annotation",
+        "pt": "Extra opcional: anota genes de ciclagem de nitrogênio via DIAMOND blastp contra o banco curado NCycDB (Tu et al. 2019) -- relevância para ciclagem de nitrogênio em solo/sedimento, complementando a anotação geral do eggNOG-mapper"
+      },
+      "citation": [
+        {
+          "text": "Tu Q, Lin L, Cheng L, Deng Y, He Z. NCycDB: a curated integrative database for fast and accurate metagenomic profiling of nitrogen cycling genes. Bioinformatics. 2019;35(6):1040-1048.",
+          "doi": "10.1093/bioinformatics/bty741"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "ncycdb_index",
+        "ncycdb_annotate"
+      ]
+    },
+    "scycdb": {
+      "name": "SCycDB",
+      "description": {
+        "en": "Optional extra: annotates sulfur-cycling genes via DIAMOND blastp against the curated SCycDB reference (Yu et al. 2021) -- soil/sediment sulfur-cycling relevance, on top of eggNOG-mapper's general annotation",
+        "pt": "Extra opcional: anota genes de ciclagem de enxofre via DIAMOND blastp contra o banco curado SCycDB (Yu et al. 2021) -- relevância para ciclagem de enxofre em solo/sedimento, complementando a anotação geral do eggNOG-mapper"
+      },
+      "citation": [
+        {
+          "text": "Yu X, Zhou J, Song W, Xu M, He Q, Peng Y, Tian Y, Wang C, Shu L, Wang S, Yan Q, Liu J, He Z. SCycDB: A curated functional gene database for metagenomic profiling of sulphur cycling pathways. Molecular Ecology Resources. 2021;21(3):924-940.",
+          "doi": "10.1111/1755-0998.13306"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "scycdb_index",
+        "scycdb_annotate"
+      ]
+    },
+    "mcycdb": {
+      "name": "MCycDB",
+      "description": {
+        "en": "Optional extra: annotates methane-cycling genes via DIAMOND blastp against the curated MCycDB reference (Qian et al. 2022) -- most relevant for anoxic/wetland sediment sites, on top of eggNOG-mapper's general annotation",
+        "pt": "Extra opcional: anota genes de ciclagem de metano via DIAMOND blastp contra o banco curado MCycDB (Qian et al. 2022) -- mais relevante para sítios de sedimento anóxico/wetland, complementando a anotação geral do eggNOG-mapper"
+      },
+      "citation": [
+        {
+          "text": "Qian L, Yu X, Zhou J, et al. MCycDB: A curated database for comprehensively profiling methane cycling processes of environmental microbiomes. Molecular Ecology Resources. 2022;22(5):1803-1823.",
+          "doi": "10.1111/1755-0998.13589"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "mcycdb_index",
+        "mcycdb_annotate"
+      ]
+    },
+    "canthyd": {
+      "name": "CANT-HYD",
+      "description": {
+        "en": "Optional extra: annotates hydrocarbon-degradation marker genes via HMMER against the curated CANT-HYD HMM set (Khot et al. 2021) -- relevant for petroleum-contaminated soil/sediment sites, on top of eggNOG-mapper's general annotation",
+        "pt": "Extra opcional: anota genes marcadores de degradação de hidrocarbonetos via HMMER contra o conjunto curado de HMMs CANT-HYD (Khot et al. 2021) -- relevante para sítios de solo/sedimento contaminados com petróleo, complementando a anotação geral do eggNOG-mapper"
+      },
+      "citation": [
+        {
+          "text": "Khot V, Zorz J, Gittins DA, et al. CANT-HYD: A Curated Database of Phylogeny-Derived Hidden Markov Models for Annotation of Marker Genes Involved in Hydrocarbon Degradation. Frontiers in Microbiology. 2021;12:764058.",
+          "doi": "10.3389/fmicb.2021.764058"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "canthyd_annotate"
+      ]
+    },
+    "fegenie": {
+      "name": "FeGenie",
+      "description": {
+        "en": "Optional extra: annotates iron-cycling genes via a self-contained HMM database (Garber et al. 2020) -- iron redox chemistry relevance for anoxic soil/sediment sites, on top of eggNOG-mapper's general annotation. No separate database download needed -- the HMMs ship inside the tool itself",
+        "pt": "Extra opcional: anota genes de ciclagem de ferro via um banco de HMMs autocontido (Garber et al. 2020) -- relevância para química redox de ferro em sítios de solo/sedimento anóxicos, complementando a anotação geral do eggNOG-mapper. Não precisa de download de banco separado -- os HMMs vêm embutidos na própria ferramenta"
+      },
+      "citation": [
+        {
+          "text": "Garber AI, Nealson KH, Okamoto A, McAllister SM, Chan CS, Barco RA, Merino N. FeGenie: A Comprehensive Tool for the Identification of Iron Genes and Iron Gene Neighborhoods in Genome and Metagenome Assemblies. Frontiers in Microbiology. 2020;11:37.",
+          "doi": "10.3389/fmicb.2020.00037"
+        }
+      ],
+      "category": "Gene Prediction & Annotation",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "fegenie_annotate"
+      ]
+    },
+    "eukulele": {
+      "name": "EUKulele",
+      "description": {
+        "en": "Taxonomic classification of transcripts against a marine microbial eukaryote reference (MMETSP+MarRef) -- eukaryotic path of Phase 2 taxonomic assignment. Manages its own database download (no separate download button; the configured folder is populated automatically the first time this tool runs)",
+        "pt": "Classificação taxonômica dos transcritos contra uma referência de eucariotos microbianos marinhos (MMETSP+MarRef) -- caminho eucariótico da atribuição taxonômica da Fase 2. Gerencia seu próprio download de banco (sem botão de download separado; a pasta configurada é populada automaticamente na primeira execução desta ferramenta)"
+      },
+      "citation": [
+        {
+          "text": "Krinos AI, Hu SK, Cohen NR, Alexander H. EUKulele: Taxonomic annotation of the unsung eukaryotic microbes. Journal of Open Source Software. 2021;6(57):2817.",
+          "doi": "10.21105/joss.02817"
+        }
+      ],
+      "category": "Taxonomic Assignment",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "eukulele_setup",
+        "eukulele_annotate"
+      ]
+    },
+    "cat": {
+      "name": "CAT/BAT",
+      "description": {
+        "en": "Taxonomic classification of assembled transcripts against a prokaryotic reference (GTDB or NCBI nr) -- prokaryotic path of Phase 2 taxonomic assignment. Manages its own database download (no separate download button; the configured folder is populated automatically the first time this tool runs)",
+        "pt": "Classificação taxonômica dos transcritos montados contra uma referência procariótica (GTDB ou NCBI nr) -- caminho procariótico da atribuição taxonômica da Fase 2. Gerencia seu próprio download de banco (sem botão de download separado; a pasta configurada é populada automaticamente na primeira execução desta ferramenta)"
+      },
+      "citation": [
+        {
+          "text": "von Meijenfeldt FAB, Arkhipova K, Cambuy DD, Coutinho FH, Dutilh BE. Robust taxonomic classification of uncharted microbial sequences and bins with CAT and BAT. Genome Biology. 2019;20:217.",
+          "doi": "10.1186/s13059-019-1817-x"
+        }
+      ],
+      "category": "Taxonomic Assignment",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "cat_setup",
+        "cat_annotate"
+      ]
+    },
+    "magma_xref": {
+      "name": "MAGMA Cross-Reference",
+      "description": {
+        "en": "Optional: cross-references this sample's own de novo assembled transcripts against a companion MAGMA run's dereplicated MAGs via DIAMOND blastp against each MAG's own predicted proteins, joined to that MAG's GTDB-Tk taxonomy call. Gives transcript-to-genome-resolved-taxon assignment when a paired metagenome (MAGMA run) exists for the same site, as an alternative/complement to CAT/BAT's generic public reference. Requires pointing the MAGMA Run database entry at a finished MAGMA run's output folder",
+        "pt": "Opcional: cruza os transcritos montados de novo desta amostra contra os MAGs dereplicados de uma run do MAGMA via DIAMOND blastp contra as proteínas já preditas de cada MAG, unindo o resultado à classificação GTDB-Tk daquele MAG. Atribui taxonomia em nível de genoma quando existe um metagenoma pareado (run do MAGMA) do mesmo local, como alternativa/complemento à referência pública genérica do CAT/BAT. Requer apontar o banco 'Run do MAGMA' para a pasta de saída de uma run do MAGMA já finalizada"
+      },
+      "citation": [
+        {
+          "text": "Buchfink B, Reuter K, Drost HG. Sensitive protein alignments at tree-of-life scale using DIAMOND. Nature Methods. 2021;18(4):366-368.",
+          "doi": "10.1038/s41592-021-01101-x"
+        },
+        {
+          "text": "Buchfink B, Xie C, Huson DH. Fast and sensitive protein alignment using DIAMOND. Nature Methods. 2015;12(1):59-60.",
+          "doi": "10.1038/nmeth.3176"
+        }
+      ],
+      "category": "Taxonomic Assignment",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transdecoder"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "magma_mag_db",
+        "magma_mag_annotate"
+      ]
+    },
+    "salmon": {
+      "name": "Salmon",
+      "description": {
+        "en": "Quantifies each sample's transcripts directly against that sample's own MAD assembly -- raw counts (NumReads) and TPM in one step, same approach eukrhythmic/PMC9983209 uses. No shared reference across samples (per-sample assembly, no co-assembly)",
+        "pt": "Quantifica os transcritos de cada amostra diretamente contra a própria montagem MAD daquela amostra -- contagem bruta (NumReads) e TPM em uma etapa só, mesma abordagem do eukrhythmic/PMC9983209. Sem referência compartilhada entre amostras (montagem por amostra, sem co-montagem)"
+      },
+      "citation": [
+        {
+          "text": "Patro R, Duggal G, Love MI, Irizarry RA, Kingsford C. Salmon provides fast and bias-aware quantification of transcript expression. Nature Methods. 2017;14(4):417-419.",
+          "doi": "10.1038/nmeth.4197"
+        }
+      ],
+      "category": "Quantification",
+      "read_type": "short",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "transcript_set"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "salmon_index",
+        "salmon_quant"
+      ]
+    }
+  },
+  "databases": {
+    "kraken2": {
+      "name": "Kraken2 / Bracken",
+      "description": {
+        "en": "Taxonomic classification of reads and contigs",
+        "pt": "Classificação taxonômica de reads e contigs"
+      },
+      "citation": [
+        {
+          "text": "Wood DE, Lu J, Langmead B. Improved metagenomic analysis with Kraken 2. Genome Biology. 2019;20:257.",
+          "doi": "10.1186/s13059-019-1891-0"
+        },
+        {
+          "text": "Lu J, Breitwieser FP, Thielen P, Salzberg SL. Bracken: estimating species abundance in metagenomics data. PeerJ Computer Science. 2017;3:e104.",
+          "doi": "10.7717/peerj-cs.104"
+        }
+      ],
+      "setting_key": "db_kraken2",
+      "size_gb": 16,
+      "detect_files": [
+        "hash.k2d",
+        "opts.k2d"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "k2_std_8",
+          "label": "Standard-8 (5.5 GB)",
+          "description": {
+            "en": "Bacteria, archaea, viruses, plasmid, human — compact",
+            "pt": "Bactérias, archaea, vírus, plasmídeo, humano — compacto"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_08_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_std_16",
+          "label": "Standard-16 (11 GB)",
+          "description": {
+            "en": "Standard capped at 16 GB",
+            "pt": "Padrão limitado a 16 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_16_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_std",
+          "label": "Standard Full (75 GB)",
+          "description": {
+            "en": "Full — bacteria, archaea, viruses, plasmid, human",
+            "pt": "Completo — bactérias, archaea, vírus, plasmídeo, humano"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pf_8",
+          "label": "PlusPF-8 (5.5 GB)",
+          "description": {
+            "en": "Standard + protozoa & fungi — 8 GB capped",
+            "pt": "Padrão + protozoários e fungos — limitado a 8 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_08_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pf_16",
+          "label": "PlusPF-16 (11 GB) ★ Recommended",
+          "description": {
+            "en": "Standard + protozoa & fungi — best balance size/coverage",
+            "pt": "Padrão + protozoários e fungos — melhor equilíbrio entre tamanho e cobertura"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pf",
+          "label": "PlusPF Full (80 GB)",
+          "description": {
+            "en": "Complete PlusPF — maximum sensitivity",
+            "pt": "PlusPF completo — sensibilidade máxima"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pfp_8",
+          "label": "PlusPFP-8 (5.2 GB)",
+          "description": {
+            "en": "Standard + protozoa, fungi & plants — 8 GB capped",
+            "pt": "Padrão + protozoários, fungos e plantas — limitado a 8 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_08_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pfp_16",
+          "label": "PlusPFP-16 (10.5 GB)",
+          "description": {
+            "en": "Standard + protozoa, fungi & plants — 16 GB capped",
+            "pt": "Padrão + protozoários, fungos e plantas — limitado a 16 GB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_16_GB_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_pfp",
+          "label": "PlusPFP Full (164 GB)",
+          "description": {
+            "en": "Standard + protozoa, fungi & plants — full index",
+            "pt": "Padrão + protozoários, fungos e plantas — índice completo"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspfp_20260226.tar.gz",
+          "extract": true
+        },
+        {
+          "id": "k2_eupathdb",
+          "label": "EuPathDB (~6 GB)",
+          "description": {
+            "en": "Eukaryotic pathogen genomes from VEuPathDB",
+            "pt": "Genomas de patógenos eucarióticos do VEuPathDB"
+          },
+          "url": "https://genome-idx.s3.amazonaws.com/kraken/k2_eupathdb48_20230407.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "kraken2"
+    },
+    "kaiju": {
+      "name": "Kaiju",
+      "description": {
+        "en": "Protein-level reference database for Kaiju classification",
+        "pt": "Banco de referência em nível de proteína para classificação com Kaiju"
+      },
+      "citation": [
+        {
+          "text": "Menzel P, Ng KL, Krogh A. Fast and sensitive taxonomic classification for metagenomics with Kaiju. Nature Communications. 2016;7:11257.",
+          "doi": "10.1038/ncomms11257"
+        }
+      ],
+      "citation_by_option": {
+        "kaiju_progenomes": [
+          {
+            "text": "Mende DR, Letunic I, Maistrenko OM, et al. proGenomes2: an improved database for accurate and consistent habitat, taxonomic and functional annotations of prokaryotic genomes. Nucleic Acids Research. 2020;48(D1):D621-D625.",
+            "doi": "10.1093/nar/gkz1002"
+          }
+        ]
+      },
+      "setting_key": "db_kaiju",
+      "size_gb": 37,
+      "detect_files": [
+        "*.fmi"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "kaiju_refseq",
+          "label": "RefSeq (37 GB) ★ Recommended",
+          "description": {
+            "en": "Archaea/bacteria complete-genome assemblies + viral sequences",
+            "pt": "Montagens de genomas completos de archaea/bactérias + sequências virais"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_refseq_2024-08-14.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_refseq_ref",
+          "label": "RefSeq representative (34 GB)",
+          "description": {
+            "en": "Archaea/bacteria representative assemblies + viral sequences — smaller, less redundant",
+            "pt": "Montagens representativas de archaea/bactérias + sequências virais — menor, menos redundante"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_refseq_ref_2024-08-14.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_progenomes",
+          "label": "proGenomes (66 GB)",
+          "description": {
+            "en": "Representative proteins from proGenomes v3 + viral sequences",
+            "pt": "Proteínas representativas do proGenomes v3 + sequências virais"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_progenomes_2023-05-25.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_nr",
+          "label": "nr — Archaea/bacteria/viruses (81 GB)",
+          "description": {
+            "en": "Subset of NCBI BLAST nr — maximum sensitivity",
+            "pt": "Subconjunto do NCBI BLAST nr — sensibilidade máxima"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_nr_2024-08-25.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_fungi",
+          "label": "Fungi (4.1 GB)",
+          "description": {
+            "en": "Fungi + virus sequences from NCBI RefSeq",
+            "pt": "Sequências de fungos e vírus do NCBI RefSeq"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_fungi_2024-08-16.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_viruses",
+          "label": "Viruses only (0.27 GB)",
+          "description": {
+            "en": "Viral protein sequences from NCBI RefSeq — tiny, for viral-focused screening",
+            "pt": "Sequências de proteínas virais do NCBI RefSeq — pequeno, para triagem focada em vírus"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_viruses_2024-08-15.tgz",
+          "extract": true
+        },
+        {
+          "id": "kaiju_plasmids",
+          "label": "Plasmids only (1.4 GB)",
+          "description": {
+            "en": "Plasmid protein sequences from NCBI RefSeq",
+            "pt": "Sequências de proteínas de plasmídeos do NCBI RefSeq"
+          },
+          "url": "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_plasmids_2024-08-15.tgz",
+          "extract": true
+        }
+      ],
+      "config_key": "kaiju"
+    },
+    "eggnog": {
+      "name": "EggNOG-mapper",
+      "description": {
+        "en": "Functional annotation using eggNOG orthology database",
+        "pt": "Anotação funcional usando o banco de ortologia eggNOG"
+      },
+      "citation": [
+        {
+          "text": "Cantalapiedra CP, Hernandez-Plaza A, Letunic I, Bork P, Huerta-Cepas J. eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular Biology and Evolution. 2021;38(12):5825-5829.",
+          "doi": "10.1093/molbev/msab293"
+        },
+        {
+          "text": "Huerta-Cepas J, Szklarczyk D, Heller D, et al. eggNOG 5.0: a hierarchical, functionally and phylogenetically annotated orthology resource based on 5090 organisms and 2502 viruses. Nucleic Acids Research. 2019;47(D1):D309-D314.",
+          "doi": "10.1093/nar/gky1085"
+        }
+      ],
+      "setting_key": "db_eggnog",
+      "size_gb": 50,
+      "detect_files": [
+        "eggnog.db",
+        "eggnog_proteins.dmnd"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "eggnog_all",
+          "label": "eggnog.db + proteins.dmnd (~14 GB compressed) ★",
+          "description": {
+            "en": "Main annotation DB (SQLite) + DIAMOND protein index",
+            "pt": "Banco de anotação principal (SQLite) + índice de proteínas DIAMOND"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz",
+          "extract": false,
+          "gunzip": true,
+          "extra_files": [
+            "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz",
+            "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz"
+          ]
+        },
+        {
+          "id": "eggnog_db",
+          "label": "eggnog.db only (~3.4 GB compressed)",
+          "description": {
+            "en": "SQLite annotation database only (no DIAMOND search)",
+            "pt": "Apenas o banco de anotação SQLite (sem busca DIAMOND)"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz",
+          "extract": false,
+          "gunzip": true
+        },
+        {
+          "id": "eggnog_diamond",
+          "label": "eggnog_proteins.dmnd only (~11 GB compressed)",
+          "description": {
+            "en": "DIAMOND protein index only",
+            "pt": "Apenas o índice de proteínas DIAMOND"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        }
+      ],
+      "config_key": "eggnog"
+    },
+    "cazy": {
+      "name": "CAZy (dbCAN)",
+      "description": {
+        "en": "dbCAN3 database (CAZy DIAMOND index + dbCAN/dbCAN-sub HMMs) for CAZyme annotation",
+        "pt": "Banco dbCAN3 (índice DIAMOND do CAZy + HMMs dbCAN/dbCAN-sub) para anotação de CAZymes"
+      },
+      "citation": [
+        {
+          "text": "Zheng J, Ge Q, Yan Y, Zhang X, Huang L, Yin Y. dbCAN3: automated carbohydrate-active enzyme and substrate annotation. Nucleic Acids Research. 2023;51(W1):W115-W121.",
+          "doi": "10.1093/nar/gkad328"
+        }
+      ],
+      "setting_key": "db_cazy",
+      "size_gb": 8,
+      "detect_files": [
+        "CAZy.dmnd",
+        "dbCAN.hmm",
+        "dbCAN-sub.hmm"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "cazy_full",
+          "label": "Full (CAZy + dbCAN + dbCAN-sub, ~7.4 GB) ★ Recommended",
+          "description": {
+            "en": "All three CAZyme_annotation methods (DIAMOND + HMM + dbCAN-sub) -- matches the tool's own default --methods",
+            "pt": "Os três métodos de CAZyme_annotation (DIAMOND + HMM + dbCAN-sub) -- corresponde ao --methods padrão da própria ferramenta"
+          },
+          "url": "https://dbcan.s3.us-west-2.amazonaws.com/db_v5-2-9_5-5-2026/CAZy.dmnd",
+          "extract": false,
+          "extra_files": [
+            "https://dbcan.s3.us-west-2.amazonaws.com/db_v5-2-9_5-5-2026/dbCAN.hmm",
+            "https://dbcan.s3.us-west-2.amazonaws.com/db_v5-2-9_5-5-2026/dbCAN_sub.hmm",
+            "https://dbcan.s3.us-west-2.amazonaws.com/db_v5-2-9_5-5-2026/fam-substrate-mapping.tsv"
+          ],
+          "post_cmd": "mv {dest_dir}/dbCAN_sub.hmm {dest_dir}/dbCAN-sub.hmm"
+        },
+        {
+          "id": "cazy_diamond_only",
+          "label": "DIAMOND only (~2.2 GB)",
+          "description": {
+            "en": "CAZy.dmnd only -- lighter/faster, but the run must then be configured with --methods diamond (dbCAN/dbCAN-sub HMM files won't be present)",
+            "pt": "Apenas CAZy.dmnd -- mais leve/rápido, mas a execução precisa ser configurada com --methods diamond (os arquivos HMM dbCAN/dbCAN-sub não estarão presentes)"
+          },
+          "url": "https://dbcan.s3.us-west-2.amazonaws.com/db_v5-2-9_5-5-2026/CAZy.dmnd",
+          "extract": false
+        }
+      ],
+      "config_key": "cazy"
+    },
+    "ncycdb": {
+      "name": "NCycDB",
+      "description": {
+        "en": "Curated nitrogen-cycling gene reference (Tu et al. 2019) -- searched with DIAMOND blastp, not a packaged tool of its own",
+        "pt": "Banco curado de genes de ciclagem de nitrogênio (Tu et al. 2019) -- pesquisado com DIAMOND blastp, não é uma ferramenta empacotada própria"
+      },
+      "citation": [
+        {
+          "text": "Tu Q, Lin L, Cheng L, Deng Y, He Z. NCycDB: a curated integrative database for fast and accurate metagenomic profiling of nitrogen cycling genes. Bioinformatics. 2019;35(6):1040-1048.",
+          "doi": "10.1093/bioinformatics/bty741"
+        }
+      ],
+      "setting_key": "db_ncycdb",
+      "size_gb": 1,
+      "detect_files": [
+        "NCyc_95.faa",
+        "id2gene.map"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "ncycdb_95",
+          "label": "NCyc_95 + id2gene.map (~27 MB) ★ Recommended",
+          "description": {
+            "en": "95%-identity-clustered reference (84,759 seqs, less redundant) + the ID-to-gene-family mapping table",
+            "pt": "Referência agrupada a 95% de identidade (84.759 seqs, menos redundante) + a tabela de mapeamento ID-para-família-gênica"
+          },
+          "url": "https://raw.githubusercontent.com/qichao1984/NCyc/master/data/NCyc_95.faa.gz",
+          "extract": false,
+          "gunzip": true,
+          "extra_files": [
+            "https://raw.githubusercontent.com/qichao1984/NCyc/master/data/id2gene.map"
+          ]
+        }
+      ],
+      "config_key": "ncycdb"
+    },
+    "scycdb": {
+      "name": "SCycDB",
+      "description": {
+        "en": "Curated sulfur-cycling gene reference (Yu et al. 2021) -- searched with DIAMOND blastp, not a packaged tool of its own",
+        "pt": "Banco curado de genes de ciclagem de enxofre (Yu et al. 2021) -- pesquisado com DIAMOND blastp, não é uma ferramenta empacotada própria"
+      },
+      "citation": [
+        {
+          "text": "Yu X, Zhou J, Song W, Xu M, He Q, Peng Y, Tian Y, Wang C, Shu L, Wang S, Yan Q, Liu J, He Z. SCycDB: A curated functional gene database for metagenomic profiling of sulphur cycling pathways. Molecular Ecology Resources. 2021;21(3):924-940.",
+          "doi": "10.1111/1755-0998.13306"
+        }
+      ],
+      "setting_key": "db_scycdb",
+      "size_gb": 0.4,
+      "detect_files": [
+        "SCycDB_2020Mar.faa",
+        "id2gene.2020Mar.map"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "scycdb_2020mar",
+          "label": "SCycDB 2020Mar + id2gene map (~95 MB download → ~365 MB extracted) ★ Recommended",
+          "description": {
+            "en": "Multi-part zip archive (911,805 curated + homolog sulfur-cycling sequences) + ID-to-gene mapping. Requires p7zip (the 7z command) installed on this machine to extract -- this is a split zip archive that plain unzip/Info-Zip cannot reassemble correctly",
+            "pt": "Arquivo zip multi-parte (911.805 sequências curadas + homólogas de ciclagem de enxofre) + mapeamento ID-para-gene. Requer p7zip (comando 7z) instalado nesta máquina para extrair -- é um arquivo zip dividido em partes que o unzip/Info-Zip comum não consegue remontar corretamente"
+          },
+          "url": "https://raw.githubusercontent.com/qichao1984/SCycDB/master/SCycDB_2020Mar.zip",
+          "extract": false,
+          "extra_files": [
+            "https://raw.githubusercontent.com/qichao1984/SCycDB/master/SCycDB_2020Mar.z01",
+            "https://raw.githubusercontent.com/qichao1984/SCycDB/master/SCycDB_2020Mar.z02",
+            "https://raw.githubusercontent.com/qichao1984/SCycDB/master/SCycDB_2020Mar.z03",
+            "https://raw.githubusercontent.com/qichao1984/SCycDB/master/SCycDB_2020Mar.z04",
+            "https://raw.githubusercontent.com/qichao1984/SCycDB/master/id2gene.2020Mar.map"
+          ],
+          "post_cmd": "7z x {dest_dir}/SCycDB_2020Mar.zip -o{dest_dir} -y && rm -f {dest_dir}/SCycDB_2020Mar.z01 {dest_dir}/SCycDB_2020Mar.z02 {dest_dir}/SCycDB_2020Mar.z03 {dest_dir}/SCycDB_2020Mar.z04 {dest_dir}/SCycDB_2020Mar.zip"
+        }
+      ],
+      "config_key": "scycdb"
+    },
+    "mcycdb": {
+      "name": "MCycDB",
+      "description": {
+        "en": "Curated methane-cycling gene reference (Qian et al. 2022) -- searched with DIAMOND blastp, not a packaged tool of its own",
+        "pt": "Banco curado de genes de ciclagem de metano (Qian et al. 2022) -- pesquisado com DIAMOND blastp, não é uma ferramenta empacotada própria"
+      },
+      "citation": [
+        {
+          "text": "Qian L, Yu X, Zhou J, et al. MCycDB: A curated database for comprehensively profiling methane cycling processes of environmental microbiomes. Molecular Ecology Resources. 2022;22(5):1803-1823.",
+          "doi": "10.1111/1755-0998.13589"
+        }
+      ],
+      "setting_key": "db_mcycdb",
+      "size_gb": 0.4,
+      "detect_files": [
+        "MCycDB_2021.faa",
+        "id2gene.map"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "mcycdb_2021",
+          "label": "MCycDB 2021 + id2gene map (~118 MB download → ~380 MB extracted) ★ Recommended",
+          "description": {
+            "en": "Multi-part zip archive (923,871 curated + homolog methane-cycling sequences) + ID-to-gene mapping. Requires p7zip (the 7z command) installed on this machine to extract -- this is a split zip archive that plain unzip/Info-Zip cannot reassemble correctly",
+            "pt": "Arquivo zip multi-parte (923.871 sequências curadas + homólogas de ciclagem de metano) + mapeamento ID-para-gene. Requer p7zip (comando 7z) instalado nesta máquina para extrair -- é um arquivo zip dividido em partes que o unzip/Info-Zip comum não consegue remontar corretamente"
+          },
+          "url": "https://raw.githubusercontent.com/qichao1984/MCycDB/master/MCycDB_2021.zip",
+          "extract": false,
+          "extra_files": [
+            "https://raw.githubusercontent.com/qichao1984/MCycDB/master/MCycDB_2021.z01",
+            "https://raw.githubusercontent.com/qichao1984/MCycDB/master/MCycDB_2021.z02",
+            "https://raw.githubusercontent.com/qichao1984/MCycDB/master/MCycDB_2021.z03",
+            "https://raw.githubusercontent.com/qichao1984/MCycDB/master/MCycDB_2021.z04",
+            "https://raw.githubusercontent.com/qichao1984/MCycDB/master/id2gene.map"
+          ],
+          "post_cmd": "7z x {dest_dir}/MCycDB_2021.zip -o{dest_dir} -y && rm -f {dest_dir}/MCycDB_2021.z01 {dest_dir}/MCycDB_2021.z02 {dest_dir}/MCycDB_2021.z03 {dest_dir}/MCycDB_2021.z04 {dest_dir}/MCycDB_2021.zip"
+        }
+      ],
+      "config_key": "mcycdb"
+    },
+    "canthyd": {
+      "name": "CANT-HYD",
+      "description": {
+        "en": "Curated HMM set for hydrocarbon-degradation marker genes (Khot et al. 2021) -- searched with HMMER hmmsearch, not DIAMOND",
+        "pt": "Conjunto curado de HMMs para genes marcadores de degradação de hidrocarbonetos (Khot et al. 2021) -- pesquisado com hmmsearch (HMMER), não DIAMOND"
+      },
+      "citation": [
+        {
+          "text": "Khot V, Zorz J, Gittins DA, et al. CANT-HYD: A Curated Database of Phylogeny-Derived Hidden Markov Models for Annotation of Marker Genes Involved in Hydrocarbon Degradation. Frontiers in Microbiology. 2021;12:764058.",
+          "doi": "10.3389/fmicb.2021.764058"
+        }
+      ],
+      "setting_key": "db_canthyd",
+      "size_gb": 0.02,
+      "detect_files": [
+        "CANT-HYD.hmm"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "canthyd_concatenated",
+          "label": "CANT-HYD.hmm (~8 MB) ★ Recommended",
+          "description": {
+            "en": "37 phylogeny-derived HMMs, concatenated, with curated trusted/noise cutoffs baked in (--cut_tc/--cut_nc at search time, no separate threshold file needed)",
+            "pt": "37 HMMs derivados de filogenia, concatenados, com limiares curados de confiança/ruído embutidos (--cut_tc/--cut_nc no momento da busca, sem arquivo de limiar separado)"
+          },
+          "url": "https://raw.githubusercontent.com/dgittins/CANT-HYD-HydrocarbonBiodegradation/main/HMMs/concatenated%20HMMs/CANT-HYD.hmm",
+          "extract": false
+        }
+      ],
+      "config_key": "canthyd"
+    },
+    "eukulele": {
+      "name": "EUKulele (MMETSP+MarRef)",
+      "description": {
+        "en": "Marine microbial eukaryote protein reference (marmmetsp) for transcript taxonomic classification. Downloaded and built automatically by EUKulele itself the first time it runs -- point this at an empty folder, no manual download needed",
+        "pt": "Referência de proteínas de eucariotos microbianos marinhos (marmmetsp) para classificação taxonômica de transcritos. Baixada e construída automaticamente pelo próprio EUKulele na primeira execução -- aponte para uma pasta vazia, sem necessidade de download manual"
+      },
+      "citation": [
+        {
+          "text": "Keeling PJ, Burki F, Wilcox HM, et al. The Marine Microbial Eukaryote Transcriptome Sequencing Project (MMETSP): Illuminating the Functional Diversity of Eukaryotic Life in the Oceans through Transcriptome Sequencing. PLoS Biology. 2014;12(6):e1001889.",
+          "doi": "10.1371/journal.pbio.1001889"
+        },
+        {
+          "text": "Klemetsen T, Raknes IA, Fu J, et al. The MAR databases: development and implementation of databases specific for marine metagenomics. Nucleic Acids Research. 2018;46(D1):D692-D699.",
+          "doi": "10.1093/nar/gkx1036"
+        }
+      ],
+      "setting_key": "db_eukulele",
+      "size_gb": 5,
+      "detect_files": [
+        "marmmetsp/tax-table.txt"
+      ],
+      "detect_dirs": [],
+      "download_options": [],
+      "config_key": "eukulele"
+    },
+    "cat": {
+      "name": "CAT/BAT (GTDB or NCBI nr)",
+      "description": {
+        "en": "Prokaryotic protein reference for CAT/BAT taxonomic classification. Two real alternatives, both large (no smaller official tier exists for either) -- pick via the cat_database setting (GTDB ~123 GiB compressed, curated bacterial/archaeal taxonomy; nr ~186 GiB compressed, broader NCBI coverage). Downloaded and built automatically by CAT_pack itself the first time it runs -- point this at an empty folder, no manual download needed",
+        "pt": "Referência de proteínas procarióticas para classificação taxonômica via CAT/BAT. Duas alternativas reais, ambas grandes (não existe um nível oficial menor para nenhuma delas) -- escolha pela configuração cat_database (GTDB ~123 GiB comprimido, taxonomia bacteriana/arqueal curada; nr ~186 GiB comprimido, cobertura mais ampla do NCBI). Baixada e construída automaticamente pelo próprio CAT_pack na primeira execução -- aponte para uma pasta vazia, sem necessidade de download manual"
+      },
+      "setting_key": "db_cat",
+      "size_gb": 123,
+      "detect_files": [
+        "db/dogma.dmnd"
+      ],
+      "detect_dirs": [],
+      "download_options": [],
+      "config_key": "cat"
+    }
+  },
+  "defaults": {
+    "fastp": "--qualified_quality_phred 30 --length_required 50 --trim_front1 1 --trim_front2 1",
+    "filtlong": "--min_length 500 --keep_percent 90",
+    "ribodetector": "-e norrna",
+    "kraken2": "--confidence 0.05",
+    "kaiju": "",
+    "domain_filter": {
+      "mode": "prokaryote"
+    },
+    "rnaspades": "",
+    "megahit": "",
+    "trinity": "--max_memory 50G",
+    "transcript_set_step1": "--min-seq-id 1.00 --cov-mode 1 -c 0.98",
+    "transcript_set": "--min-seq-id 0.98 --cov-mode 1 -c 0.98",
+    "transdecoder": "",
+    "eggnog": "",
+    "cazy": "",
+    "ncycdb": "-k 1 -e 0.0001",
+    "scycdb": "-k 1 -e 0.0001",
+    "mcycdb": "-k 1 -e 0.0001",
+    "canthyd": "--cut_tc",
+    "fegenie": "",
+    "eukulele_database": "marmmetsp",
+    "eukulele": "--no_busco",
+    "cat_database": "GTDB",
+    "cat": "",
+    "magma_xref": "-k 1 -e 0.0001",
+    "salmon_index": "-k 31",
+    "salmon": ""
+  },
+  "special_overrides": {},
+  "default_threads": {
+    "fastp": 4,
+    "ribodetector": 8,
+    "kraken2": 8,
+    "kaiju": 8,
+    "rnaspades": 8,
+    "megahit": 8,
+    "trinity": 8,
+    "transcript_set": 8,
+    "transdecoder": 1,
+    "eggnog": 16,
+    "cazy": 8,
+    "ncycdb": 8,
+    "scycdb": 8,
+    "mcycdb": 8,
+    "canthyd": 4,
+    "fegenie": 4,
+    "eukulele": 8,
+    "cat": 8,
+    "magma_xref": 8,
+    "salmon": 8
+  }
+}

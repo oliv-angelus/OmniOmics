@@ -1,0 +1,36 @@
+# Shared conda env for the Plots tab's R compute/export scripts. Resolved and
+# built on demand by plots_engine.py (mirrors snakemake_manager.install_snakemake's
+# `conda create -n <name> -f <this file>` pattern), not per-pipeline like the
+# Snakemake rule envs under pipelines/*/workflow/envs/ -- there's exactly one
+# R analysis engine shared by every pipeline's output, so one env, name "r-plots".
+name: r-plots
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base>=4.3
+  - bioconductor-phyloseq
+  - bioconductor-deseq2
+  - bioconductor-ape
+  - r-vegan
+  - r-permute
+  - r-patchwork
+  - r-ggplot2
+  - r-ggrepel
+  - r-rcolorbrewer
+  - r-tidyverse
+  - r-dplyr
+  - r-tibble
+  - r-forcats
+  - r-indicspecies
+  - r-igraph
+  - r-ggraph
+  - r-hmisc
+  - r-ggvenndiagram
+  - r-complexupset
+  - r-svglite
+  - r-jsonlite
+  - r-optparse
+  - bioconductor-apeglm
+  - bioconductor-clusterprofiler

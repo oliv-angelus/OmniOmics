@@ -1,0 +1,15 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # 3.5.1 has a real, confirmed-by-running-it bug in `emu abundance` for any
+  # database built via --taxonomy-list (not just PRISM's custom GTDB/UNITE
+  # databases -- this is a general custom-database bug): taxonomy.tsv's
+  # tax_id column is read with `dtype=str` while each alignment's tax_id is
+  # parsed as `int(ref_name.split(":")[0])`, so every species/frequency
+  # lookup silently fails ("ValueError: f sums to 0, rather than 1") because
+  # "1" != 1 as dict keys. Fixed upstream in 3.6.0's abundance code (explicit
+  # `dtype={'tax_id': 'int64'}` now, confirmed by reading the installed
+  # 3.6.2 source directly) -- pin >=3.6.2, not 3.5.1.
+  - emu>=3.6.2

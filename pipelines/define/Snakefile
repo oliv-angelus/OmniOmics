@@ -1,0 +1,27 @@
+import pandas as pd
+
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+SAMPLES = samples.index.tolist
+
+wildcard_constraints:
+    sample="[^/]+"
+
+# DEFINE is a single fixed short-read pipeline (no per-tool assembler/binner
+# choices like MAGMA/SIGMA), so rule all lists a flat, unconditional set of
+# final targets -- same pattern as SIGMA's Snakefile. A tool the user turns
+# off in the Tools tab is handled by the app's existing `--omit-from`
+# mechanism at the snakemake invocation level, not by conditional branching
+# here.
+rule all:
+    input:
+        "results/05_TABLES/contagem_anotada.tsv",
+        "results/05_TABLES/qc_summary.tsv",
+        "results/01_QC/multiqc_raw",
+        "results/01_QC/multiqc_trim"
+
+include: "workflow/rules/01_qc.smk"
+include: "workflow/rules/02_reference.smk"
+include: "workflow/rules/03_mapping.smk"
+include: "workflow/rules/04_strandedness.smk"
+include: "workflow/rules/05_counts.smk"
+include: "workflow/rules/06_merge.smk"

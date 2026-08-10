@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - vsearch=2.29.1
+  - seqkit=2.9.0
+  - biopython=1.84

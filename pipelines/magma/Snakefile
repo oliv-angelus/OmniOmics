@@ -1,0 +1,64 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+SAMPLES = samples.index.tolist
+LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]
+
+wildcard_constraints:
+    sample="[^/]+"
+
+rule all:
+    input:
+        # Nanopore QC (before and after Filtlong)
+        expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=LONG_SAMPLES),
+        expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=LONG_SAMPLES),
+
+        # Read-level taxonomy (Kraken2/Bracken, and/or Kaiju -- independent choices)
+        "results/03_TAXONOMY/abundance_table_final_RAW.tsv",
+        "results/03_TAXONOMY/abundance_table_final_kaiju_RAW.tsv",
+
+        # Assembly quality (MetaQUAST — full and prokaryotic contigs)
+        expand("results/02_ASSEMBLY/{sample}/metaquast", sample=SAMPLES),
+        expand("results/02_ASSEMBLY/{sample}/metaquast_prokaryotic", sample=SAMPLES),
+
+        # MAG taxonomy (GTDB-Tk on dereplicated HQ MAGs)
+        "results/08_MAG_TAXONOMY/gtdbtk",
+
+        # Track 1 — per-sample functional annotation
+        expand("results/09_ANNOTATION/{sample}/eggnog/{sample}_annotations.emapper.annotations", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/abricate", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/amrfinder/amrfinder_results.tsv", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/minced/{sample}.crisprs", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/checkv/quality_summary.tsv", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/genomad", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/isescan", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/bigscape", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/mobsuite", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/vibrant", sample=SAMPLES),
+        expand("results/09_ANNOTATION/{sample}/vfdb/vfdb_results.tab", sample=SAMPLES),
+
+        # Track 2 — per-MAG functional annotation
+        "results/09_ANNOTATION/mags/eggnog",
+        "results/09_ANNOTATION/mags/abricate",
+        "results/09_ANNOTATION/mags/amrfinder",
+        "results/09_ANNOTATION/mags/minced",
+        "results/09_ANNOTATION/mags/isescan",
+        "results/09_ANNOTATION/mags/bigscape",
+        "results/09_ANNOTATION/mags/vfdb",
+        "results/09_ANNOTATION/mags/barrnap",
+        "results/09_ANNOTATION/mags/trnascan",
+
+        # MAG coverage across samples (CoverM)
+        "results/10_MAG_COVERAGE/coverm_coverage.tsv"
+
+
+include: "workflow/rules/01_qc_tax.smk"
+include: "workflow/rules/02_assembly.smk"
+include: "workflow/rules/03_mapping.smk"
+include: "workflow/rules/04_binning.smk"
+include: "workflow/rules/05_mag_refine.smk"
+include: "workflow/rules/06_dereplication_tax.smk"
+include: "workflow/rules/07_annotation_mobilome.smk"
+include: "workflow/rules/08_coverage.smk"

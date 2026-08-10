@@ -1,0 +1,26 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconductor-dada2=1.34.0
+  - r-optparse=1.7.5
+  # Real, confirmed-by-running-it binary-compat bug: bioconda's
+  # bioconductor-dada2=1.34.0 build was compiled against an older
+  # r-rcppparallel that bundled its own internal TBB statically. The conda
+  # solver's default (unpinned) r-rcppparallel resolves to a current build
+  # (5.1.11_2 as of 2026-08) that dropped the bundled TBB in favor of
+  # dynamically linking a system tbb>=2023.0.0 (oneTBB) -- but dada2.so
+  # still references the classic pre-2021 TBB API (`tbb::task`), which
+  # oneTBB removed entirely. Result: `library(dada2)` fails to load with
+  # "undefined symbol: _ZTIN3tbb4taskE". Pinning r-rcppparallel back to 5.1.9
+  # (a build with no external tbb dependency at all, matching dada2 1.34.0's
+  # own build era) fixes it -- confirmed via a real `library(dada2)` load
+  # test, not just reading dependency metadata.
+  - r-rcppparallel=5.1.9
+  # For phylogenetic tree construction (2026-08-07): DADA2/phyloseq's own
+  # real, documented method -- DECIPHER::AlignSeqs() + phangorn's NJ/GTR+G+I
+  # ML tree fit. See dada2_pacbio.R's header comment for the full citation
+  # trail (Wright 2016, Schliep 2011).
+  - bioconductor-decipher
+  - r-phangorn

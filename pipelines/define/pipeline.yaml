@@ -1,0 +1,734 @@
+{
+  "id": "define",
+  "name": "DEFINE",
+  "description": "Differential Expression, Functional Interpretation & Network Enrichment",
+  "category": "transcriptomics",
+  "tags": [
+    "prokaryote",
+    "isolate",
+    "short_only"
+  ],
+  "icon": "assets/pipeline_icons/define.png",
+  "snakefile": "Snakefile",
+  "categories": [
+    "QC & Trimming",
+    "Reference Annotation",
+    "Read Mapping",
+    "Strandedness & Counting",
+    "Table Assembly"
+  ],
+  "sample_sheet": {
+    "columns": [
+      "sample",
+      "fq1",
+      "fq2"
+    ],
+    "input_dirs": [
+      {
+        "key": "short_reads_dir",
+        "label": "Pasta de reads curtas (RNA)"
+      },
+      {
+        "key": "reference_genome",
+        "label": "Genoma de referência (FASTA)",
+        "kind": "file",
+        "config_key": "reference_genome"
+      }
+    ]
+  },
+  "tools": {
+    "fastp": {
+      "name": "fastp",
+      "description": {
+        "en": "Fast all-in-one FASTQ preprocessor for paired short reads",
+        "pt": "Pré-processador FASTQ rápido e completo para reads curtas pareadas"
+      },
+      "citation": [
+        {
+          "text": "Chen S, Zhou Y, Chen Y, Gu J. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics. 2018;34(17):i884-i890.",
+          "doi": "10.1093/bioinformatics/bty560"
+        }
+      ],
+      "category": "QC & Trimming",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--qualified_quality_phred",
+          "type": "int",
+          "default": 20,
+          "enabled": true,
+          "description": {
+            "en": "Minimum Phred quality score for a base to be considered qualified",
+            "pt": "Escore de qualidade Phred mínimo para uma base ser considerada qualificada"
+          },
+          "min": 0,
+          "max": 40
+        },
+        {
+          "flag": "--unqualified_percent_limit",
+          "type": "int",
+          "default": 20,
+          "enabled": true,
+          "description": {
+            "en": "Maximum % of unqualified bases allowed in a read",
+            "pt": "% máximo de bases não qualificadas permitido numa read"
+          },
+          "min": 0,
+          "max": 100
+        },
+        {
+          "flag": "--length_required",
+          "type": "int",
+          "default": 36,
+          "enabled": true,
+          "description": {
+            "en": "Minimum read length after trimming; shorter reads are discarded",
+            "pt": "Comprimento mínimo da read após o trimming; reads mais curtas são descartadas"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--cut_right",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Enable sliding-window quality trimming from the 5' end",
+            "pt": "Ativa o trimming de qualidade por janela deslizante a partir da extremidade 5'"
+          }
+        },
+        {
+          "flag": "--cut_right_window_size",
+          "type": "int",
+          "default": 4,
+          "enabled": false,
+          "description": {
+            "en": "Sliding window size for --cut_right",
+            "pt": "Tamanho da janela deslizante para --cut_right"
+          },
+          "min": 1
+        },
+        {
+          "flag": "--cut_right_mean_quality",
+          "type": "int",
+          "default": 20,
+          "enabled": false,
+          "description": {
+            "en": "Mean quality threshold that triggers a --cut_right window cut",
+            "pt": "Limiar de qualidade média que aciona o corte da janela do --cut_right"
+          },
+          "min": 0,
+          "max": 40
+        },
+        {
+          "flag": "--detect_adapter_for_pe",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Auto-detect adapters for paired-end data",
+            "pt": "Detecta adaptadores automaticamente para dados pareados"
+          }
+        }
+      ],
+      "rule_names": [
+        "fastp"
+      ]
+    },
+    "fastqc": {
+      "name": "FastQC",
+      "description": {
+        "en": "Per-read quality control report, run on both raw and trimmed reads",
+        "pt": "Relatório de controle de qualidade por read, rodado nas reads brutas e nas trimadas"
+      },
+      "citation": [
+        {
+          "text": "Andrews S. FastQC: a quality control tool for high throughput sequence data. Babraham Bioinformatics; 2010. https://www.bioinformatics.babraham.ac.uk/projects/fastqc/",
+          "doi": null
+        }
+      ],
+      "category": "QC & Trimming",
+      "read_type": "short",
+      "flags": [],
+      "rule_names": [
+        "fastqc_raw",
+        "fastqc_trim"
+      ]
+    },
+    "multiqc": {
+      "name": "MultiQC",
+      "description": {
+        "en": "Aggregates every sample's FastQC (and fastp) reports into one consolidated report -- once for raw reads, once for trimmed reads",
+        "pt": "Agrega os relatórios de FastQC (e fastp) de todas as amostras num relatório único -- uma vez para as reads brutas, outra para as trimadas"
+      },
+      "citation": [
+        {
+          "text": "Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016;32(19):3047-3048.",
+          "doi": "10.1093/bioinformatics/btw354"
+        }
+      ],
+      "category": "QC & Trimming",
+      "read_type": "short",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "fastqc"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "multiqc_raw",
+        "multiqc_trim"
+      ]
+    },
+    "bakta_reference": {
+      "name": "Bakta",
+      "description": {
+        "en": "Annotates the single user-provided reference genome once (gene calling, tRNA/tmRNA/rRNA/ncRNA/CRISPR, functional annotation) -- reused by every sample, not re-run per sample",
+        "pt": "Anota o genoma de referência fornecido pelo usuário uma única vez (predição de genes, tRNA/tmRNA/rRNA/ncRNA/CRISPR, anotação funcional) -- reaproveitado por todas as amostras, não roda de novo por amostra"
+      },
+      "citation": [
+        {
+          "text": "Schwengers O, Jelonek L, Dieckmann MA, Beyvers S, Blom J, Goesmann A. Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification. Microbial Genomics. 2021;7(11):000685.",
+          "doi": "10.1099/mgen.0.000685"
+        }
+      ],
+      "category": "Reference Annotation",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--genus",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Genus name, improves annotation specificity (optional)",
+            "pt": "Nome do gênero, melhora a especificidade da anotação (opcional)"
+          }
+        },
+        {
+          "flag": "--species",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Species name, improves annotation specificity (optional)",
+            "pt": "Nome da espécie, melhora a especificidade da anotação (opcional)"
+          }
+        },
+        {
+          "flag": "--strain",
+          "type": "str",
+          "default": "",
+          "enabled": false,
+          "description": {
+            "en": "Strain name, improves annotation specificity (optional)",
+            "pt": "Nome da linhagem, melhora a especificidade da anotação (opcional)"
+          }
+        },
+        {
+          "flag": "--gram",
+          "type": "choice",
+          "default": "?",
+          "enabled": false,
+          "description": {
+            "en": "Gram staining type",
+            "pt": "Tipo de coloração de Gram"
+          },
+          "choices": [
+            "+",
+            "-",
+            "?"
+          ]
+        },
+        {
+          "flag": "--complete",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Assume all contigs are complete replicons (chromosome/plasmid), not draft fragments",
+            "pt": "Assume que todos os contigs são replicons completos (cromossomo/plasmídeo), não fragmentos draft"
+          }
+        },
+        {
+          "flag": "--skip-trna",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip tRNA detection",
+            "pt": "Pula a detecção de tRNA"
+          }
+        },
+        {
+          "flag": "--skip-rrna",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip rRNA detection",
+            "pt": "Pula a detecção de rRNA"
+          }
+        },
+        {
+          "flag": "--skip-ncrna",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip ncRNA (Rfam) detection",
+            "pt": "Pula a detecção de ncRNA (Rfam)"
+          }
+        },
+        {
+          "flag": "--skip-crispr",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Skip CRISPR array detection",
+            "pt": "Pula a detecção de arranjos CRISPR"
+          }
+        }
+      ],
+      "rule_names": [
+        "bakta_reference"
+      ]
+    },
+    "eggnog_reference": {
+      "name": "eggNOG-mapper",
+      "description": {
+        "en": "Functional annotation (OG, COG category, GO, EC, KEGG, PFAM) of the reference genome's proteins, once -- merged into the final annotated count table",
+        "pt": "Anotação funcional (OG, categoria COG, GO, EC, KEGG, PFAM) das proteínas do genoma de referência, uma vez -- mesclada na tabela final de contagem anotada"
+      },
+      "citation": [
+        {
+          "text": "Cantalapiedra CP, Hernandez-Plaza A, Letunic I, Bork P, Huerta-Cepas J. eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular Biology and Evolution. 2021;38(12):5825-5829.",
+          "doi": "10.1093/molbev/msab293"
+        },
+        {
+          "text": "Huerta-Cepas J, Szklarczyk D, Heller D, et al. eggNOG 5.0: a hierarchical, functionally and phylogenetically annotated orthology resource based on 5090 organisms and 2502 viruses. Nucleic Acids Research. 2019;47(D1):D309-D314.",
+          "doi": "10.1093/nar/gky1085"
+        }
+      ],
+      "category": "Reference Annotation",
+      "read_type": "all",
+      "flags": [
+        {
+          "flag": "--sensmode",
+          "type": "choice",
+          "default": "fast",
+          "enabled": true,
+          "description": {
+            "en": "DIAMOND search sensitivity -- 'fast' is ~14x faster than 'sensitive' with negligible sensitivity loss for most genomes",
+            "pt": "Sensibilidade da busca DIAMOND -- 'fast' é ~14x mais rápido que 'sensitive' com perda de sensibilidade desprezível pra maioria dos genomas"
+          },
+          "choices": [
+            "fast",
+            "mid-sensitive",
+            "sensitive",
+            "more-sensitive",
+            "very-sensitive",
+            "ultra-sensitive"
+          ]
+        },
+        {
+          "flag": "--dmnd_iterate",
+          "type": "choice",
+          "default": "no",
+          "enabled": false,
+          "description": {
+            "en": "Iterative DIAMOND search across sensitivity modes (slower, marginal sensitivity gain)",
+            "pt": "Busca iterativa do DIAMOND por vários modos de sensibilidade (mais lento, ganho marginal de sensibilidade)"
+          },
+          "choices": [
+            "yes",
+            "no"
+          ]
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "bakta_reference"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "eggnog_reference"
+      ]
+    },
+    "bowtie2": {
+      "name": "Bowtie2",
+      "description": {
+        "en": "Aligns each sample's trimmed short reads against the reference genome's shared index",
+        "pt": "Alinha as reads curtas trimadas de cada amostra contra o índice compartilhado do genoma de referência"
+      },
+      "citation": [
+        {
+          "text": "Langmead B, Salzberg SL. Fast gapped-read alignment with Bowtie 2. Nature Methods. 2012;9(4):357-359.",
+          "doi": "10.1038/nmeth.1923"
+        }
+      ],
+      "category": "Read Mapping",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--sensitive",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Use sensitive alignment preset (default)",
+            "pt": "Usa o preset de alinhamento sensível (padrão)"
+          }
+        },
+        {
+          "flag": "--no-unal",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Suppress unaligned reads in output",
+            "pt": "Omite reads não alinhadas na saída"
+          }
+        },
+        {
+          "flag": "--no-discordant",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Suppress discordant alignments",
+            "pt": "Omite alinhamentos discordantes"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "bowtie2_index_reference",
+        "bowtie2_align"
+      ]
+    },
+    "samtools_index": {
+      "name": "samtools index",
+      "description": {
+        "en": "Indexes sorted BAM files",
+        "pt": "Indexa os arquivos BAM ordenados"
+      },
+      "citation": [
+        {
+          "text": "Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H. Twelve years of SAMtools and BCFtools. GigaScience. 2021;10(2):giab008.",
+          "doi": "10.1093/gigascience/giab008"
+        }
+      ],
+      "category": "Read Mapping",
+      "read_type": "short",
+      "flags": [],
+      "rule_names": [
+        "index_bam"
+      ]
+    },
+    "rseqc": {
+      "name": "RSeQC",
+      "description": {
+        "en": "Infers each sample's library strandedness (infer_experiment.py) against the reference's CDS features, then automatically picks featureCounts' -s value: >90% one pattern -> stranded fwd/rev, ~50/50 -> unstranded",
+        "pt": "Infere a fita (strandedness) da biblioteca de cada amostra (infer_experiment.py) contra as features CDS da referência, e escolhe automaticamente o valor de -s do featureCounts: >90% um padrão -> stranded fwd/rev, ~50/50 -> unstranded"
+      },
+      "citation": [
+        {
+          "text": "Wang L, Wang S, Li W. RSeQC: quality control of RNA-seq experiments. Bioinformatics. 2012;28(16):2184-2185.",
+          "doi": "10.1093/bioinformatics/bts356"
+        }
+      ],
+      "category": "Strandedness & Counting",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "-s",
+          "type": "int",
+          "default": 500000,
+          "enabled": true,
+          "description": {
+            "en": "Number of reads sampled to infer strandedness",
+            "pt": "Número de reads amostradas para inferir a fita"
+          },
+          "min": 1000
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "bakta_reference"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "bed12_from_gff",
+        "infer_experiment",
+        "decide_strandedness"
+      ]
+    },
+    "featurecounts": {
+      "name": "featureCounts",
+      "description": {
+        "en": "Counts reads per gene (CDS/locus_tag) across every sample at once, producing one aligned gene x sample matrix -- uses the rRNA/tRNA/tmRNA-filtered annotation and the strandedness RSeQC detected",
+        "pt": "Conta reads por gene (CDS/locus_tag) de todas as amostras de uma vez, gerando uma única matriz gene x amostra alinhada -- usa a anotação filtrada de rRNA/tRNA/tmRNA e a fita detectada pelo RSeQC"
+      },
+      "citation": [
+        {
+          "text": "Liao Y, Smyth GK, Shi W. featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. Bioinformatics. 2014;30(7):923-930.",
+          "doi": "10.1093/bioinformatics/btt656"
+        }
+      ],
+      "category": "Strandedness & Counting",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "-t",
+          "type": "str",
+          "default": "CDS",
+          "enabled": false,
+          "description": {
+            "en": "Feature type counted from the GFF3",
+            "pt": "Tipo de feature contada do GFF3"
+          }
+        },
+        {
+          "flag": "-g",
+          "type": "str",
+          "default": "locus_tag",
+          "enabled": false,
+          "description": {
+            "en": "GFF3 attribute used as the gene id",
+            "pt": "Atributo do GFF3 usado como id do gene"
+          }
+        },
+        {
+          "flag": "--countReadPairs",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Count fragments (read pairs), not individual reads",
+            "pt": "Conta fragmentos (pares de reads), não reads individuais"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "bowtie2"
+          ],
+          "min": 1
+        },
+        {
+          "tools": [
+            "rseqc"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "featurecounts"
+      ]
+    },
+    "merge_annotated_counts": {
+      "name": "Annotated Count Table",
+      "description": {
+        "en": "Joins the raw count matrix with the reference's gene/product table (Bakta) and functional annotation (eggNOG: OG, COG, GO, EC, KEGG, PFAM) into a single merged TSV, ready for downstream differential expression analysis",
+        "pt": "Junta a matriz de contagem bruta com a tabela de gene/produto da referência (Bakta) e a anotação funcional (eggNOG: OG, COG, GO, EC, KEGG, PFAM) numa única TSV mesclada, pronta pra análise de expressão diferencial feita depois"
+      },
+      "category": "Table Assembly",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "featurecounts"
+          ],
+          "min": 1
+        },
+        {
+          "tools": [
+            "eggnog_reference"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "merge_annotated_counts"
+      ]
+    },
+    "qc_summary": {
+      "name": "QC Summary",
+      "description": {
+        "en": "One row per sample: fastp retention %, Bowtie2 alignment %, featureCounts assigned %, detected strandedness -- the automatic QC-alert metrics the spec calls for, consolidated in one TSV",
+        "pt": "Uma linha por amostra: % de retenção do fastp, % de alinhamento do Bowtie2, % assigned do featureCounts, fita detectada -- as métricas de alerta automático de QC consolidadas numa TSV"
+      },
+      "category": "Table Assembly",
+      "read_type": "all",
+      "flags": [],
+      "requires": [
+        {
+          "tools": [
+            "featurecounts"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "qc_summary"
+      ]
+    }
+  },
+  "databases": {
+    "bakta": {
+      "name": "Bakta",
+      "description": {
+        "en": "Bakta reference database for gene/functional annotation",
+        "pt": "Banco de referência do Bakta para anotação gênica/funcional"
+      },
+      "citation": [
+        {
+          "text": "Schwengers O, Jelonek L, Dieckmann MA, Beyvers S, Blom J, Goesmann A. Bakta: rapid and standardized annotation of bacterial genomes via alignment-free sequence identification. Microbial Genomics. 2021;7(11):000685.",
+          "doi": "10.1099/mgen.0.000685"
+        }
+      ],
+      "setting_key": "db_bakta",
+      "size_gb": 32,
+      "detect_files": [
+        "bakta.db"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "bakta_full",
+          "label": "Bakta DB full (31.9 GB) ★",
+          "description": {
+            "en": "Full database -- best annotation coverage, recommended when disk space allows",
+            "pt": "Banco completo -- melhor cobertura de anotação, recomendado quando há espaço em disco suficiente"
+          },
+          "url": "https://zenodo.org/records/14916843/files/db.tar.xz?download=1",
+          "extract": true
+        },
+        {
+          "id": "bakta_light",
+          "label": "Bakta DB light (1.3 GB)",
+          "description": {
+            "en": "Lightweight database -- skips some reference sets (e.g. PLSDB plasmids); faster to download, slightly less complete annotation",
+            "pt": "Banco leve -- pula alguns conjuntos de referência (ex.: plasmídeos PLSDB); baixa mais rápido, anotação um pouco menos completa"
+          },
+          "url": "https://zenodo.org/records/14916843/files/db-light.tar.xz?download=1",
+          "extract": true
+        }
+      ],
+      "config_key": "bakta"
+    },
+    "eggnog": {
+      "name": "EggNOG-mapper",
+      "description": {
+        "en": "Functional annotation using eggNOG orthology database",
+        "pt": "Anotação funcional usando o banco de ortologia eggNOG"
+      },
+      "citation": [
+        {
+          "text": "Cantalapiedra CP, Hernandez-Plaza A, Letunic I, Bork P, Huerta-Cepas J. eggNOG-mapper v2: functional annotation, orthology assignments, and domain prediction at the metagenomic scale. Molecular Biology and Evolution. 2021;38(12):5825-5829.",
+          "doi": "10.1093/molbev/msab293"
+        },
+        {
+          "text": "Huerta-Cepas J, Szklarczyk D, Heller D, et al. eggNOG 5.0: a hierarchical, functionally and phylogenetically annotated orthology resource based on 5090 organisms and 2502 viruses. Nucleic Acids Research. 2019;47(D1):D309-D314.",
+          "doi": "10.1093/nar/gky1085"
+        }
+      ],
+      "setting_key": "db_eggnog",
+      "size_gb": 50,
+      "detect_files": [
+        "eggnog.db",
+        "eggnog_proteins.dmnd"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "eggnog_all",
+          "label": "eggnog.db + proteins.dmnd (~14 GB compressed) ★",
+          "description": {
+            "en": "Main annotation DB (SQLite) + DIAMOND protein index",
+            "pt": "Banco de anotação principal (SQLite) + índice de proteínas DIAMOND"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz",
+          "extract": false,
+          "gunzip": true,
+          "extra_files": [
+            "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz",
+            "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.taxa.tar.gz"
+          ]
+        },
+        {
+          "id": "eggnog_db",
+          "label": "eggnog.db only (~3.4 GB compressed)",
+          "description": {
+            "en": "SQLite annotation database only (no DIAMOND search)",
+            "pt": "Apenas o banco de anotação SQLite (sem busca DIAMOND)"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog.db.gz",
+          "extract": false,
+          "gunzip": true
+        },
+        {
+          "id": "eggnog_diamond",
+          "label": "eggnog_proteins.dmnd only (~11 GB compressed)",
+          "description": {
+            "en": "DIAMOND protein index only",
+            "pt": "Apenas o índice de proteínas DIAMOND"
+          },
+          "url": "http://eggnog5.embl.de/download/emapperdb-5.0.2/eggnog_proteins.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        }
+      ],
+      "config_key": "eggnog"
+    }
+  },
+  "defaults": {
+    "fastp": "--qualified_quality_phred 20 --unqualified_percent_limit 20 --length_required 36 --cut_right --detect_adapter_for_pe",
+    "fastqc": "",
+    "multiqc": "",
+    "bakta_reference": "--complete --skip-trna --skip-rrna --skip-ncrna --skip-crispr",
+    "eggnog_reference": "--sensmode fast --dmnd_iterate no",
+    "bowtie2": "--no-unal",
+    "samtools_index": "",
+    "rseqc": "-s 500000",
+    "featurecounts": "-t CDS -g locus_tag --countReadPairs",
+    "merge_annotated_counts": "",
+    "qc_summary": ""
+  },
+  "special_overrides": {
+    "ram_gb_targets": []
+  },
+  "default_threads": {
+    "fastp": 4,
+    "fastqc": 2,
+    "multiqc": 1,
+    "bakta_reference": 8,
+    "eggnog_reference": 8,
+    "bowtie2": 8,
+    "samtools_index": 4,
+    "rseqc": 1,
+    "featurecounts": 8,
+    "merge_annotated_counts": 1,
+    "qc_summary": 1
+  }
+}
