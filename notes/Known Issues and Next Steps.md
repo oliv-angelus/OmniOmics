@@ -311,3 +311,66 @@ Flutter num estado parcial — o build seguinte falha com `file INSTALL cannot f
 .../build/native_assets/linux`. Não é dano permanente, mas **exige `flutter clean` +
 `flutter pub get`** antes do próximo build. Confirmado: após isso, `flutter build linux
 --debug` volta a compilar normalmente.
+
+## Incidente: limpeza de comentários por regex destruiu 138 arquivos (2026-08-10)
+
+**O que aconteceu.** Para a tarefa de remover comentários de desenvolvimento antes da
+publicação, apliquei regexes de linha inteira sobre toda a base de código, em vez de editar
+só linhas de comentário. Quatro regras eram destrutivas para *código*, não só para texto:
+
+| Regra | Intenção | Dano real |
+|---|---|---|
+| `re.sub(r'\(\s*\)', '', s)` | tirar `()` vazios de prosa | removeu **toda** chamada zero-arg do código |
+| `re.sub(r'\[\[([^\]]+)\]\]', r'\1', s)` | resolver links `[[wiki]]` das notas | destruiu indexação `[[ ]]` do R e `[[...]]` do pandas |
+| `re.sub(r'(#\|--\|//)\s{2,}', r'\1 ', s)` | normalizar espaço após marcador | engoliu a linha de código seguinte para dentro do comentário |
+| `re.sub(r'\s+([,.;:])', r'\1', s)` | tirar espaço antes de pontuação | juntou linhas que começavam com `.`, `,`, `:` ou `...` |
+
+A pasta **não era versionada** — fato que eu mesmo tinha registrado na limpeza do dia
+anterior — e mesmo assim não fiz backup antes. Não havia como reverter.
+
+**Como foi reparado.** `git init` + commit do estado danificado como ponto de restauração,
+push para repositório privado, e então reversão sistemática por linguagem, cada etapa
+verificada por parser/compilador real em vez de inspeção visual:
+
+- **Dart** — 1179 problemas → 0 erros; `flutter build linux --debug` compila.
+- **Python** — 0 erros de compilação, `pyflakes` limpo. 39 chamadas zero-arg restauradas.
+- **R** — 47 scripts parseiam; ~180 sítios corrigidos.
+- **Snakemake** — 44 arquivos compilam pelo parser do próprio Snakemake.
+
+**Detectores construídos (reutilizáveis).** Grep não acha esse dano, porque o resultado
+continua sintaticamente válido. O que funcionou foi análise estática semântica:
+
+1. **Símbolo indefinido + divisão prefixo/sufixo** — para cada símbolo usado mas nunca
+   definido, testar todas as divisões `a+b`; se `a` e `b` forem ambos símbolos reais do
+   arquivo, era `a[[b]]`. Achou `metagroup_var` → `meta[[group_var]]`, `setslvl` →
+   `sets[[lvl]]`, `partslength(parts) + 1` → `parts[[length(parts) + 1]]`, etc.
+2. **Dead store + divisão** — o detector acima é cego para o lado esquerdo de atribuições
+   (`args[[key]] <- v` vira `argskey <- v`, que "define" `argskey`). Complemento: símbolos
+   atribuídos e **nunca lidos**, também divisíveis. Achou `argskey` no parser de CLI —
+   que quebrava *todos* os scripts de análise.
+3. **Varredura AST de chamadas zero-arg** — nomes conhecidos como funções usados em posição
+   de valor. Achou `uuid.uuid4.hex`, `env=_subprocess_env`, `runs_store.list_runs`,
+   `h.hexdigest`, `this_script_dir` (38 sítios), `parse_cli_args`, `list`, `ggplot`,
+   `coord_flip`, `scale_x_log10`.
+4. **Colchetes vazados para dentro de strings** — nenhum literal legítimo começa com `]]`
+   ou termina com `[[`; tudo que casava era dano.
+5. **Comentário contendo código** — comentário com `<-`, `@app.`, ou `...ident` colado.
+
+**Validação funcional** (o passo que realmente fechou a conta — os parsers passavam muito
+antes do código estar correto): os 5 loaders da aba Plots rodados sobre as runs demo, e as
+31 análises implementadas executadas de verdade. 30 produzem saída. A restante (`de_upset`)
+para na própria validação de entrada — o dataset DEFINE demo tem só 2 níveis e ela exige
+≥ 2 níveis não-referência; o gêmeo `dogma_de_upset`, mesmo código com 3 níveis, passa.
+
+**Regras adotadas daqui em diante.**
+1. O projeto agora é um repositório git privado (`oliv-angelus/OmniOmics`) — commitar antes
+   de qualquer edição em massa.
+2. Nunca aplicar regex de arquivo inteiro para editar comentários. Editar **só linhas de
+   comentário**, arquivo por arquivo.
+3. Depois de qualquer edição ampla: parser de cada linguagem **e** execução funcional. Só
+   parsear não detecta nada dessa classe de dano.
+
+### Bugs pré-existentes encontrados durante o reparo (não eram dano)
+- `pipelines/dogma/workflow/rules/06_taxonomy.smk`: `\.` não escapado dentro de string
+  Python não-raw num comando `sed` — funciona hoje, mas emite `SyntaxWarning` de
+  descontinuação. Corrigido para `\\.` (o `sed` recebe exatamente o mesmo texto).
