@@ -1,0 +1,1692 @@
+{
+  "conda_path": "/home/angelo/miniforge3/bin/conda",
+  "launch_drafts": {
+    "magma": {
+      "input_dirs": {
+        "short_reads_dir": "/home/angelo/Downloads/OmniOmics/build",
+        "long_reads_dir": "/home/angelo/Downloads/OmniOmics/test_data/long_reads"
+      },
+      "output_dir": "/home/angelo/Downloads/run01",
+      "ram_gb": "4",
+      "cores": "4",
+      "long_read_platform": "pacbio_raw",
+      "thread_overrides": {},
+      "active_tools": [
+        "fastp",
+        "filtlong",
+        "kraken2",
+        "bracken",
+        "kreport2mpa",
+        "kaiju",
+        "megahit",
+        "metaquast",
+        "tiara",
+        "bowtie2",
+        "minimap2",
+        "samtools_index",
+        "semibin2",
+        "vamb",
+        "binette",
+        "checkm2",
+        "gunc",
+        "mags_annot",
+        "drep",
+        "coverm",
+        "gtdbtk",
+        "abricate",
+        "barrnap",
+        "trnascan",
+        "virsorter2",
+        "genomad",
+        "vibrant",
+        "isescan",
+        "minced",
+        "mobsuite",
+        "vfdb",
+        "antismash",
+        "bigscape",
+        "jgi_summarize",
+        "metabat2",
+        "maxbin2",
+        "checkv",
+        "prodigal",
+        "eggnog",
+        "metaspades_hybrid",
+        "flye"
+      ],
+      "active_tracks": {
+        "amrfinderplus": [
+          "sample",
+          "mags"
+        ],
+        "abricate": [
+          "sample",
+          "mags"
+        ],
+        "isescan": [
+          "sample",
+          "mags"
+        ],
+        "minced": [
+          "sample",
+          "mags"
+        ],
+        "vfdb": [
+          "sample",
+          "mags"
+        ],
+        "antismash": [
+          "sample",
+          "mags"
+        ],
+        "bigscape": [
+          "sample",
+          "mags"
+        ],
+        "prodigal": [
+          "sample",
+          "mags"
+        ],
+        "eggnog": [
+          "mags",
+          "sample"
+        ]
+      },
+      "tool_params": {
+        "fastp": {
+          "enabledFlags": [
+            "--qualified_quality_phred",
+            "--length_required",
+            "--trim_front1",
+            "--trim_front2"
+          ],
+          "flagValues": {
+            "--qualified_quality_phred": "30",
+            "--length_required": "50",
+            "--trim_front1": "1",
+            "--trim_front2": "1",
+            "--trim_tail1": "0",
+            "--trim_tail2": "0",
+            "--cut_front": "true",
+            "--cut_tail": "true",
+            "--cut_mean_quality": "20",
+            "--detect_adapter_for_pe": "true",
+            "--dedup": "true",
+            "--low_complexity_filter": "true",
+            "--complexity_threshold": "30"
+          },
+          "extraParams": ""
+        },
+        "filtlong": {
+          "enabledFlags": [
+            "--min_length",
+            "--keep_percent"
+          ],
+          "flagValues": {
+            "--min_length": "500",
+            "--max_length": "0",
+            "--keep_percent": "90.0",
+            "--target_bases": "0",
+            "--min_mean_q": "0.0"
+          },
+          "extraParams": ""
+        },
+        "kraken2": {
+          "enabledFlags": [
+            "--confidence"
+          ],
+          "flagValues": {
+            "--confidence": "0.05",
+            "--minimum-hit-groups": "2",
+            "--report-zero-counts": "true",
+            "--paired": "true",
+            "--gzip-compressed": "true"
+          },
+          "extraParams": ""
+        },
+        "bracken": {
+          "enabledFlags": [
+            "-l",
+            "-r"
+          ],
+          "flagValues": {
+            "-l": "S",
+            "-r": "150",
+            "-t": "10"
+          },
+          "extraParams": ""
+        },
+        "kreport2mpa": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "kaiju": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-a": "greedy",
+            "-e": "3",
+            "-m": "11",
+            "-s": "65",
+            "-E": "0.01",
+            "-X": "true"
+          },
+          "extraParams": ""
+        },
+        "megahit": {
+          "enabledFlags": [
+            "--min-contig-len",
+            "-m"
+          ],
+          "flagValues": {
+            "--min-contig-len": "300",
+            "-m": "0.85",
+            "--k-min": "21",
+            "--k-max": "141",
+            "--k-step": "10",
+            "--k-list": "21,29,39,59,79,99,119,141",
+            "--min-count": "2",
+            "--prune-level": "2",
+            "--prune-depth": "2",
+            "--bubble-level": "2",
+            "--merge-level": "20,0.95",
+            "--disconnect-ratio": "0.1",
+            "--low-local-ratio": "0.2",
+            "--cleaning-rounds": "5",
+            "--no-mercy": "true",
+            "--no-local": "true",
+            "--kmin-1pass": "true",
+            "--presets": "",
+            "--mem-flag": "1"
+          },
+          "extraParams": ""
+        },
+        "metaspades_hybrid": {
+          "enabledFlags": [
+            "-m"
+          ],
+          "flagValues": {
+            "-m": "60",
+            "--only-assembler": "true",
+            "--careful": "true",
+            "--k-mer-size": ""
+          },
+          "extraParams": ""
+        },
+        "flye": {
+          "enabledFlags": [
+            "--meta"
+          ],
+          "flagValues": {
+            "--meta": "true",
+            "--nano-raw": "true",
+            "--min-overlap": "0",
+            "--iterations": "1",
+            "--genome-size": "",
+            "--asm-coverage": "0",
+            "--scaffold": "true",
+            "--keep-haplotypes": "true"
+          },
+          "extraParams": ""
+        },
+        "metaquast": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-contig": "500",
+            "--max-ref-number": "50",
+            "--no-check-references": "true"
+          },
+          "extraParams": ""
+        },
+        "tiara": {
+          "enabledFlags": [
+            "--min_len"
+          ],
+          "flagValues": {
+            "--min_len": "500",
+            "-p": "0.65",
+            "--to_fasta": "prokarya eukarya unknown"
+          },
+          "extraParams": ""
+        },
+        "bowtie2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--sensitive": "true",
+            "--no-unal": "true",
+            "--no-discordant": "true"
+          },
+          "extraParams": ""
+        },
+        "minimap2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-x": "map-ont"
+          },
+          "extraParams": ""
+        },
+        "jgi_summarize": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--percentIdentity": "97.0"
+          },
+          "extraParams": ""
+        },
+        "samtools_index": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "metabat2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--minContig": "2500",
+            "--minClsSize": "200000",
+            "--maxEdges": "200",
+            "--pTNF": "0.0",
+            "--minCV": "1.0",
+            "--seed": "0"
+          },
+          "extraParams": ""
+        },
+        "semibin2": {
+          "enabledFlags": [
+            "--environment"
+          ],
+          "flagValues": {
+            "--environment": "global",
+            "--ratio": "0.05",
+            "--min-len": "2500",
+            "--minfasta-kbs": "200",
+            "--epochs": "20"
+          },
+          "extraParams": ""
+        },
+        "vamb": {
+          "enabledFlags": [
+            "--minfasta",
+            "-m"
+          ],
+          "flagValues": {
+            "--minfasta": "10000",
+            "-m": "500",
+            "--epochs": "500",
+            "--batchsize": "256",
+            "--nhiddens": "512 512",
+            "--nlatent": "32"
+          },
+          "extraParams": ""
+        },
+        "maxbin2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-min_contig_length": "1000",
+            "-max_iteration": "50",
+            "-prob_threshold": "0.9",
+            "-markerset": "107"
+          },
+          "extraParams": ""
+        },
+        "binette": {
+          "enabledFlags": [
+            "-v"
+          ],
+          "flagValues": {
+            "-v": "true",
+            "--min_completeness": "40.0",
+            "--max_contamination": "100.0"
+          },
+          "extraParams": ""
+        },
+        "checkm2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--remove_intermediates": "true"
+          },
+          "extraParams": ""
+        },
+        "gunc": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_mapped_genes": "11",
+            "--sensitive": "true"
+          },
+          "extraParams": ""
+        },
+        "mags_annot": {
+          "enabledFlags": [
+            "hq_min_completeness",
+            "hq_max_contamination"
+          ],
+          "flagValues": {
+            "hq_min_completeness": "70",
+            "hq_max_contamination": "10"
+          },
+          "extraParams": ""
+        },
+        "drep": {
+          "enabledFlags": [
+            "-comp",
+            "-con"
+          ],
+          "flagValues": {
+            "-comp": "50",
+            "-con": "10",
+            "-pa": "0.9",
+            "-sa": "0.95",
+            "-nc": "0.1",
+            "--clusterAlg": "average"
+          },
+          "extraParams": ""
+        },
+        "coverm": {
+          "enabledFlags": [
+            "-m",
+            "--min-covered-fraction"
+          ],
+          "flagValues": {
+            "-m": "relative_abundance",
+            "--min-covered-fraction": "0",
+            "--min-read-percent-identity": "0.0"
+          },
+          "extraParams": ""
+        },
+        "gtdbtk": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--extension": "fa",
+            "--min_af": "0.65",
+            "--skip_ani_screen": "true"
+          },
+          "extraParams": ""
+        },
+        "prodigal": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-p": "meta",
+            "-f": "gff"
+          },
+          "extraParams": ""
+        },
+        "eggnog": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--itype": "proteins",
+            "--tax_scope": "auto",
+            "--go_evidence": "non-electronic",
+            "--target_orthologs": "all",
+            "--pfam_realign": "none"
+          },
+          "extraParams": ""
+        },
+        "abricate": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--db": "vfdb",
+            "--minid": "80.0",
+            "--mincov": "80.0"
+          },
+          "extraParams": ""
+        },
+        "amrfinderplus": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--ident_min": "-1.0",
+            "--coverage_min": "0.5",
+            "--plus": "true"
+          },
+          "extraParams": ""
+        },
+        "barrnap": {
+          "enabledFlags": [
+            "--kingdom"
+          ],
+          "flagValues": {
+            "--kingdom": "bac",
+            "--evalue": "1e-06",
+            "--lencutoff": "0.8",
+            "--reject": "0.25"
+          },
+          "extraParams": ""
+        },
+        "trnascan": {
+          "enabledFlags": [
+            "-B"
+          ],
+          "flagValues": {
+            "-B": "true",
+            "-A": "true",
+            "-E": "true",
+            "--score": "20.0"
+          },
+          "extraParams": ""
+        },
+        "checkv": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--restart": "true"
+          },
+          "extraParams": ""
+        },
+        "virsorter2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.5",
+            "--min-length": "0",
+            "--viral-gene-enrich-off": "true",
+            "--include-groups": "dsDNAphage,ssDNA,NCLDV,RNA,lavidaviridae"
+          },
+          "extraParams": ""
+        },
+        "genomad": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.7",
+            "--min-plasmid-marker-enrichment": "0.0",
+            "--min-virus-marker-enrichment": "0.0",
+            "--relaxed": "true"
+          },
+          "extraParams": ""
+        },
+        "vibrant": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-t": "1",
+            "-l": "1000",
+            "-o": "4",
+            "-virome": "true"
+          },
+          "extraParams": ""
+        },
+        "isescan": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "minced": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-minNR": "3",
+            "-minRL": "23",
+            "-maxRL": "47",
+            "-minSL": "26",
+            "-maxSL": "50"
+          },
+          "extraParams": ""
+        },
+        "mobsuite": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_length": "1000",
+            "--run_typer": "true",
+            "--plasmid_identity": "0.8"
+          },
+          "extraParams": ""
+        },
+        "vfdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "antismash": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--taxon": "bacteria",
+            "--genefinding-tool": "prodigal",
+            "--hm-similarity-metric": "jaccard",
+            "--cb-general": "true",
+            "--cb-knownclusters": "true",
+            "--cb-subclusters": "true",
+            "--asf": "true",
+            "--pfam2go": "true",
+            "--smcog-trees": "true"
+          },
+          "extraParams": ""
+        },
+        "bigscape": {
+          "enabledFlags": [
+            "--mix",
+            "--classify"
+          ],
+          "flagValues": {
+            "--mix": "true",
+            "--classify": "none",
+            "--cutoffs": "0.3 0.5",
+            "--clan_cutoff": "0.5 0.8",
+            "--include_gbk_str": "cluster region"
+          },
+          "extraParams": ""
+        }
+      }
+    },
+    "sigma": {
+      "input_dirs": {
+        "short_reads_dir": "/home/angelo/Downloads/run01",
+        "long_reads_dir": "/home/angelo/Downloads/run01"
+      },
+      "toggled_input_dirs": [],
+      "output_dir": "/home/angelo/Downloads/run01",
+      "reference_mode": "none",
+      "reference_file": null,
+      "reference_overrides": {},
+      "reference_skipped": [],
+      "ram_gb": "32",
+      "cores": "8",
+      "long_read_platform": "nano_hq",
+      "thread_overrides": {},
+      "active_tools": [
+        "fastp",
+        "filtlong",
+        "ragtag",
+        "bowtie2",
+        "minimap2",
+        "samtools_index",
+        "quast",
+        "checkm2",
+        "gunc",
+        "gtdbtk",
+        "coverm",
+        "isescan",
+        "mobsuite",
+        "abricate",
+        "vfdb",
+        "antismash",
+        "bigscape",
+        "mlst",
+        "bakta",
+        "amrfinderplus",
+        "eggnog",
+        "flye",
+        "unicycler",
+        "racon",
+        "medaka",
+        "virsorter2",
+        "genomad",
+        "checkv",
+        "vibrant",
+        "kraken2",
+        "kaiju"
+      ],
+      "active_tracks": {},
+      "tool_params": {
+        "fastp": {
+          "enabledFlags": [
+            "--qualified_quality_phred",
+            "--length_required",
+            "--trim_front2",
+            "--trim_front1"
+          ],
+          "flagValues": {
+            "--qualified_quality_phred": "30",
+            "--length_required": "50",
+            "--trim_front1": "1",
+            "--trim_front2": "1",
+            "--cut_front": "true",
+            "--cut_tail": "true",
+            "--cut_mean_quality": "20",
+            "--detect_adapter_for_pe": "true",
+            "--dedup": "true",
+            "--low_complexity_filter": "true"
+          },
+          "extraParams": ""
+        },
+        "filtlong": {
+          "enabledFlags": [
+            "--min_length",
+            "--keep_percent"
+          ],
+          "flagValues": {
+            "--min_length": "500",
+            "--max_length": "0",
+            "--keep_percent": "90.0",
+            "--target_bases": "0",
+            "--min_mean_q": "0.0"
+          },
+          "extraParams": ""
+        },
+        "kraken2": {
+          "enabledFlags": [
+            "--confidence"
+          ],
+          "flagValues": {
+            "--confidence": "0.05",
+            "--minimum-hit-groups": "2",
+            "--report-zero-counts": "true"
+          },
+          "extraParams": ""
+        },
+        "kaiju": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-a": "greedy",
+            "-e": "3",
+            "-m": "11",
+            "-s": "65",
+            "-E": "0.01",
+            "-X": "true"
+          },
+          "extraParams": ""
+        },
+        "unicycler": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--mode": "normal",
+            "--min_fasta_length": "100",
+            "--linear_seqs": "0",
+            "--no_correct": "true",
+            "--no_pilon": "true"
+          },
+          "extraParams": ""
+        },
+        "flye": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-overlap": "0",
+            "--iterations": "1",
+            "--genome-size": "",
+            "--asm-coverage": "0",
+            "--scaffold": "true"
+          },
+          "extraParams": ""
+        },
+        "racon": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-w": "500",
+            "-e": "0.3",
+            "-q": "10.0"
+          },
+          "extraParams": ""
+        },
+        "medaka": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-m": "",
+            "-b": "100"
+          },
+          "extraParams": ""
+        },
+        "ragtag": {
+          "enabledFlags": [
+            "-u"
+          ],
+          "flagValues": {
+            "-u": "true",
+            "-C": "true",
+            "-r": "true",
+            "-f": "1000",
+            "-q": "10"
+          },
+          "extraParams": ""
+        },
+        "bowtie2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--sensitive": "true",
+            "--no-unal": "true",
+            "--no-discordant": "true"
+          },
+          "extraParams": ""
+        },
+        "minimap2": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "samtools_index": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "quast": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-contig": "500",
+            "--no-check-references": "true"
+          },
+          "extraParams": ""
+        },
+        "checkm2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--remove_intermediates": "true"
+          },
+          "extraParams": ""
+        },
+        "gunc": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--sensitive": "true"
+          },
+          "extraParams": ""
+        },
+        "gtdbtk": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_af": "0.65",
+            "--skip_ani_screen": "true"
+          },
+          "extraParams": ""
+        },
+        "coverm": {
+          "enabledFlags": [
+            "--min-covered-fraction"
+          ],
+          "flagValues": {
+            "--min-covered-fraction": "0"
+          },
+          "extraParams": ""
+        },
+        "bakta": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--genus": "",
+            "--species": "",
+            "--complete": "true",
+            "--skip-trna": "true",
+            "--skip-rrna": "true",
+            "--skip-ncrna": "true",
+            "--skip-crispr": "true"
+          },
+          "extraParams": ""
+        },
+        "eggnog": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--itype": "proteins",
+            "--tax_scope": "auto",
+            "--go_evidence": "non-electronic",
+            "--target_orthologs": "all",
+            "--pfam_realign": "none"
+          },
+          "extraParams": ""
+        },
+        "isescan": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "mobsuite": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min_length": "1000",
+            "--run_typer": "true"
+          },
+          "extraParams": ""
+        },
+        "amrfinderplus": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--ident_min": "-1.0",
+            "--coverage_min": "0.5",
+            "--plus": "true"
+          },
+          "extraParams": ""
+        },
+        "abricate": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--minid": "80.0",
+            "--mincov": "80.0"
+          },
+          "extraParams": ""
+        },
+        "vfdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "mlst": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--scheme": "",
+            "--minid": "95.0",
+            "--mincov": "10.0"
+          },
+          "extraParams": ""
+        },
+        "genomad": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.7",
+            "--relaxed": "true"
+          },
+          "extraParams": ""
+        },
+        "virsorter2": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--min-score": "0.5",
+            "--include-groups": "dsDNAphage,ssDNA,NCLDV,RNA,lavidaviridae"
+          },
+          "extraParams": ""
+        },
+        "checkv": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "vibrant": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-l": "1000",
+            "-o": "4"
+          },
+          "extraParams": ""
+        },
+        "antismash": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--taxon": "bacteria",
+            "--cb-general": "true",
+            "--cb-knownclusters": "true",
+            "--asf": "true",
+            "--pfam2go": "true"
+          },
+          "extraParams": ""
+        },
+        "bigscape": {
+          "enabledFlags": [
+            "--mix",
+            "--classify"
+          ],
+          "flagValues": {
+            "--mix": "true",
+            "--classify": "none",
+            "--cutoffs": "0.3 0.5"
+          },
+          "extraParams": ""
+        }
+      }
+    },
+    "dogma": {
+      "input_dirs": {
+        "short_reads_dir": "/home/angelo/Documentos/OmniOmics/pipelines/magma",
+        "long_reads_dir": "/home/angelo/Documentos/OmniOmics"
+      },
+      "toggled_input_dirs": [],
+      "output_dir": "/home/angelo/Documentos",
+      "reference_mode": "none",
+      "reference_file": null,
+      "reference_overrides": {},
+      "reference_skipped": [],
+      "ram_gb": "32",
+      "cores": "8",
+      "long_read_platform": "nano_hq",
+      "thread_overrides": {},
+      "active_tools": [
+        "fastp",
+        "filtlong",
+        "ribodetector",
+        "kraken2",
+        "kaiju",
+        "domain_filter",
+        "rnaspades",
+        "megahit",
+        "trinity",
+        "transcript_set",
+        "transdecoder",
+        "eggnog",
+        "cazy",
+        "ncycdb",
+        "scycdb",
+        "salmon",
+        "magma_xref",
+        "cat",
+        "eukulele",
+        "fegenie",
+        "canthyd",
+        "mcycdb"
+      ],
+      "active_tracks": {},
+      "tool_params": {
+        "fastp": {
+          "enabledFlags": [
+            "--qualified_quality_phred",
+            "--length_required",
+            "--trim_front1",
+            "--trim_front2"
+          ],
+          "flagValues": {
+            "--qualified_quality_phred": "30",
+            "--length_required": "50",
+            "--trim_front1": "1",
+            "--trim_front2": "1"
+          },
+          "extraParams": ""
+        },
+        "filtlong": {
+          "enabledFlags": [
+            "--min_length",
+            "--keep_percent"
+          ],
+          "flagValues": {
+            "--min_length": "500",
+            "--keep_percent": "90.0"
+          },
+          "extraParams": ""
+        },
+        "ribodetector": {
+          "enabledFlags": [
+            "-e"
+          ],
+          "flagValues": {
+            "-e": "norrna"
+          },
+          "extraParams": ""
+        },
+        "kraken2": {
+          "enabledFlags": [
+            "--confidence"
+          ],
+          "flagValues": {
+            "--confidence": "0.05"
+          },
+          "extraParams": ""
+        },
+        "kaiju": {
+          "enabledFlags": [],
+          "flagValues": {
+            "-a": "greedy"
+          },
+          "extraParams": ""
+        },
+        "domain_filter": {
+          "enabledFlags": [
+            "mode"
+          ],
+          "flagValues": {
+            "mode": "prokaryote"
+          },
+          "extraParams": ""
+        },
+        "rnaspades": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "megahit": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "trinity": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "transcript_set": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "transdecoder": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "eggnog": {
+          "enabledFlags": [],
+          "flagValues": {
+            "--itype": "proteins",
+            "--tax_scope": "auto",
+            "--go_evidence": "non-electronic",
+            "--target_orthologs": "all",
+            "--pfam_realign": "none"
+          },
+          "extraParams": ""
+        },
+        "cazy": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "ncycdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "scycdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "mcycdb": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "canthyd": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "fegenie": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "eukulele": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "cat": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "magma_xref": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        },
+        "salmon": {
+          "enabledFlags": [],
+          "flagValues": {},
+          "extraParams": ""
+        }
+      }
+    }
+  },
+  "db_base_dir": "/home/angelo/Documentos/databases",
+  "db_amrfinder": "/home/angelo/Downloads/data",
+  "db_checksums": {
+    "/home/angelo/Downloads/data": {
+      "algo": "sha256-manifest",
+      "value": "5aee226ecc2a213827dea3210168af563c707706966b77646773e92af1247eaa",
+      "computed_at": 1783104503.945524
+    }
+  },
+  "db_magma_run": "/tmp/claude-1002/-home-angelo-Documentos-OmniOmics/b57ddc15-f8d3-4188-bd1a-76b308f9dd8d/scratchpad/dogma_mode2_test/fake_magma_run",
+  "runs": [
+    {
+      "id": "381c1639df3f",
+      "name": "vivid-willow-515",
+      "pipeline_id": "prism",
+      "pipeline_name": "PRISM",
+      "output_dir": "/home/angelo/omniomics_demo_runs/prism_demo",
+      "config_path": "/home/angelo/omniomics_demo_runs/prism_demo/config/config.yaml",
+      "cores": 8,
+      "started_at": 1786120589.6103365,
+      "finished_at": 1786120679.6103365,
+      "status": "done",
+      "exit_code": 0
+    },
+    {
+      "id": "28baa7886119",
+      "name": "solar-grove-104",
+      "pipeline_id": "define",
+      "pipeline_name": "DEFINE",
+      "output_dir": "/home/angelo/omniomics_demo_runs/define_bigtest",
+      "config_path": "/home/angelo/omniomics_demo_runs/define_bigtest/config/config.yaml",
+      "cores": 4,
+      "started_at": 1786039544.7352345,
+      "finished_at": 1786039544.7399323,
+      "status": "done",
+      "exit_code": 0
+    },
+    {
+      "id": "145153eb8bab",
+      "name": "vivid-brook-546",
+      "pipeline_id": "magma",
+      "pipeline_name": "MAGMA",
+      "output_dir": "/home/angelo/omniomics_demo_runs/magma_bigtest",
+      "config_path": "/home/angelo/omniomics_demo_runs/magma_bigtest/config/config.yaml",
+      "cores": 16,
+      "started_at": 1785724151.3302586,
+      "finished_at": 1785724151.3679805,
+      "status": "done",
+      "exit_code": 0
+    },
+    {
+      "id": "3e772ac90b5d",
+      "name": "gentle-otter-693",
+      "pipeline_id": "define",
+      "pipeline_name": "DEFINE",
+      "output_dir": "/home/angelo/omniomics_demo_runs/define_demo",
+      "config_path": "/home/angelo/omniomics_demo_runs/define_demo/config/config.yaml",
+      "cores": 4,
+      "started_at": 1785709822.684877,
+      "finished_at": 1785709822.725267,
+      "status": "done",
+      "exit_code": 0
+    },
+    {
+      "id": "904cf832cd61",
+      "name": "amber-birch-956",
+      "pipeline_id": "dogma",
+      "pipeline_name": "DOGMA",
+      "output_dir": "/home/angelo/omniomics_demo_runs/dogma_demo",
+      "config_path": "/home/angelo/omniomics_demo_runs/dogma_demo/config/config.yaml",
+      "cores": 16,
+      "started_at": 1785709620.87768,
+      "finished_at": 1785709620.8811069,
+      "status": "done",
+      "exit_code": 0
+    },
+    {
+      "id": "c8d339c8aa4c",
+      "name": "rosy-falcon-343",
+      "pipeline_id": "magma",
+      "pipeline_name": "MAGMA",
+      "output_dir": "/home/angelo/omniomics_demo_runs/magma_demo",
+      "config_path": "/home/angelo/omniomics_demo_runs/magma_demo/config/config.yaml",
+      "cores": 16,
+      "started_at": 1785709620.8709266,
+      "finished_at": 1785709620.8744874,
+      "status": "done",
+      "exit_code": 0
+    },
+    {
+      "id": "22605592fc36",
+      "name": "hollow-tundra-373",
+      "pipeline_id": "sigma",
+      "pipeline_name": "SIGMA",
+      "output_dir": "/home/angelo/omniomics_demo_runs/sigma_demo",
+      "config_path": "/home/angelo/omniomics_demo_runs/sigma_demo/config/config.yaml",
+      "cores": 16,
+      "started_at": 1785709620.8270838,
+      "finished_at": 1785709620.867019,
+      "status": "done",
+      "exit_code": 0
+    }
+  ],
+  "plot_runs": [
+    {
+      "id": "eaa3cc6e1272",
+      "name": "dogma_functional_diversity_20260807_150052",
+      "parent_run_id": "904cf832cd61",
+      "analysis_id": "dogma_functional_diversity",
+      "started_at": 1786125652.055223,
+      "finished_at": 1786125657.325999,
+      "status": "error"
+    },
+    {
+      "id": "dda521341a6c",
+      "name": "rda_environmental_drivers_20260807_145942",
+      "parent_run_id": "381c1639df3f",
+      "analysis_id": "rda_environmental_drivers",
+      "started_at": 1786125582.2410467,
+      "finished_at": 1786125589.3386054,
+      "status": "done"
+    },
+    {
+      "id": "90116652bb14",
+      "name": "de_heatmap_20260807_132010",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "de_heatmap",
+      "started_at": 1786119610.4968624,
+      "finished_at": 1786119621.654216,
+      "status": "done"
+    },
+    {
+      "id": "a9eb2f59fc1d",
+      "name": "de_upset_20260806_161958",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "de_upset",
+      "started_at": 1786043998.178475,
+      "finished_at": 1786044009.5678,
+      "status": "error"
+    },
+    {
+      "id": "328cd028cf35",
+      "name": "functional_enrichment_20260806_161850",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "functional_enrichment",
+      "started_at": 1786043930.3483305,
+      "finished_at": 1786043942.9683204,
+      "status": "done"
+    },
+    {
+      "id": "cfab2a507540",
+      "name": "volcano_plot_20260806_161809",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "volcano_plot",
+      "started_at": 1786043889.3651032,
+      "finished_at": 1786043899.7181602,
+      "status": "done"
+    },
+    {
+      "id": "29237e6feb4a",
+      "name": "sample_distance_heatmap_20260806_161717",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "sample_distance_heatmap",
+      "started_at": 1786043837.9452574,
+      "finished_at": 1786043848.401349,
+      "status": "done"
+    },
+    {
+      "id": "7fb20b8658d6",
+      "name": "ma_plot_20260806_161653",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "ma_plot",
+      "started_at": 1786043813.1897576,
+      "finished_at": 1786043823.4716005,
+      "status": "done"
+    },
+    {
+      "id": "b06273497697",
+      "name": "ma_plot_20260806_161538",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "ma_plot",
+      "started_at": 1786043738.2151785,
+      "finished_at": 1786043749.3311818,
+      "status": "done"
+    },
+    {
+      "id": "5401a96bab0a",
+      "name": "functional_enrichment_20260806_161433",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "functional_enrichment",
+      "started_at": 1786043673.2210236,
+      "finished_at": 1786043686.1627839,
+      "status": "done"
+    },
+    {
+      "id": "197dc00d526b",
+      "name": "de_upset_20260806_161357",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "de_upset",
+      "started_at": 1786043637.2409532,
+      "finished_at": 1786043649.7063477,
+      "status": "done"
+    },
+    {
+      "id": "bed2d099f8db",
+      "name": "volcano_plot_20260806_154407",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "volcano_plot",
+      "started_at": 1786041847.0594084,
+      "finished_at": 1786041857.853049,
+      "status": "done"
+    },
+    {
+      "id": "c1c737845325",
+      "name": "alpha_diversity_20260806_154023",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1786041623.8608866,
+      "finished_at": 1786041634.3856847,
+      "status": "done"
+    },
+    {
+      "id": "9f0d249fd2ca",
+      "name": "taxonomic_composition_20260806_153740",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "taxonomic_composition",
+      "started_at": 1786041460.4168832,
+      "finished_at": 1786041468.48675,
+      "status": "done"
+    },
+    {
+      "id": "439079fb0a53",
+      "name": "sample_distance_heatmap_20260806_152611",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "sample_distance_heatmap",
+      "started_at": 1786040771.2808895,
+      "finished_at": 1786040783.7736208,
+      "status": "done"
+    },
+    {
+      "id": "0e6b436f3437",
+      "name": "functional_enrichment_20260806_152525",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "functional_enrichment",
+      "started_at": 1786040725.9838467,
+      "finished_at": 1786040743.9488328,
+      "status": "done"
+    },
+    {
+      "id": "50c76658f16c",
+      "name": "ma_plot_20260806_152449",
+      "parent_run_id": "28baa7886119",
+      "analysis_id": "ma_plot",
+      "started_at": 1786040689.3609886,
+      "finished_at": 1786040701.0029478,
+      "status": "done"
+    },
+    {
+      "id": "d167ebda82a3",
+      "name": "goods_coverage_20260806_142906",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "goods_coverage",
+      "started_at": 1786037346.741714,
+      "finished_at": 1786037354.5426345,
+      "status": "done"
+    },
+    {
+      "id": "889b2930e4b2",
+      "name": "upset_plot_20260806_135325",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "upset_plot",
+      "started_at": 1786035205.0371225,
+      "finished_at": 1786035215.378522,
+      "status": "done"
+    },
+    {
+      "id": "1c892bcf3c72",
+      "name": "differential_abundance_deseq2_20260805_205626",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "differential_abundance_deseq2",
+      "started_at": 1785974186.2028198,
+      "finished_at": 1785974198.4441142,
+      "status": "done"
+    },
+    {
+      "id": "45126c6ff87c",
+      "name": "upset_plot_20260805_205551",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "upset_plot",
+      "started_at": 1785974151.3979564,
+      "finished_at": 1785974160.0477362,
+      "status": "done"
+    },
+    {
+      "id": "3b3b14541765",
+      "name": "venn_diagram_20260805_205532",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "venn_diagram",
+      "started_at": 1785974132.3301964,
+      "finished_at": 1785974137.4936347,
+      "status": "error"
+    },
+    {
+      "id": "bf9ec15116da",
+      "name": "core_microbiome_20260805_203006",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "core_microbiome",
+      "started_at": 1785972606.7678745,
+      "finished_at": 1785972613.1741157,
+      "status": "done"
+    },
+    {
+      "id": "f8fc4a53fe69",
+      "name": "core_microbiome_20260805_202934",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "core_microbiome",
+      "started_at": 1785972574.5363326,
+      "finished_at": 1785972581.6825721,
+      "status": "done"
+    },
+    {
+      "id": "e66d05823453",
+      "name": "indicator_species_20260805_201441",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "indicator_species",
+      "started_at": 1785971681.6948004,
+      "finished_at": 1785971691.4961128,
+      "status": "error"
+    },
+    {
+      "id": "1659ab055ac5",
+      "name": "indicator_species_20260805_201410",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "indicator_species",
+      "started_at": 1785971650.6729007,
+      "finished_at": 1785971659.023495,
+      "status": "done"
+    },
+    {
+      "id": "a5fc0fd3e08c",
+      "name": "indicator_species_20260805_192438",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "indicator_species",
+      "started_at": 1785968678.290437,
+      "finished_at": 1785968687.198142,
+      "status": "error"
+    },
+    {
+      "id": "1a66d6d27f7a",
+      "name": "indicator_species_20260805_192014",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "indicator_species",
+      "started_at": 1785968414.343577,
+      "finished_at": 1785968422.1772344,
+      "status": "done"
+    },
+    {
+      "id": "683d0bfd7797",
+      "name": "rda_environmental_drivers_20260805_191849",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "rda_environmental_drivers",
+      "started_at": 1785968329.168421,
+      "finished_at": 1785968336.213079,
+      "status": "error"
+    },
+    {
+      "id": "e029fcb901f5",
+      "name": "rda_environmental_drivers_20260805_191739",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "rda_environmental_drivers",
+      "started_at": 1785968259.764772,
+      "finished_at": 1785968267.3302693,
+      "status": "done"
+    },
+    {
+      "id": "720f002f553a",
+      "name": "beta_diversity_20260805_143820",
+      "parent_run_id": "dd76e0aa5c6f",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785951500.0641675,
+      "finished_at": 1785951506.3487651,
+      "status": "done"
+    },
+    {
+      "id": "e2347a9954ad",
+      "name": "indicator_species_20260805_140302",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "indicator_species",
+      "started_at": 1785949382.1677587,
+      "finished_at": 1785949391.1310403,
+      "status": "done"
+    },
+    {
+      "id": "8317da645d5b",
+      "name": "cooccurrence_network_20260805_140231",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "cooccurrence_network",
+      "started_at": 1785949351.248381,
+      "finished_at": 1785949366.1281693,
+      "status": "done"
+    },
+    {
+      "id": "c137b9501ecb",
+      "name": "differential_abundance_deseq2_20260805_140143",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "differential_abundance_deseq2",
+      "started_at": 1785949303.9494023,
+      "finished_at": 1785949317.088382,
+      "status": "done"
+    },
+    {
+      "id": "848d3be6192e",
+      "name": "core_microbiome_20260805_140125",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "core_microbiome",
+      "started_at": 1785949285.020611,
+      "finished_at": 1785949292.3920145,
+      "status": "done"
+    },
+    {
+      "id": "4a6b2e1c4ed7",
+      "name": "taxonomic_composition_20260805_135819",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "taxonomic_composition",
+      "started_at": 1785949099.4383276,
+      "finished_at": 1785949106.562926,
+      "status": "done"
+    },
+    {
+      "id": "9f177ec8fe31",
+      "name": "beta_diversity_20260805_135751",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785949071.5466392,
+      "finished_at": 1785949079.0604208,
+      "status": "done"
+    },
+    {
+      "id": "e740e86a585f",
+      "name": "alpha_diversity_20260805_135028",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785948628.4887524,
+      "finished_at": 1785948637.0442548,
+      "status": "done"
+    },
+    {
+      "id": "f5a74e2904b7",
+      "name": "rarefaction_curve_20260805_134927",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "rarefaction_curve",
+      "started_at": 1785948567.988059,
+      "finished_at": 1785948598.5298722,
+      "status": "done"
+    },
+    {
+      "id": "12d7d75e0ea9",
+      "name": "goods_coverage_20260805_134909",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "goods_coverage",
+      "started_at": 1785948549.1688585,
+      "finished_at": 1785948557.0608473,
+      "status": "done"
+    },
+    {
+      "id": "b4efea6a08ea",
+      "name": "differential_abundance_deseq2_20260803_010349",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "differential_abundance_deseq2",
+      "started_at": 1785729829.5154037,
+      "finished_at": 1785729840.9978113,
+      "status": "done"
+    },
+    {
+      "id": "dbdb8b5b0c27",
+      "name": "rda_environmental_drivers_20260803_010314",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "rda_environmental_drivers",
+      "started_at": 1785729794.8772602,
+      "finished_at": 1785729802.2704241,
+      "status": "done"
+    },
+    {
+      "id": "659a0fa8e97a",
+      "name": "beta_diversity_20260803_004036",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785728436.731136,
+      "finished_at": 1785728443.9970922,
+      "status": "done"
+    },
+    {
+      "id": "aba2898d3f40",
+      "name": "beta_diversity_20260803_004004",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785728404.5915916,
+      "finished_at": 1785728412.799914,
+      "status": "done"
+    },
+    {
+      "id": "c2f3f7af3c50",
+      "name": "alpha_diversity_20260803_003017",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785727817.823658,
+      "finished_at": 1785727826.2967718,
+      "status": "done"
+    },
+    {
+      "id": "2beb3b1511c7",
+      "name": "alpha_diversity_20260802_235357",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785725637.1596694,
+      "finished_at": 1785725645.9830692,
+      "status": "done"
+    },
+    {
+      "id": "5ede1d75e971",
+      "name": "core_microbiome_20260802_233321",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "core_microbiome",
+      "started_at": 1785724401.2713037,
+      "finished_at": 1785724406.6195047,
+      "status": "done"
+    },
+    {
+      "id": "df78a0ffe496",
+      "name": "taxonomic_composition_20260802_233300",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "taxonomic_composition",
+      "started_at": 1785724380.561007,
+      "finished_at": 1785724385.6913495,
+      "status": "done"
+    },
+    {
+      "id": "5f56f0091335",
+      "name": "beta_diversity_20260802_233230",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785724350.5741692,
+      "finished_at": 1785724357.8597345,
+      "status": "done"
+    },
+    {
+      "id": "60438185017a",
+      "name": "alpha_diversity_20260802_233207",
+      "parent_run_id": "145153eb8bab",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785724327.4040463,
+      "finished_at": 1785724335.838263,
+      "status": "done"
+    },
+    {
+      "id": "0a647f7f9728",
+      "name": "beta_diversity_20260802_232534",
+      "parent_run_id": "c8d339c8aa4c",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785723934.6038485,
+      "finished_at": 1785723939.5999126,
+      "status": "error"
+    },
+    {
+      "id": "6494be54e0d9",
+      "name": "alpha_diversity_20260802_232502",
+      "parent_run_id": "c8d339c8aa4c",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785723902.9253147,
+      "finished_at": 1785723911.2056465,
+      "status": "done"
+    },
+    {
+      "id": "63a78baaf4c0",
+      "name": "alpha_diversity_20260802_225958",
+      "parent_run_id": "c8d339c8aa4c",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785722398.1208277,
+      "finished_at": 1785722406.7548904,
+      "status": "done"
+    },
+    {
+      "id": "b0a625052bcb",
+      "name": "alpha_diversity_20260802_224634",
+      "parent_run_id": "c8d339c8aa4c",
+      "analysis_id": "alpha_diversity",
+      "started_at": 1785721594.301182,
+      "finished_at": 1785721594.7617671,
+      "status": "done"
+    },
+    {
+      "id": "7f006d792b16",
+      "name": "beta_diversity_20260802_223954",
+      "parent_run_id": "c8d339c8aa4c",
+      "analysis_id": "beta_diversity",
+      "started_at": 1785721194.4844842,
+      "finished_at": 1785721200.8099942,
+      "status": "error"
+    }
+  ]
+}
