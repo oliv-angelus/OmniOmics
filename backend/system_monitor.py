@@ -5,7 +5,7 @@ def get_system_info() -> dict:
     cpu_count = psutil.cpu_count(logical=True)
     cpu_percent = psutil.cpu_percent(interval=None)
 
-    ram = psutil.virtual_memory
+    ram = psutil.virtual_memory()
     ram_total_gb = round(ram.total / (1024 ** 3), 1)
     ram_used_gb = round(ram.used / (1024 ** 3), 1)
     ram_percent = ram.percent

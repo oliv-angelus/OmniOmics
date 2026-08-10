@@ -188,7 +188,7 @@ def clear_download_choice(setting_key: str):
 
 
 def _hash_file(path: str, chunk_size: int = 1024 * 1024) -> str:
-    h = hashlib.sha256
+    h = hashlib.sha256()
     with open(path, "rb") as f:
         while True:
             chunk = f.read(chunk_size)
@@ -216,7 +216,7 @@ def _hash_dir_manifest(path: str) -> str:
                 continue
             entries.append(f"{os.path.relpath(fpath, path)}\t{size}")
     entries.sort()
-    h = hashlib.sha256
+    h = hashlib.sha256()
     h.update("\n".join(entries).encode("utf-8", errors="replace"))
     return h.hexdigest()
 
