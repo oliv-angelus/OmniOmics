@@ -34,8 +34,8 @@ class MetadataTableEditor extends ConsumerStatefulWidget {
 class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
   static const _colWidth = 170.0;
 
-  List<TextEditingController()> _headerControllers = const [];
-  List<List<TextEditingController()>> _controllers = const [];
+  List<TextEditingController> _headerControllers = const [];
+  List<List<TextEditingController>> _controllers = const [];
   bool _parseError = false;
 
   @override
@@ -104,7 +104,7 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
   }
 
   String _serialize() {
-    final buffer = StringBuffer;
+    final buffer = StringBuffer();
     buffer.writeln(_headerControllers.map((c) => c.text).join('\t'));
     for (final row in _controllers) {
       buffer.writeln(row.map((c) => c.text).join('\t'));

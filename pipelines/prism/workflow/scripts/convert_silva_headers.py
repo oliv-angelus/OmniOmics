@@ -33,7 +33,7 @@ def open_maybe_gz(path, mode="rt"):
     return gzip.open(path, mode) if path.endswith(".gz") else open(path, mode)
 
 
-def main() :
+def main():
     ap = argparse.ArgumentParser
     ap.add_argument("--in", dest="in_path", required=True)
     ap.add_argument("--out", dest="out_path", required=True)
@@ -55,4 +55,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()

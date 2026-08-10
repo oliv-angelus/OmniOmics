@@ -35,7 +35,7 @@ def get_all_databases_status() -> list:
     """
     settings = load_settings()
     by_setting_key: dict = {}
-    for summary in list_pipelines:
+    for summary in list_pipelines():
         pid = summary["id"]
         for key, db in _databases(pid).items():
             setting_key = db["setting_key"]
@@ -98,7 +98,7 @@ def detect_all_databases(base_dir: str) -> dict:
     follow-up 'set' call through that (pipeline_id, key) pair."""
     results = {}
     seen_setting_keys = set
-    for summary in list_pipelines:
+    for summary in list_pipelines():
         pid = summary["id"]
         found = detect_databases(pid, base_dir)
         for key, path in found.items():
@@ -195,7 +195,7 @@ def _hash_file(path: str, chunk_size: int = 1024 * 1024) -> str:
             if not chunk:
                 break
             h.update(chunk)
-    return h.hexdigest
+    return h.hexdigest()
 
 
 def _hash_dir_manifest(path: str) -> str:
@@ -218,7 +218,7 @@ def _hash_dir_manifest(path: str) -> str:
     entries.sort()
     h = hashlib.sha256
     h.update("\n".join(entries).encode("utf-8", errors="replace"))
-    return h.hexdigest
+    return h.hexdigest()
 
 
 def compute_checksum(path: str) -> dict:

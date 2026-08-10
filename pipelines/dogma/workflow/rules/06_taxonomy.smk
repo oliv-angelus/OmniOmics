@@ -209,7 +209,7 @@ rule cat_annotate:
     shell:
         """
         mkdir -p $(dirname {params.out_prefix})
-        sed -E '/^>/s/^>([^ ]+)\.p([0-9]+)/>\\1_\\2/' {input.proteins} > {params.proteins_fixed}
+        sed -E '/^>/s/^>([^ ]+)\\.p([0-9]+)/>\\1_\\2/' {input.proteins} > {params.proteins_fixed}
         CAT_pack contigs -c {input.contigs} -d {params.dbdir} -t {params.taxdir} \
             -p {params.proteins_fixed} -o {params.out_prefix} -n {threads} --force {params.extra} > {log} 2>&1
         """

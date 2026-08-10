@@ -5,7 +5,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -58,7 +58,7 @@ df_core$Sample <- factor(df_core$Sample, levels = unique(df_core$Sample))
 if (rank == "ASV") {
   df_core$Taxon_Label <- paste0(df_core$OTU, " (", df_core$Genus, ")")
 } else {
-  df_core$Taxon_Label <- as.character(df_corerank)
+  df_core$Taxon_Label <- as.character(df_core[[rank]])
   df_core$Taxon_Label[is.na(df_core$Taxon_Label)] <- "Unclassified"
 }
 
@@ -75,7 +75,7 @@ p <- ggplot(df_core, aes(x = Sample, y = Taxon_Label, fill = log10(Abundance * 1
     axis.text.y = element_text(size = 10, face = "italic"),
     strip.background = element_rect(fill = "white", color = "black"),
     strip.text = element_text(size = 10, face = "bold"),
-    panel.grid = element_blank
+    panel.grid = element_blank()
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
@@ -87,7 +87,7 @@ table_out <- df_core %>%
   arrange(desc(mean_abundance_pct))
 
 records <- lapply(seq_len(nrow(df_core)), function(i) {
-  list(sample = as.character(df_core$Sample[i]), group = as.character(df_coregroup_var[i]),
+  list(sample = as.character(df_core$Sample[i]), group = as.character(df_core[[group_var]][i]),
        taxon = df_core$Taxon_Label[i], abundance_pct = df_core$Abundance[i] * 100)
 })
 

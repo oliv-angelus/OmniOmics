@@ -6,7 +6,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -47,7 +47,7 @@ dados_cov <- data.frame(SampleID = names(coverage), Goods_Coverage = coverage, r
 p <- ggplot(dados_cov, aes(x = reorder(SampleID, Goods_Coverage), y = Goods_Coverage)) +
   geom_col(fill = accent_color, color = "black", width = 0.7) +
   geom_hline(yintercept = cutoff, color = "red", linetype = "dashed", linewidth = 0.8) +
-  coord_flip +
+  coord_flip() +
   labs(x = NULL, y = NULL) +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
   theme(legend.position = "none")

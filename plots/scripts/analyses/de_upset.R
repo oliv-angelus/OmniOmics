@@ -16,7 +16,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -61,19 +61,19 @@ if (length(comparison_coefs) < 2) {
   ))
 }
 comparison_levels <- sub("_vs_.*$", "", sub(paste0("^", group_var, "_"), "", comparison_coefs))
-log_line("[de_upset] %d comparisons vs reference '%s': %s[[", length(comparison_levels), reference_group, paste(comparison_levels, collapse = "]], "))
+log_line("[de_upset] %d comparisons vs reference '%s': %s", length(comparison_levels), reference_group, paste(comparison_levels, collapse = ", "))
 
-up_sets <- list
-down_sets <- list
+up_sets <- list()
+down_sets <- list()
 for (i in seq_along(comparison_coefs)) {
   res <- as.data.frame(results(dds, name = comparison_coefs[i])) %>%
     tibble::rownames_to_column("locus_tag") %>%
     filter(!is.na(padj))
   lvl <- comparison_levels[i]
-  up_setslvl <- res %>% filter(padj < alpha, log2FoldChange > min_lfc) %>% pull(locus_tag)
-  down_setslvl <- res %>% filter(padj < alpha, log2FoldChange < -min_lfc) %>% pull(locus_tag)
+  up_sets[[lvl]] <- res %>% filter(padj < alpha, log2FoldChange > min_lfc) %>% pull(locus_tag)
+  down_sets[[lvl]] <- res %>% filter(padj < alpha, log2FoldChange < -min_lfc) %>% pull(locus_tag)
   log_line("[de_upset] %s vs %s: %d up, %d down (padj < %g, |log2FC| > %g)",
-            lvl, reference_group, length(up_setslvl), length(down_setslvl), alpha, min_lfc)
+            lvl, reference_group, length(up_sets[[lvl]]), length(down_sets[[lvl]]), alpha, min_lfc)
 }
 
 # Every non-empty intersection (2^n - 1 combinations) -- same brute-force,
@@ -81,11 +81,11 @@ for (i in seq_along(comparison_coefs)) {
 # here to gene sets instead.
 all_intersections <- function(sets) {
   names_ <- names(sets)
-  out <- list
+  out <- list()
   for (k in seq_along(names_)) {
     for (combo in combn(names_, k, simplify = FALSE)) {
       in_all <- Reduce(intersect, sets[combo])
-      if (length(in_all) > 0) outpaste(combo, collapse = " & ") <- in_all
+      if (length(in_all) > 0) out[[paste(combo, collapse = " & ")]] <- in_all
     }
   }
   out
@@ -96,8 +96,8 @@ down_intersections <- all_intersections(down_sets)
 # own specific deliverable (core_UP_3condicoes.txt/core_DOWN_3condicoes.txt) --
 # is just the intersection using every level, i.e. the one keyed by all names.
 core_key <- paste(comparison_levels, collapse = " & ")
-core_up <- up_intersectionscore_key %||% character(0)
-core_down <- down_intersectionscore_key %||% character(0)
+core_up <- up_intersections[[core_key]] %||% character(0)
+core_down <- down_intersections[[core_key]] %||% character(0)
 log_line("[de_upset] core (DE in all %d comparisons): %d up, %d down", length(comparison_levels), length(core_up), length(core_down))
 
 palette <- resolve_palette(comparison_levels, style)
@@ -105,7 +105,7 @@ palette <- resolve_palette(comparison_levels, style)
 build_presence_df <- function(sets) {
   all_genes <- unique(unlist(sets))
   df <- data.frame(gene = all_genes, stringsAsFactors = FALSE)
-  for (lvl in names(sets)) dflvl <- all_genes %in% setslvl
+  for (lvl in names(sets)) df[[lvl]] <- all_genes %in% sets[[lvl]]
   df
 }
 
@@ -123,7 +123,7 @@ build_upset_panel <- function(sets, direction_label) {
   # "don't crash over a cosmetic detail" reasoning already used elsewhere
   # (e.g. ma_plot's lfcShrink fallback).
   non_empty_levels <- comparison_levels[lengths(sets[comparison_levels]) > 0]
-  queries <- lapply(non_empty_levels, function(lvl) ComplexUpset::upset_query(set = lvl, fill = unname(palettelvl)))
+  queries <- lapply(non_empty_levels, function(lvl) ComplexUpset::upset_query(set = lvl, fill = unname(palette[[lvl]])))
   p <- ComplexUpset::upset(df, comparison_levels, name = group_var, width_ratio = 0.25, min_size = 1, queries = queries, sort_sets = "descending")
   p <- p & theme(text = element_text(family = font_family, color = "black"),
                  panel.background = element_rect(fill = bg), plot.background = element_rect(fill = bg, color = NA))
@@ -140,7 +140,7 @@ if (length(panels) == 0) {
   log_line("[de_upset] no DE genes in either direction for any comparison -- writing an empty result, no plot")
   write_json(
     list(analysis_id = "de_upset", group_var = group_var, reference_group = reference_group,
-         comparisons = comparison_levels, core_up = list, core_down = list),
+         comparisons = comparison_levels, core_up = list(), core_down = list()),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
   quit(save = "no", status = 0)
@@ -169,7 +169,7 @@ writeLines(core_up, file.path(args$out_dir, "core_up_genes.txt"))
 writeLines(core_down, file.path(args$out_dir, "core_down_genes.txt"))
 
 format_intersections <- function(intersections) {
-  lapply(names(intersections), function(nm) list(sets = nm, n_genes = length(intersectionsnm), genes = intersectionsnm))
+  lapply(names(intersections), function(nm) list(sets = nm, n_genes = length(intersections[[nm]]), genes = intersections[[nm]]))
 }
 write_json(
   list(analysis_id = "de_upset", group_var = group_var, reference_group = reference_group,

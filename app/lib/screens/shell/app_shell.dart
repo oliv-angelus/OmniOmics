@@ -33,7 +33,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final pages = const [HubScreen, DatabasesScreen, ResultsScreen, PlotsScreen, ResourcesScreen, AboutScreen];
+    final pages = const [HubScreen(), DatabasesScreen(), ResultsScreen(), PlotsScreen(), ResourcesScreen(), AboutScreen()];
     final index = ref.watch(selectedTabProvider);
     final embedded = ref.watch(embeddedPipelineProvider);
     final embeddedMonitor = ref.watch(embeddedMonitorProvider);
@@ -104,7 +104,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 const Divider(height: 1),
                 Expanded(
                   child: embeddedMonitor
-                      ? const MonitorScreen: embedded != null
+                      ? const MonitorScreen(): embedded != null
                           ? LaunchScreen(pipelineId: embedded.pipelineId, pipelineName: embedded.pipelineName): embeddedPlotRun != null
                               ? PlotWorkspaceScreen(run: embeddedPlotRun): pages[index],
                 ),
@@ -150,9 +150,9 @@ class _TopBar extends ConsumerWidget {
                   appBar: AppBar(
                     title: Text(ref.t('settings_title')),
                     actions: const [
-                      LanguageToggle,
+                      LanguageToggle(),
                       SizedBox(width: 12),
-                      ThemeToggle,
+                      ThemeToggle(),
                       SizedBox(width: 12),
                     ],
                   ),
@@ -177,7 +177,7 @@ class _RunningPipelineBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final run = ref.watch(pipelineRunProvider);
-    if (run == null) return const SizedBox.shrink;
+    if (run == null) return const SizedBox.shrink();
 
     final running = !run.finished;
     return InkWell(
@@ -228,7 +228,7 @@ class _DownloadAllIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final batch = ref.watch(downloadAllProvider)[kHubDownloadBatchId];
-    if (batch == null) return const SizedBox.shrink;
+    if (batch == null) return const SizedBox.shrink();
 
     final total = batch.targets.length;
     final done = batch.dbStatus.values.where((s) => s == DbBatchState.done || s == DbBatchState.error || s == DbBatchState.skipped).length;
@@ -261,7 +261,7 @@ class _DownloadAllIndicator extends ConsumerWidget {
           api: ref.read(apiClientProvider),
           pipelineId: kHubDownloadBatchId,
           missing: const [], // reattaches to the existing batch; missing unused on that path
-          onChanged:  {},
+          onChanged: () {},
         ),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -297,7 +297,7 @@ class _DatabaseDownloadsIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final downloads = ref.watch(databaseDownloadsProvider).values;
-    if (downloads.isEmpty) return const SizedBox.shrink;
+    if (downloads.isEmpty) return const SizedBox.shrink();
 
     final downloading = downloads.where((d) => d.phase == DownloadPhase.running);
     final errored = downloads.where((d) => d.phase == DownloadPhase.error);

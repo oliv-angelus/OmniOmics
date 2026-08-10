@@ -18,7 +18,7 @@ _MAX_PLOT_RUNS = 200
 
 def add_plot_run(name: str, parent_run_id: str, analysis_id: str) -> dict:
     run = {
-        "id": uuid.uuid4.hex[:12],
+        "id": uuid.uuid4().hex[:12],
         "name": name,
         "parent_run_id": parent_run_id,
         "analysis_id": analysis_id,

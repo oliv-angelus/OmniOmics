@@ -56,10 +56,10 @@ base_theme <- function(bg = "gray90", font_family = "serif", font_scale = 1.0) {
 #' _kNoAxisControlAnalyses).
 apply_axis_visibility <- function(plot, hide_x_axis = FALSE, hide_y_axis = FALSE) {
   if (isTRUE(hide_x_axis)) {
-    plot <- plot + theme(axis.text.x = element_blank, axis.title.x = element_blank, axis.ticks.x = element_blank)
+    plot <- plot + theme(axis.text.x = element_blank(), axis.title.x = element_blank(), axis.ticks.x = element_blank())
   }
   if (isTRUE(hide_y_axis)) {
-    plot <- plot + theme(axis.text.y = element_blank, axis.title.y = element_blank, axis.ticks.y = element_blank)
+    plot <- plot + theme(axis.text.y = element_blank(), axis.title.y = element_blank(), axis.ticks.y = element_blank())
   }
   plot
 }
@@ -71,11 +71,11 @@ apply_axis_visibility <- function(plot, hide_x_axis = FALSE, hide_y_axis = FALSE
 #' fixed design choice, not user-customizable (only the plot panel's own
 #' background is) -- font_family still applies, since it's text.
 title_bar <- function(label, size = 10, font_family = "serif") {
-  ggplot +
+  ggplot() +
     annotate("text", x = 1, y = 1, label = label, size = size,
               fontface = "bold", family = font_family, hjust = 0.5, lineheight = 0.9) +
     xlim(0, 2) + ylim(0.5, 1.5) +
-    theme_void +
+    theme_void() +
     theme(panel.background = element_rect(fill = "gray70", color = NA))
 }
 
@@ -168,7 +168,7 @@ apply_palette_overrides <- function(base_colors, style = NULL) {
   overrides <- style$palette
   if (is.null(overrides)) return(base_colors)
   for (name in names(overrides)) {
-    if (name %in% names(base_colors)) base_colorsname <- overridesname
+    if (name %in% names(base_colors)) base_colors[[name]] <- overrides[[name]]
   }
   base_colors
 }

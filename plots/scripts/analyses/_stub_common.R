@@ -10,9 +10,8 @@ suppressMessages({
 })
 
 run_stub <- function(analysis_id) {
-  source(file.path(this_script_dir, "..", "lib", "io_helpers.R"))
-  args <- parse_cli_args
-
+  source(file.path(this_script_dir(), "..", "lib", "io_helpers.R"))
+  args <- parse_cli_args()
   log_line("[%s] stub analysis starting", analysis_id)
   log_line("[%s] phyloseq_rds: %s", analysis_id, args$phyloseq_rds)
   log_line("[%s] out dir: %s", analysis_id, args$out_dir)

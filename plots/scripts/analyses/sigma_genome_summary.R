@@ -14,7 +14,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -26,8 +26,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args
-
+args <- parse_cli_args()
 if (is.null(args$genome) || args$genome == "") stop("--genome is required")
 genome <- args$genome
 style <- read_style_from_path(args$style_json)
@@ -68,9 +67,9 @@ fmt_value <- function(v) {
 }
 
 stats_json <- lapply(names(stat_groups), function(group) {
-  entries <- lapply(names(stat_groupsgroup), function(label) {
-    col <- stat_groupsgrouplabel
-    val <- if (col %in% colnames(row)) rowcol[1] else NA
+  entries <- lapply(names(stat_groups[[group]]), function(label) {
+    col <- stat_groups[[group]][[label]]
+    val <- if (col %in% colnames(row)) row[[col]][1] else NA
     list(label = label, value = fmt_value(val))
   })
   list(group = group, entries = entries)
@@ -93,8 +92,8 @@ write_json(
 # no numeric axes to plot, this is a report, not a chart; ggplot text
 # geoms are used purely as a layout engine for consistent theming/export.
 card_rows <- do.call(rbind, lapply(names(stat_groups), function(group) {
-  labels <- names(stat_groupsgroup)
-  values <- vapply(stat_groupsgroup, function(col) fmt_value(if (col %in% colnames(row)) rowcol[1] else NA), character(1))
+  labels <- names(stat_groups[[group]])
+  values <- vapply(stat_groups[[group]], function(col) fmt_value(if (col %in% colnames(row)) row[[col]][1] else NA), character(1))
   data.frame(group = group, label = labels, value = values, stringsAsFactors = FALSE)
 }))
 card_rows$y <- rev(seq_len(nrow(card_rows)))
@@ -106,7 +105,7 @@ p_card <- ggplot(card_rows) +
   scale_y_continuous(limits = c(0, nrow(card_rows) + 1), expand = c(0, 0)) +
   labs(x = NULL, y = NULL) +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
-  theme(axis.text = element_blank, axis.ticks = element_blank, panel.grid = element_blank)
+  theme(axis.text = element_blank(), axis.ticks = element_blank(), panel.grid = element_blank())
 
 # AMR/virulence gene hits, grouped by real database/class -- only drawn
 # when this genome actually has hits (a clean genome with zero AMR/
@@ -115,7 +114,7 @@ if (nrow(hits) > 0) {
   hits_summary <- hits %>% count(source, name = "n")
   p_hits <- ggplot(hits_summary, aes(x = reorder(source, n), y = n, fill = source)) +
     geom_bar(stat = "identity", color = "black", linewidth = 0.2) +
-    coord_flip +
+    coord_flip() +
     scale_fill_brewer(palette = "Set2") +
     labs(x = NULL, y = "Gene hits") +
     base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +

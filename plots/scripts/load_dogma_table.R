@@ -10,14 +10,13 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "lib")
+lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "build_dogma_table.R"))
 
 suppressMessages(library(jsonlite))
 
-args <- parse_cli_args
-
+args <- parse_cli_args()
 if (is.null(args$metadata) || args$metadata == "") {
   stop("--metadata is required")
 }
@@ -72,7 +71,7 @@ if (length(annotation_columns) == 0) {
 meta <- coldata
 columns <- colnames(meta)
 column_levels <- lapply(columns, function(col) {
-  vals <- unique(as.character(metacol))
+  vals <- unique(as.character(meta[[col]]))
   vals <- vals[!is.na(vals)]
   sort(vals)
 })
@@ -87,6 +86,6 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_dogma_table] detected %d metadata columns: %s[[", length(columns), paste(columns, collapse = "]], "))
-log_line("[load_dogma_table] detected %d usable annotation columns: %s[[", length(annotation_columns), paste(annotation_columns, collapse = "]], "))
+log_line("[load_dogma_table] detected %d metadata columns: %s", length(columns), paste(columns, collapse = ", "))
+log_line("[load_dogma_table] detected %d usable annotation columns: %s", length(annotation_columns), paste(annotation_columns, collapse = ", "))
 log_line("[load_dogma_table] wrote dogma_table.rds, metadata_columns.json")

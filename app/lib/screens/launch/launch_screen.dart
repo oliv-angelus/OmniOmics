@@ -109,7 +109,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   final _coresController = TextEditingController(text: '8');
   // Per-tool thread overrides (Resources tab): tool_id -> controller. Empty
   // text means "use the manifest's default_threads value for this tool" -- // one controller per tool known from the manifest, created once in _load.
-  final Map<String, TextEditingController()> _threadControllers = {};
+  final Map<String, TextEditingController> _threadControllers = {};
 
   bool _loading = true;
   String? _error;
@@ -390,7 +390,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// Writes samples.tsv + config.yaml from the current in-memory state
   /// (inputs/databases/tools tabs) into `<output_dir>/config/`. Shared by the
   /// standalone "Salvar" action and by `_start`, which saves then launches.
-  Future<Map<String, dynamic>> _buildAndSaveConfig async {
+  Future<Map<String, dynamic>> _buildAndSaveConfig() async {
     await _saveDraft();
 
     final api = ref.read(apiClientProvider);
@@ -480,7 +480,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       _previewError = null;
     });
     try {
-      final res = await _buildAndSaveConfig;
+      final res = await _buildAndSaveConfig();
       final cores = int.tryParse(_coresController.text) ?? 4;
       final omit = _graph.omitFromRuleNames(_activeTools, _activeTracks);
       final cmd = [
@@ -522,7 +522,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   Future<void> _saveConfig() async {
     setState(() => _saving = true);
     try {
-      final configRes = await _buildAndSaveConfig;
+      final configRes = await _buildAndSaveConfig();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_tr('config_saved')}: ${configRes['path']}')),
@@ -545,7 +545,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       // earlier in the Inputs tab.
       await _checkReferenceMatches();
       if (!mounted) return;
-      final configRes = await _buildAndSaveConfig;
+      final configRes = await _buildAndSaveConfig();
 
       if (!mounted) return;
       ref.read(pipelineRunProvider.notifier).start(
@@ -1132,9 +1132,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// Runs settle and records whatever it turns off as cascade-caused (as
   /// opposed to a direct user click), so it's eligible for _reviveCascaded.
   void _settleAndTrackCascade() {
-    final before = _unitSnapshot;
+    final before = _unitSnapshot();
     _graph.settle(_activeTools, _activeTracks);
-    _cascadeDisabled.addAll(before.difference(_unitSnapshot));
+    _cascadeDisabled.addAll(before.difference(_unitSnapshot()));
   }
 
   /// After the user turns something on, bring back anything that's only off
@@ -1233,7 +1233,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
           toolParams: _toolParams,
           onToggle: _onToggleTool,
           onToggleTrack: _onToggleTrack,
-          onParamsChanged:  {
+          onParamsChanged: () {
             setState(() {});
             _markDirty();
           },
@@ -1379,7 +1379,7 @@ class _AutosaveIndicator extends ConsumerWidget {
         ],
       );
     }
-    return const SizedBox.shrink;
+    return const SizedBox.shrink();
   }
 }
 
@@ -1394,7 +1394,7 @@ class _ResourceCardGrid extends StatelessWidget {
   final List<ToolDef> tools;
   final Set<String> ramTargets;
   final Map<String, dynamic> defaultThreads;
-  final Map<String, TextEditingController()> threadControllers;
+  final Map<String, TextEditingController> threadControllers;
   final TextEditingController ramController;
   final VoidCallback onChanged;
   static const double _targetColumnWidth = 210;
@@ -1443,7 +1443,7 @@ class _ResourceCard extends ConsumerWidget {
   final ToolDef tool;
   final bool showRam;
   final String defaultThreadsHint;
-  final TextEditingController()? threadController;
+  final TextEditingController? threadController;
   final TextEditingController ramController;
   final VoidCallback onChanged;
 

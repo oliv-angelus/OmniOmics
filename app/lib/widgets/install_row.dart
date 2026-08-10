@@ -84,7 +84,7 @@ class _InstallRowState extends ConsumerState<InstallRow> {
           _log.add('${ref.t('error_prefix')}: ${event['text']}');
         });
       }
-    }, onDone:  {
+    }, onDone: () {
       if (mounted) setState(() => _running = false);
     });
   }

@@ -88,7 +88,7 @@ class _ReferenceValidationDialogState extends ConsumerState<_ReferenceValidation
       ),
       actions: [
         TextButton(
-          onPressed: _allResolved ?  => Navigator.of(context).pop: null,
+          onPressed: _allResolved ? () => Navigator.of(context).pop() : null,
           child: Text(ref.t('reference_validation_done')),
         ),
       ],

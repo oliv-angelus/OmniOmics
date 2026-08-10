@@ -11,7 +11,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -46,7 +46,7 @@ if (nrow(hits) == 0) {
   log_line("[sigma_amr_heatmap] no gene hits at all (source filter: %s) -- writing an empty result, no plot", source_filter)
   dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
   write_json(
-    list(analysis_id = "sigma_amr_heatmap", source_filter = source_filter, n_genes = 0, genomes = all_genomes, records = list),
+    list(analysis_id = "sigma_amr_heatmap", source_filter = source_filter, n_genes = 0, genomes = all_genomes, records = list()),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
   log_line("[sigma_amr_heatmap] wrote data.json (empty) -- no preview.png")
@@ -99,7 +99,7 @@ p <- ggplot(grid, aes(x = sample, y = gene, fill = present)) +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
     axis.text.y = element_text(size = 9),
-    panel.grid = element_blank,
+    panel.grid = element_blank(),
     legend.position = "top"
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)

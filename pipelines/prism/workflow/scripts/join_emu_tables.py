@@ -49,7 +49,7 @@ def lineage_from_row(row):
     return ";".join(f"{prefix}{row.get(rank, '') or ''}" for rank, prefix in RANK_PREFIXES)
 
 
-def main() :
+def main():
     ap = argparse.ArgumentParser
     ap.add_argument("--inputs", nargs="+", required=True, help="sample_name:path.tsv pairs")
     ap.add_argument("--out", required=True)
@@ -98,4 +98,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()

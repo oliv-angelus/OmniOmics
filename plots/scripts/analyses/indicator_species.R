@@ -6,7 +6,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -61,7 +61,7 @@ dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 if (nrow(df_inv) == 0) {
   log_line("[indicator_species] no significant indicators at p <= %g -- writing an empty result, no plot", p_cutoff)
-  write_json(list(analysis_id = "indicator_species", group_var = group_var, rank = rank, n_indicators = 0, indicators = list),
+  write_json(list(analysis_id = "indicator_species", group_var = group_var, rank = rank, n_indicators = 0, indicators = list()),
              file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE)
   quit(save = "no", status = 0)
 }
@@ -88,7 +88,7 @@ p <- ggplot(df_plot, aes(x = stat, y = TaxonName, color = Indicated_Group)) +
   theme(
     axis.text.y = element_text(size = 11, face = "italic"),
     panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),
-    panel.grid.major.y = element_blank
+    panel.grid.major.y = element_blank()
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

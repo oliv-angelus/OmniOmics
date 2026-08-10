@@ -14,7 +14,7 @@ import re
 import pandas as pd
 
 
-def main() :
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fastp", nargs="+", required=True)
     parser.add_argument("--bowtie2-logs", nargs="+", required=True)
@@ -71,4 +71,4 @@ def main() :
 
 
 if __name__ == "__main__":
-    main
+    main()

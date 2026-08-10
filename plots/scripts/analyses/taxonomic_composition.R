@@ -6,7 +6,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -45,8 +45,8 @@ build_rank_panel <- function(rank) {
   glom <- tax_glom(ps, taxrank = rank, NArm = FALSE)
   ps_rel <- transform_sample_counts(glom, function(x) x / sum(x) * 100)
   df <- psmelt(ps_rel)
-  dfrank <- as.character(dfrank)
-  dfrank[is.na(dfrank)] <- "Unclassified"
+  df[[rank]] <- as.character(df[[rank]])
+  df[[rank]][is.na(df[[rank]])] <- "Unclassified"
 
   summary_tab <- df %>% group_by(.data[[rank]]) %>% summarise(Mean = mean(Abundance),.groups = "drop") %>% arrange(desc(Mean))
   top_taxa <- summary_tab %>% slice_head(n = top_n_taxa) %>% pull(.data[[rank]])
@@ -74,7 +74,7 @@ build_rank_panel <- function(rank) {
       axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 9),
       legend.text = element_text(size = 10, face = "italic"),
       legend.title = element_text(size = 12, face = "bold"),
-      panel.grid.major.x = element_blank
+      panel.grid.major.x = element_blank()
     )
   p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
@@ -112,7 +112,7 @@ write_json(
 # case of a single --rank being requested (the primary interactive use
 # case -- pick a rank, tweak its colors, replot).
 effective_style <- list(
-  palette = as.list(panels1$palette),
+  palette = as.list(panels[[1]]$palette),
   legend_position = "right",
   show_labels = FALSE,
   background = bg,

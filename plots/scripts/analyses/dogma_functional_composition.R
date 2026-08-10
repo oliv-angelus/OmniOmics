@@ -11,7 +11,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -60,8 +60,7 @@ df <- long_table %>%
   summarise(reads = sum(salmon_NumReads),.groups = "drop") %>%
   group_by(sample_domain) %>%
   mutate(pct = reads / sum(reads) * 100) %>%
-  ungroup
-
+  ungroup()
 summary_tab <- df %>% group_by(family) %>% summarise(Mean = mean(pct),.groups = "drop") %>% arrange(desc(Mean))
 top_families <- summary_tab %>% filter(family != "Unclassified") %>% slice_head(n = top_n_families) %>% pull(family)
 
@@ -91,7 +90,7 @@ p <- ggplot(df_agg, aes(x = sample_domain, y = pct, fill = Family_Plot)) +
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 9),
     legend.text = element_text(size = 9),
     legend.title = element_text(size = 12, face = "bold"),
-    panel.grid.major.x = element_blank
+    panel.grid.major.x = element_blank()
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

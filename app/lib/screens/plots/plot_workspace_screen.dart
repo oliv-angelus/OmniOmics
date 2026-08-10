@@ -536,7 +536,9 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
                     // row's own cards are stretched (via IntrinsicHeight) to
                     // that row's own tallest card, so every row reads as a
                     // clean, aligned grid band, while a short-description row
-                    // stays short and a long-description row stays tall -- // organized without truncating anything.: SingleChildScrollView(
+                    // stays short and a long-description row stays tall --
+                    // organized without truncating anything.
+                        : SingleChildScrollView(
                         child: LayoutBuilder(
                           builder: (context, constraints) => _buildAnalysisRows(constraints.maxWidth),
                         ),
@@ -744,7 +746,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     final analysis = _selectedAnalysis;
     final params = _paramsState;
     final loaded = _loadedData;
-    if (analysis == null || params == null || loaded == null) return const SizedBox.shrink;
+    if (analysis == null || params == null || loaded == null) return const SizedBox.shrink();
 
     return Card(
       child: Padding(

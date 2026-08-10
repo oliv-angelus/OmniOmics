@@ -79,7 +79,7 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
   }
 
   Future<void> _detectInFolder() async {
-    final baseDir = await getDirectoryPath;
+    final baseDir = await getDirectoryPath();
     if (baseDir == null) return;
     final api = ref.read(apiClientProvider);
     final res = await api.post('/api/databases/detect', {'base_dir': baseDir}) as Map<String, dynamic>;

@@ -8,7 +8,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -62,7 +62,7 @@ p <- ggplot(df, aes(x = SampleA, y = SampleB, fill = Distance)) +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-    panel.grid = element_blank
+    panel.grid = element_blank()
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

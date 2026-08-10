@@ -117,7 +117,7 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
   }
 
   Future<void> _pick() async {
-    final result = await getDirectoryPath;
+    final result = await getDirectoryPath();
     if (result != null) setState(() => _path = result);
   }
 
@@ -198,7 +198,8 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
         TextButton(onPressed: () => Navigator.of(context).pop, child: Text(ref.t('cancel'))),
         ElevatedButton(
           onPressed: (_path?.isNotEmpty == true && _selected.isNotEmpty)
-              ?  => Navigator.of(context).pop(_BaseDirChoice(_path!, _selectedOptions, _selected.toList())): null,
+              ? () => Navigator.of(context).pop(_BaseDirChoice(_path!, _selectedOptions, _selected.toList()))
+              : null,
           child: Text(ref.t('download_all_dialog_start')),
         ),
       ],

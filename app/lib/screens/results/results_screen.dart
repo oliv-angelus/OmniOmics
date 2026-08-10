@@ -27,7 +27,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   bool _deleting = false;
   String? _error;
   Timer? _pollTimer;
-  final _treeKey = GlobalKey<ResultsFileTreeState>;
+  final _treeKey = GlobalKey<ResultsFileTreeState>();
 
   @override
   void initState() {
@@ -62,7 +62,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         _loading = false;
         _error = null;
       });
-      if (_selected?.isRunning ?? false) _treeKey.currentState()?.refresh;
+      if (_selected?.isRunning ?? false) _treeKey.currentState?.refresh();
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
@@ -243,7 +243,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: ref.t('review_refresh'),
-                onPressed: () => _treeKey.currentState()?.refresh,
+                onPressed: () => _treeKey.currentState?.refresh(),
               ),
             ],
           ),

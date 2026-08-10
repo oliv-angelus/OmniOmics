@@ -10,7 +10,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -67,7 +67,7 @@ present_sets <- lapply(groups, function(g) {
 })
 names(present_sets) <- groups
 
-log_line("[upset_plot] set sizes: %s", paste(sprintf("%s=%d[[", groups, lengths(present_sets)), collapse = "]], "))
+log_line("[upset_plot] set sizes: %s", paste(sprintf("%s=%d", groups, lengths(present_sets)), collapse = ", "))
 
 all_taxa <- unique(unlist(present_sets))
 if (length(all_taxa) == 0) stop("No taxon met --min_abundance in any group -- try lowering it.")
@@ -79,13 +79,13 @@ if (length(all_taxa) == 0) stop("No taxon met --min_abundance in any group -- tr
 # n_intersections below), but it's the same computation regardless of group
 # count and cheap relative to the DIAMOND/DESeq2/etc. steps elsewhere in the
 # app.
-intersections <- list
+intersections <- list()
 for (k in seq_along(groups)) {
   combos <- combn(groups, k, simplify = FALSE)
   for (combo in combos) {
     in_all <- Reduce(intersect, present_sets[combo])
     if (length(in_all) > 0) {
-      intersectionspaste(combo, collapse = " & ") <- in_all
+      intersections[[paste(combo, collapse = " & ")]] <- in_all
     }
   }
 }
@@ -93,7 +93,7 @@ for (k in seq_along(groups)) {
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 intersections_json <- lapply(names(intersections), function(nm) {
-  list(sets = nm, n_taxa = length(intersectionsnm), taxa = intersectionsnm)
+  list(sets = nm, n_taxa = length(intersections[[nm]]), taxa = intersections[[nm]])
 })
 
 write_json(
@@ -121,7 +121,7 @@ presence_df <- data.frame(
   taxon = all_taxa,
   stringsAsFactors = FALSE
 )
-for (g in groups) presence_dfg <- all_taxa %in% present_setsg
+for (g in groups) presence_df[[g]] <- all_taxa %in% present_sets[[g]]
 
 # Above ~40 present intersection combinations the bar strip becomes as
 # unreadable as an unlabeled point cloud (same class of large-N cramping
@@ -141,7 +141,7 @@ n_intersections_shown <- min(n_present_combos, 40)
 # stay ComplexUpset's own black/gray "on/off" dots, same scope-cut
 # reasoning already applied to core_microbiome's/goods_coverage's
 # non-multi-key-palette analyses).
-queries <- lapply(groups, function(g) ComplexUpset::upset_query(set = g, fill = unname(paletteg)))
+queries <- lapply(groups, function(g) ComplexUpset::upset_query(set = g, fill = unname(palette[[g]])))
 
 p <- ComplexUpset::upset(
   presence_df, groups,

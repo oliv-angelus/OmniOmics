@@ -41,7 +41,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-source(file.path(this_script_dir, "lib", "build_tree.R"))
+source(file.path(this_script_dir(), "lib", "build_tree.R"))
 
 suppressPackageStartupMessages({
   library(optparse)

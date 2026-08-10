@@ -18,7 +18,7 @@ import 'screens/shell/dependency_gate_screen.dart';
 /// `themeModeProvider` would tear down `apiClientProvider`'s override and throw
 /// "must be overridden after backend health check". Resolving the backend once,
 /// before the one-and-only `runApp` call for the real app, avoids that entirely.
-final _launcher = BackendLauncher;
+final _launcher = BackendLauncher();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized;
@@ -29,7 +29,7 @@ void main() {
 Future<void> _boot() async {
   try {
     await _launcher.start();
-    final apiClient = ApiClient(baseUrl: _launcher.baseUrl());
+    final apiClient = ApiClient(baseUrl: _launcher.baseUrl);
     runApp(
       ProviderScope(
         overrides: [apiClientProvider.overrideWithValue(apiClient)],
@@ -131,7 +131,7 @@ class _OmniOmicsAppState extends ConsumerState<_OmniOmicsApp> with WidgetsBindin
       darkTheme: buildDarkTheme(),
       themeMode: themeMode,
       locale: locale,
-      home: const DependencyGateScreen(next(): AppShell),
+      home: const DependencyGateScreen(next: AppShell()),
     );
   }
 }

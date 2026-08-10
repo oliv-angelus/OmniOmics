@@ -65,9 +65,9 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                LanguageToggle,
+                LanguageToggle(),
                 SizedBox(width: 12),
-                ThemeToggle,
+                ThemeToggle(),
               ],
             ),
           ),

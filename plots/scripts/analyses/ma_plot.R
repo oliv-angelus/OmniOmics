@@ -10,7 +10,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -74,7 +74,7 @@ dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 p <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange, color = Significant)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
   geom_point(alpha = 0.6, size = 1.6) +
-  scale_x_log10 +
+  scale_x_log10() +
   scale_color_manual(values = c(`TRUE` = "#D95F02", `FALSE` = "gray60"),
                       labels = c(`TRUE` = paste0("padj < ", alpha), `FALSE` = "not significant"), name = NULL) +
   labs(x = "Mean of normalized counts", y = "Log2 fold change (shrunk)") +

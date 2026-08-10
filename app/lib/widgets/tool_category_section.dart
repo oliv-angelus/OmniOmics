@@ -114,7 +114,7 @@ class _ToolRow extends StatelessWidget {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap: p == null ? null:  {
+            onTap: p == null ? null : () {
               p.expanded = !p.expanded;
               onParamsChanged();
             },

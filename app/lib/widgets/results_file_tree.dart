@@ -69,7 +69,7 @@ class ResultsFileTreeState extends State<ResultsFileTree> {
       return;
     }
     try {
-      final entries = await dir.list.toList();
+      final entries = await dir.list().toList();
       entries.sort((a, b) {
         final aDir = a is Directory;
         final bDir = b is Directory;
@@ -150,7 +150,7 @@ const _kKnownApps = [
   _KnownApp('Visual Studio Code', 'code'),
 ];
 
-Future<List<_KnownApp>> _detectInstalledApps async {
+Future<List<_KnownApp>> _detectInstalledApps() async {
   final checks = await Future.wait(_kKnownApps.map((app) async {
     try {
       final res = await Process.run('which', [app.binary]);
@@ -177,7 +177,7 @@ Future<void> _openWithDefault(BuildContext context, String path, String errorPre
 }
 
 Future<void> _showOpenWithDialog(BuildContext context, String path, ResultsFileTree cfg) async {
-  final apps = await _detectInstalledApps;
+  final apps = await _detectInstalledApps();
   if (!context.mounted) return;
 
   final customController = TextEditingController();
@@ -327,10 +327,10 @@ class _FileSize extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return FutureBuilder<int>(
-      future: File(path).length.catchError((_) => 0),
+      future: File(path).length().catchError((_) => 0),
       builder: (context, snapshot) {
         final bytes = snapshot.data;
-        if (bytes == null) return const SizedBox.shrink;
+        if (bytes == null) return const SizedBox.shrink();
         return Text(_formatBytes(bytes), style: TextStyle(fontSize: 11, color: colors.textMuted));
       },
     );

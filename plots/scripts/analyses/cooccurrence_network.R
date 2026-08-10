@@ -7,7 +7,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -123,7 +123,7 @@ build_group_network <- function(group) {
     scale_fill_manual(values = colors_phylum, name = "Phylum") +
     scale_size_continuous(range = c(3, 10), name = "Rel. Abundance (%)") +
     guides(fill = guide_legend(override.aes = list(size = 6))) +
-    theme_void +
+    theme_void() +
     theme(
       text = element_text(family = font_family),
       legend.position = "right",
@@ -147,7 +147,7 @@ dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 if (length(results_by_group) == 0) {
   log_line("[cooccurrence_network] no group produced a network meeting the cutoffs -- writing an empty result, no plot")
-  write_json(list(analysis_id = "cooccurrence_network", group_var = group_var, groups = list),
+  write_json(list(analysis_id = "cooccurrence_network", group_var = group_var, groups = list()),
              file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE)
   quit(save = "no", status = 0)
 }
@@ -171,7 +171,7 @@ write_json(
 # key space across every group's panel; still a real, useful starting
 # point since phyla are typically shared across most groups in practice.
 effective_style <- list(
-  palette = as.list(results_by_group1$palette),
+  palette = as.list(results_by_group[[1]]$palette),
   legend_position = "right", show_labels = TRUE,
   background = bg, font_family = font_family
 )

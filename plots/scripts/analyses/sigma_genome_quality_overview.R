@@ -12,7 +12,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -24,7 +24,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args
+args <- parse_cli_args()
 group_var <- args$group_var  # optional -- NULL/"" is fine, every genome just gets one color then
 style <- read_style_from_path(args$style_json)
 bg <- style$background %||% "gray90"

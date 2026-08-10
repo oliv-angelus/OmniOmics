@@ -37,7 +37,7 @@ def _load_all() -> dict:
     return registry
 
 
-def reload_registry() :
+def reload_registry():
     """Drop the in-memory cache so the next call re-scans pipelines/ from disk."""
     global _cache
     _cache = None

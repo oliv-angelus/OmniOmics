@@ -8,7 +8,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -113,7 +113,7 @@ if (max(dist_matrix) == 0) {
 meta <- data.frame(sample_data(ps_rar))
 
 set.seed(seed)
-permanova <- adonis2(dist_matrix ~ metagroup_var, permutations = permutations)
+permanova <- adonis2(dist_matrix ~ meta[[group_var]], permutations = permutations)
 p_value <- permanova$`Pr(>F)`[1]
 log_line("[beta_diversity] PERMANOVA: %s (%d permutations)", format_p_value(p_value), permutations)
 
@@ -169,9 +169,9 @@ axis_variance <- tryCatch({
 points <- lapply(seq_len(nrow(df)), function(i) {
   list(
     sample = df$SampleID[i],
-    axis1 = dfaxis_cols[1][i],
-    axis2 = dfaxis_cols[2][i],
-    group = as.character(dfgroup_var[i])
+    axis1 = df[[axis_cols[1]]][i],
+    axis2 = df[[axis_cols[2]]][i],
+    group = as.character(df[[group_var]][i])
   )
 })
 
@@ -198,7 +198,7 @@ write_json(
 # used in the plot is exactly what gets written to default_style.json --
 # see default_style_for_groups's docstring: computing a fresh palette here
 # would overwrite the overrides actually applied to the plot.
-palette <- resolve_palette(dfgroup_var, style)
+palette <- resolve_palette(df[[group_var]], style)
 
 # Every point gets a SampleID label -- fine for a handful of samples, but
 # past a few dozen, points crowd together (especially inside tight ellipses)
@@ -209,7 +209,7 @@ palette <- resolve_palette(dfgroup_var, style)
 n_samples <- nrow(df)
 show_point_labels <- n_samples <= 40
 
-effective_style <- default_style_for_groups(dfgroup_var, legend_position = "right", show_labels = show_point_labels,
+effective_style <- default_style_for_groups(df[[group_var]], legend_position = "right", show_labels = show_point_labels,
                                              background = bg, font_family = font_family, palette = palette)
 write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 
@@ -219,7 +219,7 @@ saveRDS(list(ps_rar = ps_rar, ordination = ord, permanova = permanova),
 # Phase 1 static preview -- the interactive widget (Phase 2) replaces this
 # for beta_diversity specifically once built; every other analysis keeps
 # using this kind of static image through Phase 1 regardless.
-p <- ggplot(df, aes(x =.data[[axis_cols]][1], y =.data[[axis_cols]][2],
+p <- ggplot(df, aes(x =.data[[axis_cols[1]]], y =.data[[axis_cols[2]]],
                      color =.data[[group_var]], fill =.data[[group_var]])) +
   stat_ellipse(geom = "polygon", alpha = 0.2, type = "t", level = 0.95, show.legend = FALSE) +
   geom_point(size = 5, alpha = 0.9, shape = 21, color = "black", stroke = 0.5) +

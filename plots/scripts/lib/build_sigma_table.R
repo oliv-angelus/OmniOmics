@@ -80,7 +80,8 @@ suppressMessages({
 }
 
 # Real 7-rank GTDB naming, same convention build_phyloseq.R already
-# established for MAGMA/PRISM's own GTDB-style lineage strings..GTDB_RANK_COLS <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+# established for MAGMA/PRISM's own GTDB-style lineage strings.
+.GTDB_RANK_COLS <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
 
 #' GTDB-Tk writes exactly ONE of gtdbtk.bac120.summary.tsv /
 #' gtdbtk.ar53.summary.tsv per single-genome classify_wf run (confirmed
@@ -125,7 +126,7 @@ suppressMessages({
   find_col <- function(suffix) {
     hit <- grep(paste0(suffix, "$"), colnames(row), value = TRUE)
     if (length(hit) == 0) return(NA_real_)
-    suppressWarnings(as.numeric(rowhit[1]))
+    suppressWarnings(as.numeric(row[[hit[1]]]))
   }
   data.frame(
     sample = sample,
@@ -223,12 +224,12 @@ build_sigma_table <- function(results_dir) {
 #' (different granularity: one row per genome vs. one row per hit).
 build_sigma_gene_hits <- function(results_dir) {
   samples <-.discover_sigma_samples(results_dir)
-  parts <- list
+  parts <- list()
   for (s in samples) {
-    partslength(parts) + 1 <-.read_amrfinder(results_dir, s)
-    partslength(parts) + 1 <-.read_abricate(results_dir, s, "ncbi", file.path("abricate", "ncbi_results.tab"))
-    partslength(parts) + 1 <-.read_abricate(results_dir, s, "card", file.path("abricate", "card_results.tab"))
-    partslength(parts) + 1 <-.read_abricate(results_dir, s, "vfdb", file.path("vfdb", "vfdb_results.tab"))
+    parts[[length(parts) + 1]] <-.read_amrfinder(results_dir, s)
+    parts[[length(parts) + 1]] <-.read_abricate(results_dir, s, "ncbi", file.path("abricate", "ncbi_results.tab"))
+    parts[[length(parts) + 1]] <-.read_abricate(results_dir, s, "card", file.path("abricate", "card_results.tab"))
+    parts[[length(parts) + 1]] <-.read_abricate(results_dir, s, "vfdb", file.path("vfdb", "vfdb_results.tab"))
   }
   parts <- Filter(Negate(is.null), parts)
   if (length(parts) == 0) {

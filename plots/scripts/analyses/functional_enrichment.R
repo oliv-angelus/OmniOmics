@@ -17,7 +17,7 @@ this_script_dir <- function() {
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
 }
-lib_dir <- file.path(this_script_dir, "..", "lib")
+lib_dir <- file.path(this_script_dir(), "..", "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "plot_theme.R"))
 source(file.path(lib_dir, "style_io.R"))
@@ -87,7 +87,7 @@ if (length(sig_genes) == 0) {
   dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
   write_json(
     list(analysis_id = "functional_enrichment", group_var = group_var, reference_group = reference_group,
-         comparison_level = test_group, term_source = term_source, n_sig_genes = 0, terms = list),
+         comparison_level = test_group, term_source = term_source, n_sig_genes = 0, terms = list()),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
   log_line("[functional_enrichment] wrote data.json (empty) -- no preview.png")
@@ -100,7 +100,7 @@ if (length(sig_genes) == 0) {
 # comma-separate multiple values; "-" is eggNOG's own "no annotation" marker
 # and is dropped before building the mapping.
 build_term2gene <- function(gene_info, column) {
-  raw <- gene_infocolumn
+  raw <- gene_info[[column]]
   genes <- rownames(gene_info)
   split_fn <- if (column == "COG_category") function(x) strsplit(x, "") else function(x) strsplit(x, ",")
   pairs <- Map(function(g, v) {
@@ -129,7 +129,7 @@ if (is.null(enrich_result) || nrow(as.data.frame(enrich_result)) == 0) {
   log_line("[functional_enrichment] no term met p_cutoff < %g -- writing an empty result, no plot", p_cutoff)
   write_json(
     list(analysis_id = "functional_enrichment", group_var = group_var, reference_group = reference_group,
-         comparison_level = test_group, term_source = term_source, n_sig_genes = length(sig_genes), terms = list),
+         comparison_level = test_group, term_source = term_source, n_sig_genes = length(sig_genes), terms = list()),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
   log_line("[functional_enrichment] wrote data.json (empty) -- no preview.png")
@@ -147,7 +147,7 @@ enrich_df <- as.data.frame(enrich_result) %>%
 enrich_df$Label <- factor(enrich_df$Label, levels = rev(enrich_df$Label))
 
 p <- ggplot(enrich_df, aes(x = GeneRatioNum, y = Label, size = Count, color = p.adjust)) +
-  geom_point +
+  geom_point() +
   scale_color_distiller(palette = "Spectral", name = "padj") +
   scale_size_continuous(range = c(3, 10), name = "Gene count") +
   labs(x = "Gene ratio", y = NULL) +

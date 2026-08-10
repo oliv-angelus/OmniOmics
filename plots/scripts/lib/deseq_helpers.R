@@ -29,26 +29,26 @@ run_deseq <- function(count_data, group_var, reference_group = NULL) {
   counts <- count_data$counts
   # Samples with NA in group_var can't be assigned to a design level -- # dropped rather than erroring, same reasoning as build_phyloseq-based
   # analyses already use for their own group_var.
-  keep_samples <- !is.na(coldatagroup_var)
+  keep_samples <- !is.na(coldata[[group_var]])
   if (!all(keep_samples)) {
     log_line("[deseq_helpers] dropping %d sample(s) with NA in %s", sum(!keep_samples), group_var)
   }
   coldata <- coldata[keep_samples,, drop = FALSE]
   counts <- counts[, rownames(coldata), drop = FALSE]
 
-  coldatagroup_var <- factor(coldatagroup_var)
+  coldata[[group_var]] <- factor(coldata[[group_var]])
   if (!is.null(reference_group) && reference_group != "") {
-    if (!(reference_group %in% levels(coldatagroup_var))) {
+    if (!(reference_group %in% levels(coldata[[group_var]]))) {
       stop(sprintf("reference_group '%s' is not a level of '%s'. Available levels: %s",
-                   reference_group, group_var, paste(levels(coldatagroup_var), collapse = ", ")))
+                   reference_group, group_var, paste(levels(coldata[[group_var]]), collapse = ", ")))
     }
-    coldatagroup_var <- relevel(coldatagroup_var, ref = reference_group)
+    coldata[[group_var]] <- relevel(coldata[[group_var]], ref = reference_group)
   }
 
   # DESeq2 needs real replicates to estimate dispersion at all -- same guard
   # (and same real crash it prevents) as differential_abundance_deseq2.R's
   # own level_counts check.
-  level_counts <- table(coldatagroup_var)
+  level_counts <- table(coldata[[group_var]])
   if (any(level_counts < 2)) {
     under_replicated <- names(level_counts)[level_counts < 2]
     stop(sprintf(
