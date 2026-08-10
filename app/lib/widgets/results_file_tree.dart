@@ -215,7 +215,7 @@ Future<void> _showOpenWithDialog(BuildContext context, String path, ResultsFileT
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(dialogContext).pop, child: Text(cfg.cancelLabel)),
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(cfg.cancelLabel)),
         ElevatedButton(
           onPressed: () => Navigator.of(dialogContext).pop(customController.text),
           child: Text(cfg.openWithOpenButton),

@@ -28,7 +28,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
   }
 
   Future<void> _stop() async {
-    await ref.read(pipelineRunProvider.notifier).stop;
+    await ref.read(pipelineRunProvider.notifier).stop();
   }
 
   String _statusText(PipelineRunState run) {

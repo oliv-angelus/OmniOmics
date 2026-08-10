@@ -291,7 +291,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           onSubmitted: (v) => Navigator.of(dialogContext).pop(v),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop, child: Text(ref.t('cancel'))),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(ref.t('cancel'))),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(controller.text),
             child: Text(ref.t('results_rename_save')),

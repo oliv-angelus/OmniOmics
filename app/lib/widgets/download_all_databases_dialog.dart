@@ -195,7 +195,7 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop, child: Text(ref.t('cancel'))),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(ref.t('cancel'))),
         ElevatedButton(
           onPressed: (_path?.isNotEmpty == true && _selected.isNotEmpty)
               ? () => Navigator.of(context).pop(_BaseDirChoice(_path!, _selectedOptions, _selected.toList()))
@@ -307,13 +307,13 @@ class _DownloadAllProgressDialog extends ConsumerWidget {
       actions: [
         if (!finished)...[
           TextButton(
-            onPressed: () => Navigator.of(context).pop,
+            onPressed: () => Navigator.of(context).pop(),
             child: Text(ref.t('download_all_close_keep')),
           ),
           TextButton(
             onPressed: () {
               ref.read(downloadAllProvider.notifier).cancel(pipelineId);
-              Navigator.of(context).pop;
+              Navigator.of(context).pop();
             },
             child: Text(ref.t('cancel')),
           ),
@@ -321,7 +321,7 @@ class _DownloadAllProgressDialog extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               ref.read(downloadAllProvider.notifier).dismiss(pipelineId);
-              Navigator.of(context).pop;
+              Navigator.of(context).pop();
             },
             child: Text(ref.t('download_all_done')),
           ),

@@ -276,7 +276,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// Back to the analyses list for this SAME run+metadata -- loading is
   /// per-run, not per-analysis, so there's nothing to redo here.
   void _newAnalysis() {
-    ref.read(plotRunProvider.notifier).dismiss;
+    ref.read(plotRunProvider.notifier).dismiss();
     setState(() {
       _selectedAnalysis = null;
       _paramsState = null;
