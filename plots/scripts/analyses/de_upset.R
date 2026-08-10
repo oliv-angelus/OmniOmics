@@ -161,6 +161,8 @@ final_plot <- Reduce(`/`, lapply(panels, patchwork::wrap_elements)) + patchwork:
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = max(9, length(comparison_levels) * 2.5), height = 6 * length(panels),
        units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = max(9, length(comparison_levels) * 2.5), height = 6 * length(panels)),
+        file.path(args$out_dir, "plot_final.rds"))
 
 # Plain one-gene-per-line text files alongside data.json -- the exact
 # deliverable shape the reference workflow's own core_UP_3condicoes.txt/

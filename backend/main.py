@@ -1890,9 +1890,12 @@ async def plots_ws(websocket: WebSocket, run_id: str):
 
 @app.post("/api/plots/{run_id}/export")
 async def export_plot(run_id: str, data: dict):
-    """Renders a compute run's cached .rds through export/render_final.R at
-    the caller's chosen format/DPI/size, using the style.json the compute
-    step wrote (default_style.json unless overridden)."""
+    """Re-renders an already-computed analysis at publication quality via
+    export/render_final.R: it reads the ggplot object the analysis saved next
+    to its preview (plot_final.rds) and writes it again at the caller's chosen
+    format, DPI and size. No statistics are recomputed. Styling is baked in at
+    compute time (see plots/scripts/lib/style_io.R), so changing a palette
+    means re-running the analysis, not re-exporting."""
     run = plot_runs_store.get_plot_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Plot run not found.")

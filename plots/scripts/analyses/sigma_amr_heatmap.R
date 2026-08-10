@@ -110,6 +110,8 @@ width <- max(8, length(all_genomes) * 0.5)
 final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family, plot_width_in = width)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = width, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "sigma_amr_heatmap", source_filter = source_filter, n_genes = length(top_genes), genomes = all_genomes,

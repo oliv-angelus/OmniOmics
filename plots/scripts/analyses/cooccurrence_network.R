@@ -185,5 +185,7 @@ final_plot <- patchwork::wrap_plots(lapply(results_by_group, function(r) r$plot)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 9 * min(2, n_groups), height = 8 * ceiling(n_groups / min(2, n_groups)),
        units = "in", dpi = 120, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = 9 * min(2, n_groups), height = 8 * ceiling(n_groups / min(2, n_groups))),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[cooccurrence_network] wrote data.json, default_style.json, cooccurrence_network.rds, preview.png (%d group network(s))", n_groups)

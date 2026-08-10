@@ -236,5 +236,7 @@ title <- paste0("Beta Diversity (", toupper(dist_method), ")  |  PERMANOVA: ", f
 final_plot <- with_title_bar(p, title, size = 10, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = 10, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 12, height = 10),
+        file.path(args$out_dir, "plot_final.rds"))
 
 log_line("[beta_diversity] wrote data.json, default_style.json, beta_diversity.rds, preview.png")

@@ -160,6 +160,8 @@ final_plot <- with_title_bar(p, title, size = 6, title_height = 0.14, font_famil
 height <- max(6, nrow(enrich_df) * 0.35)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = 12, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "functional_enrichment", group_var = group_var, reference_group = reference_group,

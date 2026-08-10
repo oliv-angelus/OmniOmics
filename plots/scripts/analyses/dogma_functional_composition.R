@@ -99,6 +99,8 @@ final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_famil
 plot_width <- max(14, length(unique(df_agg$sample_domain)) * 0.25)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 8, units = "in", dpi = 120, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = plot_width, height = 8),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "dogma_functional_composition", annotation_column = annotation_col, top_families = top_families,

@@ -100,6 +100,8 @@ width <- max(8, ncol(mat_z) * 0.6)
 final_plot <- with_title_bar(p, title, size = 7, title_height = 0.08, font_family = font_family, plot_width_in = width)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = width, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "dogma_de_heatmap", annotation_column = annotation_col, group_var = group_var, reference_group = reference_group,

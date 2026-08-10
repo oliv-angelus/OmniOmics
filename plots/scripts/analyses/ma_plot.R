@@ -86,6 +86,8 @@ title <- paste0("MA Plot: ", test_group, " vs ", reference_group, " (", sum(res_
 final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 8, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 10, height = 8),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "ma_plot", group_var = group_var, reference_group = reference_group,

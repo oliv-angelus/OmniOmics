@@ -79,6 +79,8 @@ title <- paste0("MA Plot (", annotation_col, "): ", test_group, " vs ", referenc
 final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 8, units = "in", dpi = 150, bg = "white")
+saveRDS(list(plot = final_plot, width = 10, height = 8),
+        file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
   list(analysis_id = "dogma_ma_plot", annotation_column = annotation_col, group_var = group_var, reference_group = reference_group,

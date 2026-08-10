@@ -59,6 +59,8 @@ final_plot <- with_title_bar(p, "Good's Coverage", size = 8, title_height = 0.1,
 height <- max(4, nrow(dados_cov) * 0.35)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
+saveRDS(list(plot = final_plot, width = 12, height = height),
+        file.path(args$out_dir, "plot_final.rds"))
 
 samples_json <- lapply(seq_len(nrow(dados_cov)), function(i) {
   list(sample = dados_cov$SampleID[i], coverage = dados_cov$Goods_Coverage[i])
