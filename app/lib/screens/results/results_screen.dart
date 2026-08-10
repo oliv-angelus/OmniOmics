@@ -184,6 +184,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(run.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), overflow: TextOverflow.ellipsis),
+                      // A run whose folder is gone stays listed so it can be
+                      // removed deliberately, but says so instead of opening
+                      // to an empty tree with no explanation.
+                      if (run.isMissing)
+                        Row(children: [
+                          Icon(Icons.folder_off_outlined, size: 12, color: colors.statusError),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(ref.t('results_output_missing'),
+                                style: TextStyle(fontSize: 11, color: colors.statusError),
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                        ]),
                       Text('${run.pipelineName} · ${_formatWhen(run.startedAtDate)}',
                           style: TextStyle(fontSize: 11, color: colors.textSecondary), overflow: TextOverflow.ellipsis),
                     ],

@@ -1487,8 +1487,18 @@ async def stop_pipeline(pid: str):
 def api_list_runs():
     """Backs the Results page's run list -- every run ever started, most recent
     first, across all pipelines. File browsing itself happens client-side
-    (dart:io) directly against each run's output_dir, no endpoint needed for that."""
-    return runs_store.list_runs()
+    (dart:io) directly against each run's output_dir, no endpoint needed for that.
+
+    Each record carries `output_exists`, checked here rather than assumed: a
+    run's folder can disappear without the app knowing (deleted in a file
+    manager, an external drive unmounted, a shared path gone). Without the
+    flag the entry stays in the list forever and opening it just shows an
+    empty tree, with nothing explaining why."""
+    runs = runs_store.list_runs()
+    for r in runs:
+        out = r.get("output_dir") or ""
+        r["output_exists"] = bool(out) and os.path.isdir(out)
+    return runs
 
 
 # Never delete these, no matter what a run record's output_dir claims -- a
@@ -1544,7 +1554,7 @@ def delete_runs(data: dict):
     for r in all_runs:
         d = r.get("output_dir")
         if d:
-            refs_by_dir.setdefault(d, set).add(r["id"])
+            refs_by_dir.setdefault(d, set()).add(r["id"])
 
     ids_removed = set()
     dirs_to_delete = set()
