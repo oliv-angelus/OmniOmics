@@ -374,3 +374,49 @@ para na própria validação de entrada — o dataset DEFINE demo tem só 2 nív
 - `pipelines/dogma/workflow/rules/06_taxonomy.smk`: `\.` não escapado dentro de string
   Python não-raw num comando `sed` — funciona hoje, mas emite `SyntaxWarning` de
   descontinuação. Corrigido para `\\.` (o `sed` recebe exatamente o mesmo texto).
+
+## Passada de revisão para publicação: comentários, descrições e traduções (2026-08-10)
+
+Feita depois do reparo do incidente acima, editando **somente linhas de comentário**,
+arquivo por arquivo, com parser/compilador rodado a cada etapa.
+
+**Comentários.** 38 comentários que o regex tinha fundido numa linha só (`-- //`, `-- #`)
+voltaram a ser duas linhas. Removida a narrativa do processo de criação — "per the user's
+request", "real reported bug", "unchanged from before", "not part of the original script",
+"Phase 1/Phase 2 do plano", e uma citação em português do relato do usuário que tinha
+ficado dentro de um docstring. O *conteúdo técnico* foi preservado em todos os casos: o
+motivo continua documentado, só não conta mais a história de como chegamos nele.
+
+Mantidos de propósito, porque são avisos reais e não narrativa:
+- `config["threads"].get("picrust2", 1)` — Snakemake avalia `threads:` no DAG-build mesmo
+  quando a regra está desativada, então um lookup direto quebra o build inteiro.
+- limite de 4 conjuntos do ggVennDiagram (por isso existe o `upset_plot` em paralelo).
+- `.gff3` do TransDecoder não é compatível com featureCounts.
+
+**Descrições in-app.** Duas eram parágrafos inteiros de justificativa dentro de um card:
+`vsearch_chimera` (1428 en / 1594 pt) e `picrust2` (958 / 1067). Reduzidas a ~550-620,
+mantendo citação e limites de escopo. Removidas as construções defensivas do tipo
+"Real X, not Y" ("Real mechanism, not a black box", "Real scope limits, not a wiring gap"),
+as afirmações de verificação ("confirmado contra fragmentos reais baixados") e as
+referências a `notes/DOGMA.md` que apareciam em texto visível ao usuário. Mediana das
+descrições: 55 caracteres.
+
+**Traduções — verificado, não assumido.** 251 chaves usadas via `ref.t()`/`_tr()`, nenhuma
+ausente; `_pt` e `_en` com conjuntos de chaves idênticos (266 cada). Manifests com 100% de
+cobertura pt/en (as 5 sem idioma são as expansões das siglas dos pipelines, em inglês de
+propósito). As 12 chamadas de `fromJson` recebem o idioma corrente, e **toda** tela que faz
+`ref.read(localeProvider)` tem um `ref.listen` correspondente para recarregar na troca —
+então trocar o idioma no meio da sessão realmente re-renderiza as descrições dos manifests.
+
+Corrigido no caminho:
+- a aba **Sobre** tinha títulos e placeholders em português fixo (apareceriam em português
+  mesmo no modo EN) — agora passam pelo `app_strings`.
+- a tela de falha de boot roda **fora** do `ProviderScope`, então não alcança o provider de
+  idioma; virou mensagem bilíngue, com o motivo comentado no código.
+- o cabeçalho do `app_strings.dart` afirmava que Launch/Monitor não estavam conectados à
+  tradução. Estavam (60 e 16 chamadas) — comentário desatualizado, corrigido.
+
+**Ponta solta pequena**: 14 chaves de tradução definidas e nunca usadas (`plots_preview_title`,
+`plots_building`, `results_clear_selection`, `monitor_stopping_log`, `cores_label`...).
+Inofensivas, mas algumas sugerem rótulos escritos para elementos de UI que nunca foram
+ligados — vale conferir ao mexer nessas telas.
