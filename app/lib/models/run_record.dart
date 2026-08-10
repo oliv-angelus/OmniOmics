@@ -15,6 +15,12 @@ class RunRecord {
   final double? finishedAt;
   final String status; // running | done | error | stopped
   final int? exitCode;
+  /// Whether the run's output folder is still on disk, checked server-side on
+  /// every listing (see main.py's api_list_runs). A folder can vanish without
+  /// the app knowing -- deleted in a file manager, an external drive
+  /// unmounted -- and the Results list would otherwise keep offering an entry
+  /// that opens to nothing.
+  final bool outputExists;
 
   RunRecord({
     required this.id,
@@ -28,9 +34,11 @@ class RunRecord {
     required this.finishedAt,
     required this.status,
     required this.exitCode,
+    this.outputExists = true,
   });
 
   bool get isRunning => status == 'running';
+  bool get isMissing => !outputExists;
 
   DateTime get startedAtDate => DateTime.fromMillisecondsSinceEpoch((startedAt * 1000).round());
 
@@ -49,5 +57,8 @@ class RunRecord {
         finishedAt: (json['finished_at'] as num?)?.toDouble(),
         status: json['status'] as String? ?? 'running',
         exitCode: (json['exit_code'] as num?)?.toInt(),
+        // Absent on records from an older backend: assume present rather than
+        // flagging every run as missing.
+        outputExists: json['output_exists'] as bool? ?? true,
       );
 }
