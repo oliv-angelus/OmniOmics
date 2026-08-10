@@ -50,6 +50,9 @@ const _pt = <String, String>{
   'resources_used': 'em uso',
   'resources_free': 'disponível',
 
+  'plots_pick_items': 'Selecionar...',
+  'plots_no_items': 'Nada disponível nesta execução.',
+  'plots_selected_suffix': 'selecionados',
   'about_title': 'Sobre',
   'about_author': 'Autor',
   'about_author_placeholder': 'Nome, formação e linha de pesquisa vão aqui.',
@@ -340,6 +343,9 @@ const _en = <String, String>{
   'resources_used': 'used',
   'resources_free': 'free',
 
+  'plots_pick_items': 'Select...',
+  'plots_no_items': 'Nothing available in this run.',
+  'plots_selected_suffix': 'selected',
   'about_title': 'About',
   'about_author': 'Author',
   'about_author_placeholder': 'Name, background and research area go here.',

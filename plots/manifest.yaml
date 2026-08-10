@@ -1256,6 +1256,25 @@ analyses:
   # dropdown of this run's actual genome names, not a metadata column the
   # user picked -- see plot_loaded_data.dart's own docstring).
   # =========================================================================
+  - id: magma_mag_summary
+    name:
+      en: "MAG Summary"
+      pt: "Resumo dos MAGs"
+    description:
+      en: "Per-MAG report card for the genomes you pick out of the run: CheckM2 completeness and contamination, the MIMAG quality tier with the rRNA and tRNA evidence behind it, genome size, GTDB-Tk lineage, abundance in each sample, and AMR/virulence hits. Several MAGs can be shown side by side."
+      pt: "Ficha por MAG dos genomas que você selecionar da execução: completude e contaminação (CheckM2), o nível de qualidade MIMAG com a evidência de rRNA e tRNA por trás dele, tamanho do genoma, linhagem GTDB-Tk, abundância em cada amostra e hits de resistência/virulência. Vários MAGs podem ser mostrados lado a lado."
+    applies_to: [magma]
+    input_shape: magma_mags
+    script: analyses/magma_mag_summary.R
+    parameters:
+      - flag: "--mags"
+        type: samples
+        enabled: true
+        default: ""
+        description:
+          en: "Which MAGs from this run to show, one panel each"
+          pt: "Quais MAGs desta execução mostrar, um painel para cada"
+
   - id: sigma_genome_summary
     name:
       en: "Genome Summary"
