@@ -20,7 +20,7 @@
 # -- phyloseq's phy_tree needs tip labels that exactly match real
 # taxon/row identifiers, which the lineage-collapsed shape can't provide.
 
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

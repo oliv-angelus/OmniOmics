@@ -8,7 +8,7 @@
 # Answers "is the community's overall functional/taxonomic profile
 # different between conditions", complementing dogma_functional_
 # composition/differential's "which specific gene family changed".
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -173,8 +173,8 @@ write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 saveRDS(list(ps_rar = ps_rar, ordination = ord, permanova = permanova),
         file.path(args$out_dir, "dogma_functional_beta_diversity.rds"))
 
-p <- ggplot(df, aes(x =.dataaxis_cols[1], y =.dataaxis_cols[2],
-                     color =.datagroup_var, fill =.datagroup_var)) +
+p <- ggplot(df, aes(x =.data[[axis_cols]][1], y =.data[[axis_cols]][2],
+                     color =.data[[group_var]], fill =.data[[group_var]])) +
   stat_ellipse(geom = "polygon", alpha = 0.2, type = "t", level = 0.95, show.legend = FALSE) +
   geom_point(size = 5, alpha = 0.9, shape = 21, color = "black", stroke = 0.5) +
   scale_color_manual(values = palette, name = "Group") +

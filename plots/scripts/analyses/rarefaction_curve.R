@@ -4,7 +4,7 @@
 # script's manual attr-based extraction (same computation, simpler and
 # confirmed to run cleanly headless, no interactive plot side effect).
 # See plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

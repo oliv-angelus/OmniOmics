@@ -61,7 +61,7 @@ class PlotParam {
         description: localizedManifestText(json['description'], lang),
         min: json['min'] as num?,
         max: json['max'] as num?,
-        choices: (json['choices'] as List?)?.map((e) => e.toString).toList,
+        choices: (json['choices'] as List?)?.map((e) => e.toString()).toList(),
         dependsOn: json['depends_on'] as String?,
         includeAll: json['include_all'] as bool? ?? false,
         includeAsv: json['include_asv'] as bool? ?? false,
@@ -95,9 +95,9 @@ class PlotAnalysis {
         id: json['id'] as String,
         name: localizedManifestText(json['name'], lang),
         description: localizedManifestText(json['description'], lang),
-        appliesTo: (json['applies_to'] as List? ?? const []).map((e) => e.toString).toList,
+        appliesTo: (json['applies_to'] as List? ?? const []).map((e) => e.toString()).toList(),
         inputShape: json['input_shape'] as String? ?? 'phyloseq',
-        parameters: (json['parameters'] as List? ?? const []).map((e) => PlotParam.fromJson(e as Map<String, dynamic>, lang)).toList,
+        parameters: (json['parameters'] as List? ?? const []).map((e) => PlotParam.fromJson(e as Map<String, dynamic>, lang)).toList(),
         implemented: json['implemented'] as bool? ?? true,
       );
 }

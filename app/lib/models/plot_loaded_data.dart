@@ -45,11 +45,11 @@ class PlotLoadedData {
 
   factory PlotLoadedData.fromJson(Map<String, dynamic> json) => PlotLoadedData(
         dataRds: json['data_rds'] as String,
-        columns: (json['columns'] as List).map((e) => e.toString).toList,
+        columns: (json['columns'] as List).map((e) => e.toString()).toList(),
         columnLevels: (json['column_levels'] as Map<String, dynamic>).map(
-          (k, v) => MapEntry(k, (v as List).map((e) => e.toString).toList),
+          (k, v) => MapEntry(k, (v as List).map((e) => e.toString()).toList()),
         ),
-        taxRanks: (json['tax_ranks'] as List? ?? const []).map((e) => e.toString).toList,
-        samples: (json['samples'] as List? ?? const []).map((e) => e.toString).toList,
+        taxRanks: (json['tax_ranks'] as List? ?? const []).map((e) => e.toString()).toList(),
+        samples: (json['samples'] as List? ?? const []).map((e) => e.toString()).toList(),
       );
 }

@@ -7,7 +7,7 @@
 # sigma_genome_summary's single-genome detail view with an "are all my
 # genomes actually good enough to trust" view across the whole run at once
 # -- no --genome picker needed here, every genome is shown together.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

@@ -4,7 +4,7 @@
 # full citation trail). Entirely generic over "locus_tag"-shaped IDs in the
 # original, so this ports over gene-family IDs (e.g. "ko:K00370") with only
 # the aggregation-step and label changes.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -53,7 +53,7 @@ if (length(comparison_coefs) < 2) {
   ))
 }
 comparison_levels <- sub("_vs_.*$", "", sub(paste0("^", group_var, "_"), "", comparison_coefs))
-log_line("[dogma_de_upset] %d comparisons vs reference '%s': %s", length(comparison_levels), reference_group, paste(comparison_levels, collapse = ", "))
+log_line("[dogma_de_upset] %d comparisons vs reference '%s': %s[[", length(comparison_levels), reference_group, paste(comparison_levels, collapse = "]], "))
 
 up_sets <- list
 down_sets <- list

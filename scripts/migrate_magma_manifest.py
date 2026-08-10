@@ -51,7 +51,7 @@ SETTING_KEY_TO_CONFIG_KEY = {
 }
 
 databases = {}
-for key, db in dm.DATABASES.items:
+for key, db in dm.DATABASES.items():
     entry = copy.deepcopy(db)
     entry["config_key"] = SETTING_KEY_TO_CONFIG_KEY.get(db["setting_key"])  # None for gunc
     databases[key] = entry

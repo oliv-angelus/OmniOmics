@@ -5,7 +5,7 @@
 # 2016, DOI 10.1186/s13059-016-0881-8). Gene-family IDs (e.g. "ko:K00370")
 # are already meaningful labels here, unlike DEFINE's locus_tags -- no
 # separate "Gene" pretty-name lookup needed.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

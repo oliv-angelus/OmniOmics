@@ -49,11 +49,11 @@ def parse_fasta_ids(fasta_path):
     with open(fasta_path) as fh:
         for line in fh:
             if line.startswith(">"):
-                ids.add(line[1:].split(";")[0].split[0].strip)
+                ids.add(line[1:].split(";")[0].split()[0].strip())
     return ids
 
 
-def main:
+def main() :
     ap = argparse.ArgumentParser
     ap.add_argument("--uc", required=True)
     ap.add_argument("--nonchimeras", required=True)
@@ -64,7 +64,7 @@ def main:
     member_to_centroid = parse_uc(args.uc)
     nonchimeric_centroids = parse_fasta_ids(args.nonchimeras)
     keep_ids = {
-        read_id for read_id, centroid in member_to_centroid.items
+        read_id for read_id, centroid in member_to_centroid.items()
         if centroid in nonchimeric_centroids
     }
 
@@ -78,7 +78,7 @@ def main:
             plus = fin.readline
             qual = fin.readline
             total += 1
-            read_id = header[1:].split[0].strip
+            read_id = header[1:].split()[0].strip()
             if read_id in keep_ids:
                 fout.write(header)
                 fout.write(seq)

@@ -29,7 +29,7 @@ class ToolFlag {
         description: localizedManifestText(json['description'], lang),
         min: json['min'] as num?,
         max: json['max'] as num?,
-        choices: (json['choices'] as List?)?.map((e) => e.toString).toList,
+        choices: (json['choices'] as List?)?.map((e) => e.toString()).toList(),
       );
 }
 
@@ -42,7 +42,7 @@ class RequirementGroup {
   const RequirementGroup({required this.tools, required this.min});
 
   factory RequirementGroup.fromJson(Map<String, dynamic> json) => RequirementGroup(
-        tools: (json['tools'] as List? ?? const []).map((e) => e.toString).toList,
+        tools: (json['tools'] as List? ?? const []).map((e) => e.toString()).toList(),
         min: json['min'] as int? ?? 1,
       );
 
@@ -91,10 +91,10 @@ class ToolDef {
         description: localizedManifestText(json['description'], lang),
         category: json['category'] as String? ?? 'Other',
         readType: json['read_type'] as String? ?? 'all',
-        requires: (json['requires'] as List? ?? const []).map((e) => RequirementGroup.fromJson(e as Map<String, dynamic>)).toList,
-        ruleNames: (json['rule_names'] as List? ?? const []).map((e) => e.toString).toList,
-        flags: (json['flags'] as List? ?? const []).map((e) => ToolFlag.fromJson(e as Map<String, dynamic>, lang)).toList,
-        tracks: (json['tracks'] as Map<String, dynamic>? ?? const {}).map((k, v) => MapEntry(k, (v as List).map((e) => e.toString).toList)),
+        requires: (json['requires'] as List? ?? const []).map((e) => RequirementGroup.fromJson(e as Map<String, dynamic>)).toList(),
+        ruleNames: (json['rule_names'] as List? ?? const []).map((e) => e.toString()).toList(),
+        flags: (json['flags'] as List? ?? const []).map((e) => ToolFlag.fromJson(e as Map<String, dynamic>, lang)).toList(),
+        tracks: (json['tracks'] as Map<String, dynamic>? ?? const {}).map((k, v) => MapEntry(k, (v as List).map((e) => e.toString()).toList())),
         activeByDefault: json['active_by_default'] as bool? ?? true,
       );
 }
@@ -107,6 +107,6 @@ class ToolCategory {
 
   factory ToolCategory.fromJson(Map<String, dynamic> json, [String lang = 'en']) => ToolCategory(
         category: json['category'] as String,
-        tools: (json['tools'] as List? ?? const []).map((e) => ToolDef.fromJson(e as Map<String, dynamic>, lang)).toList,
+        tools: (json['tools'] as List? ?? const []).map((e) => ToolDef.fromJson(e as Map<String, dynamic>, lang)).toList(),
       );
 }

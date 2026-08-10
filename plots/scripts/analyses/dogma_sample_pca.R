@@ -5,7 +5,7 @@
 # table -- see lib/build_dogma_table.R's header for why DOGMA needs that
 # extra aggregation step (no co-assembly, so raw transcript/ORF IDs are
 # never comparable across samples the way DEFINE's shared reference is).
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -54,7 +54,7 @@ palette <- resolve_palette(pca_datagroup_var, style)
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
-p <- ggplot(pca_data, aes(x = PC1, y = PC2, color =.datagroup_var, fill =.datagroup_var)) +
+p <- ggplot(pca_data, aes(x = PC1, y = PC2, color =.data[[group_var]], fill =.data[[group_var]])) +
   stat_ellipse(geom = "polygon", alpha = 0.15, type = "t", level = 0.95, show.legend = FALSE) +
   geom_point(size = 5, alpha = 0.9, shape = 21, color = "black", stroke = 0.5) +
   geom_text_repel(aes(label = SampleID), size = 4, family = font_family, color = "black",

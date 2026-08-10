@@ -37,7 +37,7 @@ class ResultsFileTree extends StatefulWidget {
   });
 
   @override
-  State<ResultsFileTree> createState => ResultsFileTreeState;
+  State<ResultsFileTree> createState() => ResultsFileTreeState();
 }
 
 class ResultsFileTreeState extends State<ResultsFileTree> {
@@ -46,8 +46,8 @@ class ResultsFileTreeState extends State<ResultsFileTree> {
   bool _rootMissing = false;
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     _load(widget.rootPath);
   }
 
@@ -55,8 +55,8 @@ class ResultsFileTreeState extends State<ResultsFileTree> {
   void didUpdateWidget(covariant ResultsFileTree oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.rootPath != widget.rootPath) {
-      _cache.clear;
-      _expanded.clear;
+      _cache.clear();
+      _expanded.clear();
       _rootMissing = false;
       _load(widget.rootPath);
     }
@@ -64,20 +64,20 @@ class ResultsFileTreeState extends State<ResultsFileTree> {
 
   Future<void> _load(String path) async {
     final dir = Directory(path);
-    if (!await dir.exists) {
-      if (mounted) setState( => _rootMissing = path == widget.rootPath ? true: _rootMissing);
+    if (!await dir.exists()) {
+      if (mounted) setState(() => _rootMissing = path == widget.rootPath ? true: _rootMissing);
       return;
     }
     try {
-      final entries = await dir.list.toList;
+      final entries = await dir.list.toList();
       entries.sort((a, b) {
         final aDir = a is Directory;
         final bDir = b is Directory;
         if (aDir != bDir) return aDir ? -1: 1;
-        return a.path.toLowerCase.compareTo(b.path.toLowerCase);
+        return a.path.toLowerCase().compareTo(b.path.toLowerCase());
       });
       if (mounted) {
-        setState( {
+        setState(() {
           _cache[path] = entries;
           if (path == widget.rootPath) _rootMissing = false;
         });
@@ -89,15 +89,15 @@ class ResultsFileTreeState extends State<ResultsFileTree> {
 
   /// Re-reads the root and every currently-expanded folder, preserving which
   /// nodes are open -- called on manual refresh and while a run is "running".
-  Future<void> refresh async {
+  Future<void> refresh() async {
     await _load(widget.rootPath);
-    for (final path in _expanded.toList) {
+    for (final path in _expanded.toList()) {
       await _load(path);
     }
   }
 
   void toggleExpand(String path) {
-    setState( {
+    setState(() {
       if (_expanded.contains(path)) {
         _expanded.remove(path);
       } else {
@@ -117,14 +117,14 @@ class ResultsFileTreeState extends State<ResultsFileTree> {
     }
     final rootEntries = _cache[widget.rootPath];
     if (rootEntries == null) {
-      return const Center(child: CircularProgressIndicator);
+      return const Center(child: CircularProgressIndicator());
     }
     if (rootEntries.isEmpty) {
       return Center(child: Text(widget.emptyLabel, style: TextStyle(color: colors.textMuted)));
     }
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      children: rootEntries.map((e) => _Node(entry: e, depth: 0, tree: this)).toList,
+      children: rootEntries.map((e) => _Node(entry: e, depth: 0, tree: this)).toList(),
     );
   }
 }
@@ -159,7 +159,7 @@ Future<List<_KnownApp>> _detectInstalledApps async {
       return null;
     }
   }));
-  return checks.whereType<_KnownApp>.toList;
+  return checks.whereType<_KnownApp>().toList();
 }
 
 /// Opens with the system's default association for this file type --
@@ -180,7 +180,7 @@ Future<void> _showOpenWithDialog(BuildContext context, String path, ResultsFileT
   final apps = await _detectInstalledApps;
   if (!context.mounted) return;
 
-  final customController = TextEditingController;
+  final customController = TextEditingController();
   final chosen = await showDialog<String>(
     context: context,
     builder: (dialogContext) => AlertDialog(
@@ -201,7 +201,7 @@ Future<void> _showOpenWithDialog(BuildContext context, String path, ResultsFileT
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.open_in_new, size: 18),
                     title: Text(app.label, style: const TextStyle(fontSize: 13)),
-                    onTap:  => Navigator.of(dialogContext).pop(app.binary),
+                    onTap: () => Navigator.of(dialogContext).pop(app.binary),
                   )),
             const Divider(height: 20),
             Text(cfg.openWithCustomLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
@@ -215,17 +215,17 @@ Future<void> _showOpenWithDialog(BuildContext context, String path, ResultsFileT
         ),
       ),
       actions: [
-        TextButton(onPressed:  => Navigator.of(dialogContext).pop, child: Text(cfg.cancelLabel)),
+        TextButton(onPressed: () => Navigator.of(dialogContext).pop, child: Text(cfg.cancelLabel)),
         ElevatedButton(
-          onPressed:  => Navigator.of(dialogContext).pop(customController.text),
+          onPressed: () => Navigator.of(dialogContext).pop(customController.text),
           child: Text(cfg.openWithOpenButton),
         ),
       ],
     ),
   );
-  customController.dispose;
+  customController.dispose();
 
-  final command = chosen?.trim;
+  final command = chosen?.trim();
   if (command == null || command.isEmpty) return;
   try {
     await Process.start(command, [path], mode: ProcessStartMode.detached);
@@ -251,7 +251,7 @@ class _Node extends StatelessWidget {
 
     if (!isDir) {
       return InkWell(
-        onTap:  => _openWithDefault(context, entry.path, tree.widget.openErrorPrefix),
+        onTap: () => _openWithDefault(context, entry.path, tree.widget.openErrorPrefix),
         child: Padding(
           padding: EdgeInsets.only(left: 16.0 * depth + 16, top: 2, bottom: 2, right: 4),
           child: Row(
@@ -263,7 +263,7 @@ class _Node extends StatelessWidget {
               const SizedBox(width: 4),
               InkWell(
                 borderRadius: BorderRadius.circular(4),
-                onTap:  => _showOpenWithDialog(context, entry.path, tree.widget),
+                onTap: () => _showOpenWithDialog(context, entry.path, tree.widget),
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Tooltip(
@@ -285,7 +285,7 @@ class _Node extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap:  => tree.toggleExpand(entry.path),
+          onTap: () => tree.toggleExpand(entry.path),
           child: Padding(
             padding: EdgeInsets.only(left: 16.0 * depth + 8, top: 4, bottom: 4, right: 8),
             child: Row(
@@ -312,7 +312,7 @@ class _Node extends StatelessWidget {
                       child: Text(tree.widget.nodeEmptyLabel,
                           style: TextStyle(fontSize: 11.5, color: colors.textMuted, fontStyle: FontStyle.italic)),
                     ): Column(
-                      children: children.map((e) => _Node(entry: e, depth: depth + 1, tree: tree)).toList,
+                      children: children.map((e) => _Node(entry: e, depth: depth + 1, tree: tree)).toList(),
                     ),
       ],
     );

@@ -10,7 +10,7 @@ rule fastp:
         r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
         r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz",
         html="results/01_QC/{sample}/{sample}_fastp.html",
-        json="results/01_QC/{sample}/{sample}_fastp.json"
+        json="results/01_QC/{sample}/{sample}_fastp.json()"
     params:
         extra=config["params"]["fastp"],
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
@@ -20,9 +20,9 @@ rule fastp:
     shell:
         """
         if [ "{params.rtype}" == "short" ] || [ "{params.rtype}" == "hybrid" ]; then
-            fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -h {output.html} -j {output.json} 2> {log}
+            fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -h {output.html} -j {output.json()} 2> {log}
         else
-            touch {output.r1} {output.r2} {output.html} {output.json}
+            touch {output.r1} {output.r2} {output.html} {output.json()}
         fi
         """
 

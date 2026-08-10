@@ -32,8 +32,8 @@ def _fmt_time(ts: float | None) -> str:
 
 def _flags_string(params_entry) -> str:
     if isinstance(params_entry, dict):
-        return " ".join(f"{k}={v}" for k, v in params_entry.items)
-    return (params_entry or "").strip
+        return " ".join(f"{k}={v}" for k, v in params_entry.items())
+    return (params_entry or "").strip()
 
 
 def _join_natural(items: list) -> str:
@@ -67,7 +67,8 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
         cat = tools[tid].get("category", "Other")
         by_category.setdefault(cat, []).append(tid)
 
-    # ---- Methods paragraph (draft) -------------------------------------- methods_paragraphs = []
+    # ---- Methods paragraph (draft) --------------------------------------
+    methods_paragraphs = []
     detail_rows = []  # (tool name, version, category, parameters)
     # Citations for every active tool that has one, deduped and in the same
     # category/tool order as detail_rows -- e.g. jgi_summarize and metabat2
@@ -100,7 +101,7 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
                     continue
                 _seen_refs.add(dedup_key)
                 reference_entries.append(citation)
-        methods_paragraphs.append(f"For {cat.lower}, we used {_join_natural(phrases)}.")
+        methods_paragraphs.append(f"For {cat.lower()}, we used {_join_natural(phrases)}.")
 
     if not active_tools:
         methods_paragraphs.append("No tools were active for this run.")
@@ -110,10 +111,10 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
     # "amrfinderplus" tool) -- config.yaml's databases block otherwise carries
     # every database the app knows about globally, active or not, which would
     # misreport databases the run never touched as having been used.
-    active_norms = [t.lower.replace("_", "").replace("-", "") for t in active_tools]
+    active_norms = [t.lower().replace("_", "").replace("-", "") for t in active_tools]
 
     def _db_relevant(db_key: str) -> bool:
-        norm_db = db_key.lower.replace("_", "").replace("-", "")
+        norm_db = db_key.lower().replace("_", "").replace("-", "")
         return any(norm_db == t or norm_db in t or t in norm_db for t in active_norms)
 
     # A database can have several download_options (e.g. Kraken2's PlusPF-16
@@ -124,7 +125,7 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
     # time; cleared if the path was later set/detected manually), so the
     # report cites the database actually used, not just a generic default.
     db_rows = []
-    for key, info in databases_manifest.items:
+    for key, info in databases_manifest.items():
         if not _db_relevant(key):
             continue
         path = databases_block.get(info.get("config_key")) if info.get("config_key") else None
@@ -154,7 +155,8 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
             _seen_refs.add(dedup_key)
             reference_entries.append(citation)
 
-    # ---- Assemble ---------------------------------------------------------- lines = []
+    # ---- Assemble ----------------------------------------------------------
+    lines = []
     lines.append("=" * 80)
     lines.append("OmniOmics -- Run Report")
     lines.append("=" * 80)
@@ -162,7 +164,7 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
     lines.append(f"Run name:          {run.get('name', '-')}")
     lines.append(f"Run id:            {run.get('id', '-')}")
     lines.append(f"Started:           {_fmt_time(run.get('started_at'))}")
-    lines.append(f"Finished:          {_fmt_time(run.get('finished_at') or time.time)}")
+    lines.append(f"Finished:          {_fmt_time(run.get('finished_at') or time.time())}")
     lines.append(f"Status:            {run.get('status', '-')}  (exit code {run.get('exit_code')})")
     lines.append(f"Cores:             {run.get('cores', '-')}")
     lines.append(f"Output directory:  {run.get('output_dir', '-')}")
@@ -247,7 +249,7 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
     lines.append("")
 
     lines.append(_RULE)
-    lines.append(f"Generated automatically by OmniOmics on {_fmt_time(time.time)}.")
+    lines.append(f"Generated automatically by OmniOmics on {_fmt_time(time.time())}.")
     lines.append(_RULE)
 
     return "\n".join(lines) + "\n"

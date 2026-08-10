@@ -67,7 +67,7 @@ class PlotStyleState {
     final palette = <String, String>{};
     if (rawPalette is Map) {
       rawPalette.forEach((k, v) {
-        if (v is String) palette[k.toString] = v;
+        if (v is String) palette[k.toString()] = v;
       });
     }
     return PlotStyleState(
@@ -75,13 +75,13 @@ class PlotStyleState {
       fontFamily: json['font_family'] as String? ?? 'serif',
       palette: palette,
       accentColor: json['accent_color'] as String?,
-      fontScale: (json['font_scale'] as num?)?.toDouble ?? 1.0,
+      fontScale: (json['font_scale'] as num?)?.toDouble() ?? 1.0,
       hideXAxis: json['hide_x_axis'] as bool? ?? false,
       hideYAxis: json['hide_y_axis'] as bool? ?? false,
     );
   }
 
-  Map<String, dynamic> toJson => {
+  Map<String, dynamic> toJson() => {
         'background': background,
         'font_family': fontFamily,
         if (palette.isNotEmpty) 'palette': palette,

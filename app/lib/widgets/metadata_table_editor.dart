@@ -28,19 +28,19 @@ class MetadataTableEditor extends ConsumerStatefulWidget {
   const MetadataTableEditor({super.key, required this.rawTsv, required this.onConfirm, required this.onCancel});
 
   @override
-  ConsumerState<MetadataTableEditor> createState => _MetadataTableEditorState;
+  ConsumerState<MetadataTableEditor> createState() => _MetadataTableEditorState();
 }
 
 class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
   static const _colWidth = 170.0;
 
-  List<TextEditingController> _headerControllers = const [];
-  List<List<TextEditingController>> _controllers = const [];
+  List<TextEditingController()> _headerControllers = const [];
+  List<List<TextEditingController()>> _controllers = const [];
   bool _parseError = false;
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     _parse(widget.rawTsv);
   }
 
@@ -48,24 +48,24 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
   void didUpdateWidget(MetadataTableEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.rawTsv != widget.rawTsv) {
-      _disposeControllers;
+      _disposeControllers();
       _parse(widget.rawTsv);
     }
   }
 
   @override
-  void dispose {
-    _disposeControllers;
-    super.dispose;
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
   }
 
-  void _disposeControllers {
+  void _disposeControllers() {
     for (final c in _headerControllers) {
-      c.dispose;
+      c.dispose();
     }
     for (final row in _controllers) {
       for (final c in row) {
-        c.dispose;
+        c.dispose();
       }
     }
   }
@@ -74,12 +74,12 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
     // A trailing newline (near-universal on saved TSVs) would otherwise
     // parse as one extra, all-empty row -- dropped explicitly rather than
     // shown as a confusing blank editable row at the bottom.
-    final lines = raw.split('\n').map((l) => l.replaceAll('\r', '')).toList;
-    while (lines.isNotEmpty && lines.last.trim.isEmpty) {
-      lines.removeLast;
+    final lines = raw.split('\n').map((l) => l.replaceAll('\r', '')).toList();
+    while (lines.isNotEmpty && lines.last.trim().isEmpty) {
+      lines.removeLast();
     }
     if (lines.isEmpty) {
-      setState( {
+      setState(() {
         _parseError = true;
         _headerControllers = const [];
         _controllers = const [];
@@ -88,28 +88,28 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
     }
     final headerCells = lines.first.split('\t');
     final width = headerCells.length;
-    final headerControllers = headerCells.map((h) => TextEditingController(text: h)).toList;
+    final headerControllers = headerCells.map((h) => TextEditingController(text: h)).toList();
     final controllers = lines.skip(1).map((line) {
       final cells = line.split('\t');
       // A short row (fewer tabs than the header) pads with empty cells
       // instead of an index-out-of-range crash -- real TSVs exported from a
       // spreadsheet sometimes drop trailing empty cells.
       return List.generate(width, (i) => TextEditingController(text: i < cells.length ? cells[i]: ''));
-    }).toList;
-    setState( {
+    }).toList();
+    setState(() {
       _parseError = width == 0;
       _headerControllers = headerControllers;
       _controllers = controllers;
     });
   }
 
-  String _serialize {
+  String _serialize() {
     final buffer = StringBuffer;
     buffer.writeln(_headerControllers.map((c) => c.text).join('\t'));
     for (final row in _controllers) {
       buffer.writeln(row.map((c) => c.text).join('\t'));
     }
-    return buffer.toString;
+    return buffer.toString();
   }
 
   Widget _headerCell(TextEditingController controller, AppPalette colors) {
@@ -172,7 +172,7 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
                       // header", not just another data row.
                       Container(
                         color: colors.surfaceAlt,
-                        child: Row(children: _headerControllers.map((c) => _headerCell(c, colors)).toList),
+                        child: Row(children: _headerControllers.map((c) => _headerCell(c, colors)).toList()),
                       ),
                       const Divider(height: 1),
                       Expanded(
@@ -200,7 +200,7 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
                                               ),
                                             ),
                                           ),
-                                        )).toList,
+                                        )).toList(),
                               ),
                             );
                           },
@@ -220,7 +220,7 @@ class _MetadataTableEditorState extends ConsumerState<MetadataTableEditor> {
             TextButton(onPressed: widget.onCancel, child: Text(ref.t('plots_change_metadata'))),
             const SizedBox(width: 8),
             ElevatedButton.icon(
-              onPressed:  => widget.onConfirm(_serialize),
+              onPressed: () => widget.onConfirm(_serialize()),
               icon: const Icon(Icons.check),
               label: Text(ref.t('plots_metadata_confirm')),
             ),

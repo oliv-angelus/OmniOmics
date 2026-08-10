@@ -3,7 +3,7 @@ import pandas as pd
 configfile: "config/config.yaml"
 
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
-SAMPLES = samples.index.tolist
+SAMPLES = samples.index.tolist()
 LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]
 # De novo transcript assembly (Phase 2, mode 3) uses short-read assemblers, so
 # it applies to samples that have short reads (short/hybrid). Long-read-only

@@ -9,7 +9,7 @@
 # POST /api/plots/load in main.py (input_shape-routed) and
 # analyses/*.R's `readRDS(args$count_matrix_rds)`. DEFINE-only, mirrors but
 # never shares code with load_phyloseq.R.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -51,5 +51,5 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_count_matrix] detected %d metadata columns: %s", length(columns), paste(columns, collapse = ", "))
+log_line("[load_count_matrix] detected %d metadata columns: %s[[", length(columns), paste(columns, collapse = "]], "))
 log_line("[load_count_matrix] wrote count_matrix.rds, metadata_columns.json")

@@ -4,7 +4,7 @@
 # 10.1186/s13059-014-0550-8; Zhu, Ibrahim & Love 2019, DOI
 # 10.1093/bioinformatics/bty895). See lib/build_dogma_table.R for the
 # aggregation step this reads from instead of a single pre-merged table.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

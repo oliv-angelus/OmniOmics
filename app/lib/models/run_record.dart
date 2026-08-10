@@ -32,21 +32,21 @@ class RunRecord {
 
   bool get isRunning => status == 'running';
 
-  DateTime get startedAtDate => DateTime.fromMillisecondsSinceEpoch((startedAt * 1000).round);
+  DateTime get startedAtDate => DateTime.fromMillisecondsSinceEpoch((startedAt * 1000).round());
 
   factory RunRecord.fromJson(Map<String, dynamic> json) => RunRecord(
         id: json['id'] as String,
         // Records created before this field existed simply won't have it -- // fall back to a short id-based label instead of an empty string.
-        name: (json['name'] as String?)?.trim.isNotEmpty == true
+        name: (json['name'] as String?)?.trim().isNotEmpty == true
             ? json['name'] as String: 'run-${(json['id'] as String).substring(0, 6)}',
         pipelineId: json['pipeline_id'] as String,
         pipelineName: json['pipeline_name'] as String? ?? json['pipeline_id'] as String,
         outputDir: json['output_dir'] as String? ?? '',
         configPath: json['config_path'] as String? ?? '',
-        cores: (json['cores'] as num?)?.toInt ?? 0,
-        startedAt: (json['started_at'] as num?)?.toDouble ?? 0,
-        finishedAt: (json['finished_at'] as num?)?.toDouble,
+        cores: (json['cores'] as num?)?.toInt() ?? 0,
+        startedAt: (json['started_at'] as num?)?.toDouble() ?? 0,
+        finishedAt: (json['finished_at'] as num?)?.toDouble(),
         status: json['status'] as String? ?? 'running',
-        exitCode: (json['exit_code'] as num?)?.toInt,
+        exitCode: (json['exit_code'] as num?)?.toInt(),
       );
 }

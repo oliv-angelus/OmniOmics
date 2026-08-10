@@ -6,7 +6,7 @@
 # significance into this scatter format, which every modern DESeq2/edgeR/
 # limma workflow still uses as its standard result figure. DEFINE-only; see
 # plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -67,7 +67,7 @@ res_df <- res_df %>%
   ))
 
 palette <- resolve_palette(setdiff(unique(res_df$Direction), "NS"), style)
-palette"NS" <- style$palette"NS" %||% "gray70"
+palette[["NS"]] <- style$palette[["NS"]] %||% "gray70"
 
 top_hits <- res_df %>% filter(Direction != "NS") %>% arrange(padj) %>% head(label_top_n)
 
@@ -104,7 +104,7 @@ write_json(
 effective_style <- default_style_for_groups(setdiff(unique(res_df$Direction), "NS"), legend_position = "top",
                                              show_labels = TRUE, background = bg, font_family = font_family,
                                              palette = palette[setdiff(unique(res_df$Direction), "NS")])
-effective_style$palette"NS" <- palette"NS"
+effective_style$palette[["NS"]] <- palette[["NS"]]
 write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 
 saveRDS(res_df, file.path(args$out_dir, "volcano_plot.rds"))

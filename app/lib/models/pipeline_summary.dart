@@ -23,6 +23,6 @@ class PipelineSummary {
         description: json['description'] as String? ?? '',
         category: json['category'] as String? ?? '',
         icon: json['icon'] as String? ?? '',
-        tags: (json['tags'] as List?)?.map((e) => e as String).toList ?? const [],
+        tags: (json['tags'] as List?)?.map((e) => e as String).toList() ?? const [],
       );
 }

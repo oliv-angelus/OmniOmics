@@ -33,7 +33,7 @@ ABUNDANCE_FILE_PATTERNS <- list(
   # per-platform branch copy happened to sort first.
   prism = list(pattern = "prism_abundance_table\\.tsv$", prefer = "/05_ABUNDANCE_TABLE/")
 )
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -116,7 +116,7 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_phyloseq] detected %d metadata columns: %s", length(columns), paste(columns, collapse = ", "))
-log_line("[load_phyloseq] detected %d taxonomic ranks: %s", length(tax_ranks), paste(tax_ranks, collapse = ", "))
+log_line("[load_phyloseq] detected %d metadata columns: %s[[", length(columns), paste(columns, collapse = "]], "))
+log_line("[load_phyloseq] detected %d taxonomic ranks: %s[[", length(tax_ranks), paste(tax_ranks, collapse = "]], "))
 log_line("[load_phyloseq] has_tree = %s", has_tree)
 log_line("[load_phyloseq] wrote phyloseq.rds, metadata_columns.json")

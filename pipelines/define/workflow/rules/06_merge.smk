@@ -40,7 +40,7 @@ rule qc_summary:
     QC-alert metrics PIPELINE_SPEC.md calls out throughout, consolidated
     instead of left scattered across each tool's own report/log."""
     input:
-        fastp=expand("results/01_QC/{sample}/{sample}_fastp.json", sample=SAMPLES),
+        fastp=expand("results/01_QC/{sample}/{sample}_fastp.json()", sample=SAMPLES),
         bowtie2_logs=expand("logs/mapping/{sample}_bowtie2.log", sample=SAMPLES),
         summary="results/04_COUNTS/counts.tsv.summary",
         strand_report="results/03_STRANDEDNESS/strandedness_report.tsv"

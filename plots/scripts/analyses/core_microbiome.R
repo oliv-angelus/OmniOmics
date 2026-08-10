@@ -1,6 +1,6 @@
 # Real core microbiome heatmap, direct translation of microbiome.R's
 # section 10. See plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -52,7 +52,7 @@ if (ntaxa(core_taxa) == 0) {
 ps_core_glom <- if (rank == "ASV") core_taxa else tax_glom(core_taxa, taxrank = rank, NArm = FALSE)
 
 df_core <- psmelt(ps_core_glom)
-df_core <- df_core %>% arrange(.datagroup_var)
+df_core <- df_core %>% arrange(.data[[group_var]])
 df_core$Sample <- factor(df_core$Sample, levels = unique(df_core$Sample))
 
 if (rank == "ASV") {
@@ -67,7 +67,7 @@ title <- paste0("Core Microbiome (", rank, " > ", prevalence * 100, "%)")
 p <- ggplot(df_core, aes(x = Sample, y = Taxon_Label, fill = log10(Abundance * 100 + 0.01))) +
   geom_tile(color = "white", linewidth = 0.1) +
   scale_fill_distiller(palette = "Spectral", direction = -1, name = "Log10(%)") +
-  facet_grid(~.datagroup_var, scales = "free_x", space = "free_x") +
+  facet_grid(~.data[[group_var]], scales = "free_x", space = "free_x") +
   labs(x = NULL, y = paste(rank, "(Core)")) +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
   theme(

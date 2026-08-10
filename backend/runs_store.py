@@ -28,7 +28,7 @@ _NOUNS = [
 ]
 
 
-def generate_run_name -> str:
+def generate_run_name() -> str:
     return f"{random.choice(_ADJECTIVES)}-{random.choice(_NOUNS)}-{random.randint(100, 999)}"
 
 
@@ -41,12 +41,12 @@ def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: 
         "output_dir": output_dir,
         "config_path": config_path,
         "cores": cores,
-        "started_at": time.time,
+        "started_at": time.time(),
         "finished_at": None,
         "status": "running",  # running | done | error | stopped
         "exit_code": None,
     }
-    settings = load_settings
+    settings = load_settings()
     runs = settings.get("runs", [])
     runs.insert(0, run)
     save_settings({"runs": runs[:_MAX_RUNS]})
@@ -54,7 +54,7 @@ def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: 
 
 
 def update_run(run_id: str, **fields):
-    settings = load_settings
+    settings = load_settings()
     runs = settings.get("runs", [])
     for r in runs:
         if r["id"] == run_id:
@@ -63,8 +63,8 @@ def update_run(run_id: str, **fields):
     save_settings({"runs": runs})
 
 
-def list_runs -> list:
-    return load_settings.get("runs", [])
+def list_runs() -> list:
+    return load_settings().get("runs", [])
 
 
 def remove_runs(run_ids) -> None:
@@ -72,6 +72,6 @@ def remove_runs(run_ids) -> None:
     matching output folder(s) were actually removed from disk (or found
     already gone). Does not touch anything on disk itself."""
     run_ids = set(run_ids)
-    settings = load_settings
+    settings = load_settings()
     runs = [r for r in settings.get("runs", []) if r["id"] not in run_ids]
     save_settings({"runs": runs})

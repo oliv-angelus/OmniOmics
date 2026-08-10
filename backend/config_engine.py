@@ -136,12 +136,12 @@ def build_samples(pipeline_id: str, data: dict) -> list:
         # (a sample whose folder name didn't match anything under
         # reference_dir) -- takes precedence over an automatic match, though
         # in practice the two are mutually exclusive per sample.
-        for name, path in reference_overrides.items:
+        for name, path in reference_overrides.items():
             if name in samples and path:
                 samples[name]["reference"] = path
 
     rows = []
-    for name, paths in sorted(samples.items):
+    for name, paths in sorted(samples.items()):
         has_short = bool(paths.get("fq1"))
         has_long = bool(paths.get("fq_long"))
 
@@ -176,7 +176,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
 
     params = dict(manifest.get("defaults", {}))
     user_params = data.get("tool_flags", {})
-    for key, val in user_params.items:
+    for key, val in user_params.items():
         if key not in params:
             continue
         if isinstance(params[key], dict):
@@ -197,7 +197,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
             # fresh one -- overwriting the whole string previously discarded
             # any *other* flags the user had customized for this tool (e.g.
             # SIGMA's spades_isolate --isolate flag, or SPAdes' --careful).
-            cleaned = re.sub(r"(?:^|\s)-m\s+\S+", "", current).strip
+            cleaned = re.sub(r"(?:^|\s)-m\s+\S+", "", current).strip()
             if tool_id == "megahit":
                 # MEGAHIT's -m/--memory takes a plain float: 0-1 means "fraction
                 # of total system RAM", >1 means "absolute byte count" -- it has
@@ -209,7 +209,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
                 # (it terminates the run if exceeded) -- no fraction/byte
                 # conversion needed, unlike MEGAHIT.
                 mem_flag = f"-m {ram}"
-            params[tool_id] = f"{cleaned} {mem_flag}".strip
+            params[tool_id] = f"{cleaned} {mem_flag}".strip()
 
     active_tools = data.get("active_tools", [])
     all_binners = overrides.get("active_binners", [])
@@ -220,7 +220,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
     # manifest's default_threads for any tool the user didn't override.
     threads = dict(manifest.get("default_threads", {}))
     user_threads = data.get("thread_overrides", {})
-    for tool_id, val in user_threads.items:
+    for tool_id, val in user_threads.items():
         if tool_id not in threads:
             continue
         try:
@@ -284,7 +284,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
     # so a real primer MIX works -- ONT's own SQK-MAB114.24 kit pools a
     # universal pair with taxon-specific ones.
     def _split_primers(raw):
-        return [p.strip.upper for p in str(raw or "").replace(";", ",").split(",") if p.strip]
+        return [p.strip().upper() for p in str(raw or "").replace(";", ",").split(",") if p.strip()]
 
     for field, key in (("amplicon_fwd_primers", "fwd_primers"),
                        ("amplicon_rev_primers", "rev_primers")):
@@ -299,7 +299,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
     # every path it already told us about via /api/databases/set.
     db_status = get_databases_status(pipeline_id)
     databases_block = {}
-    for key, info in db_status.items:
+    for key, info in db_status.items():
         config_key = info.get("config_key")
         if not config_key:
             continue  # e.g. gunc: downloadable, but no pipeline rule consumes a config path for it
@@ -341,7 +341,7 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
         yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=4096)
 
     with open(yaml_path) as f:
-        yaml_content = f.read
+        yaml_content = f.read()
 
     return {"path": yaml_path, "content": yaml_content, "data": config}
 

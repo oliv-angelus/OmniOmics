@@ -1,7 +1,7 @@
 # Real indicator species analysis (indicspecies::multipatt, lollipop chart),
 # direct translation of microbiome.R's section 14. See plots/manifest.yaml
 # for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -45,7 +45,7 @@ if (!(group_var %in% colnames(sample_data(ps)))) {
 
 ps_indval <- tax_glom(ps, taxrank = rank, NArm = FALSE)
 abund_matrix <- t(as(otu_table(ps_indval), "matrix"))
-groups_indval <- as.character(data.frame(sample_data(ps_indval))group_var)
+groups_indval <- as.character(data.frame(sample_data(ps_indval))[[group_var]])
 
 log_line("[indicator_species] running multipatt (IndVal.g) for %d taxa x %d samples across %d group(s)...",
           ntaxa(ps_indval), nsamples(ps_indval), length(unique(groups_indval)))

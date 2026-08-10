@@ -29,7 +29,7 @@ class DependencyGraph {
       final reqTool = toolsById[reqId];
       if (reqTool == null || !activeTools.contains(reqId)) continue;
       if (evalTrack != null && reqTool.tracks.isNotEmpty) {
-        final reqTracks = activeTracks[reqId] ?? reqTool.tracks.keys.toSet;
+        final reqTracks = activeTracks[reqId] ?? reqTool.tracks.keys.toSet();
         if (!reqTracks.contains(evalTrack)) continue;
       }
       count++;
@@ -59,7 +59,7 @@ class DependencyGraph {
     var changed = true;
     while (changed) {
       changed = false;
-      for (final id in activeTools.toList) {
+      for (final id in activeTools.toList()) {
         final tool = toolsById[id];
         if (tool == null) continue;
         if (tool.tracks.isEmpty) {
@@ -70,8 +70,8 @@ class DependencyGraph {
           }
           continue;
         }
-        final tracks = activeTracks[id] ?? tool.tracks.keys.toSet;
-        final keep = tracks.where((t) => _satisfiedForTrack(id, t, activeTools, activeTracks)).toSet;
+        final tracks = activeTracks[id] ?? tool.tracks.keys.toSet();
+        final keep = tracks.where((t) => _satisfiedForTrack(id, t, activeTools, activeTracks)).toSet();
         if (keep.length != tracks.length) {
           changed = true;
           if (keep.isEmpty) {
@@ -141,11 +141,11 @@ class DependencyGraph {
         active.addAll(tool.ruleNames);
         continue;
       }
-      final tracks = activeTracks?[tool.id] ?? tool.tracks.keys.toSet;
+      final tracks = activeTracks?[tool.id] ?? tool.tracks.keys.toSet();
       for (final entry in tool.tracks.entries) {
         if (tracks.contains(entry.key)) active.addAll(entry.value);
       }
     }
-    return allRules.difference(active).toList;
+    return allRules.difference(active).toList();
   }
 }

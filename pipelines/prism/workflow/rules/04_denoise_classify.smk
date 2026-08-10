@@ -25,7 +25,7 @@ def _reference_db(tool_id):
     return _flag_value(config["params"][tool_id], "--reference_db", "gtdb")
 
 
-def _emu_max_align_len:
+def _emu_max_align_len():
     """Emu's own --max-align-len defaults to 2000 bp, tuned for 16S -- it
     silently DISCARDS every alignment longer than that. Real, reproduced
     failure: all 70 reads
@@ -59,7 +59,7 @@ def _resolve_ref_path(gene, reference_db):
     history), so an empty string is the correct "not configured yet"
     signal, not a crash.
     """
-    gene = (gene or "16S").upper
+    gene = (gene or "16S").upper()
     # Full 16S-ITS-23S operon: GROND is the only reference that carries whole
     # operons (~4.3 kb each) -- no SSU/LSU-only database can classify an
     # amplicon that spans both subunits plus the ITS between them, so
@@ -181,7 +181,7 @@ rule emu_classify:
     params:
         gene=_gene("emu_ont"),
         min_abundance=_flag_value(config["params"]["emu_ont"], "--min-abundance", "0.0001"),
-        max_align_len=_emu_max_align_len,
+        max_align_len=_emu_max_align_len(),
         db_dir=lambda wc: f"results/04_DENOISE/emu/db_{_gene('emu_ont')}"
     conda: "../envs/emu.yaml"
     threads: config["threads"]["emu_ont"]

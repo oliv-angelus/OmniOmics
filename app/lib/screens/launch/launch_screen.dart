@@ -20,7 +20,7 @@ class LaunchScreen extends ConsumerStatefulWidget {
   const LaunchScreen({super.key, required this.pipelineId, required this.pipelineName});
 
   @override
-  ConsumerState<LaunchScreen> createState => _LaunchScreenState;
+  ConsumerState<LaunchScreen> createState() => _LaunchScreenState();
 }
 
 class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerProviderStateMixin {
@@ -80,18 +80,18 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   // trocados (existem primers diferentes que amplificam a mesma região).
   // Vários primers separados por vírgula -- o kit ONT SQK-MAB114.24 é um mix real
   // (par universal + pares taxon-específicos), não um par único.
-  final _fwdPrimersController = TextEditingController;
-  final _revPrimersController = TextEditingController;
+  final _fwdPrimersController = TextEditingController();
+  final _revPrimersController = TextEditingController();
   /// Preenche os campos de primer a partir de um preset do manifest, sem
   /// sobrescrever o que o usuário já digitou à mão (only=true força).
   void _seedPrimersFromPreset(String? presetId, {bool force = false}) {
-    final list = (_manifest?['amplicon_presets'] as List?)?.cast<Map<String, dynamic>> ?? [];
-    final p = list.firstWhere((e) => e['id'] == presetId, orElse:  => const <String, dynamic>{});
+    final list = (_manifest?['amplicon_presets'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final p = list.firstWhere((e) => e['id'] == presetId, orElse: () => const <String, dynamic>{});
     if (p.isEmpty) return;
     final fwd = ((p['fwd_primers'] as List?) ?? const []).join(', ');
     final rev = ((p['rev_primers'] as List?) ?? const []).join(', ');
-    if (force || _fwdPrimersController.text.trim.isEmpty) _fwdPrimersController.text = fwd;
-    if (force || _revPrimersController.text.trim.isEmpty) _revPrimersController.text = rev;
+    if (force || _fwdPrimersController.text.trim().isEmpty) _fwdPrimersController.text = fwd;
+    if (force || _revPrimersController.text.trim().isEmpty) _revPrimersController.text = rev;
   }
   final Set<String> _activeTools = {};
   // Per-track activation for dual-track tools (Prodigal, antiSMASH,...): tool_id
@@ -109,7 +109,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   final _coresController = TextEditingController(text: '8');
   // Per-tool thread overrides (Resources tab): tool_id -> controller. Empty
   // text means "use the manifest's default_threads value for this tool" -- // one controller per tool known from the manifest, created once in _load.
-  final Map<String, TextEditingController> _threadControllers = {};
+  final Map<String, TextEditingController()> _threadControllers = {};
 
   bool _loading = true;
   String? _error;
@@ -128,18 +128,18 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   bool _autosaving = false;
   bool _everSaved = false;
 
-  void _markDirty {
-    setState( => _dirty = true);
-    _autosaveDebounce?.cancel;
+  void _markDirty() {
+    setState(() => _dirty = true);
+    _autosaveDebounce?.cancel();
     _autosaveDebounce = Timer(const Duration(milliseconds: 1200), _runAutosave);
   }
 
-  Future<void> _runAutosave async {
+  Future<void> _runAutosave() async {
     if (!mounted || _outputDir == null || _outputDir!.isEmpty) return;
-    setState( => _autosaving = true);
-    await _saveDraft;
+    setState(() => _autosaving = true);
+    await _saveDraft();
     if (!mounted) return;
-    setState( {
+    setState(() {
       _autosaving = false;
       _dirty = false;
       _everSaved = true;
@@ -157,35 +157,35 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   String _tr(String key) => translate(key, ref.read(localeProvider).languageCode);
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_onTabChanged);
-    _load;
+    _load();
   }
 
-  void _onTabChanged {
+  void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
-    setState( {});
+    setState(() {});
     if (_tabController.index == 4) _refreshPreview;
   }
 
   @override
-  void dispose {
+  void dispose() {
     _tabController.removeListener(_onTabChanged);
-    _tabController.dispose;
-    _autosaveDebounce?.cancel;
-    _fwdPrimersController.dispose;
-    _revPrimersController.dispose;
-    _ramController.dispose;
-    _coresController.dispose;
+    _tabController.dispose();
+    _autosaveDebounce?.cancel();
+    _fwdPrimersController.dispose();
+    _revPrimersController.dispose();
+    _ramController.dispose();
+    _coresController.dispose();
     for (final c in _threadControllers.values) {
-      c.dispose;
+      c.dispose();
     }
-    super.dispose;
+    super.dispose();
   }
 
-  Future<void> _load async {
+  Future<void> _load() async {
     try {
       final api = ref.read(apiClientProvider);
       final manifest = await api.get('/api/pipelines/${widget.pipelineId}') as Map<String, dynamic>;
@@ -194,10 +194,10 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       final draft = await api.get('/api/pipelines/${widget.pipelineId}/draft') as Map<String, dynamic>;
 
       final lang = ref.read(localeProvider).languageCode;
-      final categories = toolsRaw.map((e) => ToolCategory.fromJson(e as Map<String, dynamic>, lang)).toList;
+      final categories = toolsRaw.map((e) => ToolCategory.fromJson(e as Map<String, dynamic>, lang)).toList();
       final databases = dbsRaw.map((k, v) => MapEntry(k, DatabaseDef.fromJson(k, v as Map<String, dynamic>, lang)));
 
-      setState( {
+      setState(() {
         _manifest = manifest;
         _toolsRaw = toolsRaw;
         _categories = categories;
@@ -207,25 +207,25 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         _ampliconPreset = manifest['default_amplicon_preset'] as String?;
         _seedPrimersFromPreset(_ampliconPreset, force: true);
         _toolsById = {for (final t in categories.expand((c) => c.tools)) t.id: t};
-        _toolParams..clear..addEntries(_toolsById.entries.map((e) => MapEntry(e.key, ToolParamsState.fromDefaults(e.value))));
-        _activeTools..clear..addAll(_toolsById.keys.where((id) => _toolsById[id]!.activeByDefault));
-        _activeTracks.clear;
+        _toolParams..clear()..addEntries(_toolsById.entries.map((e) => MapEntry(e.key, ToolParamsState.fromDefaults(e.value))));
+        _activeTools..clear()..addAll(_toolsById.keys.where((id) => _toolsById[id]!.activeByDefault));
+        _activeTracks.clear();
         for (final t in _toolsById.values) {
-          if (t.tracks.isNotEmpty) _activeTracks[t.id] = t.tracks.keys.toSet;
+          if (t.tracks.isNotEmpty) _activeTracks[t.id] = t.tracks.keys.toSet();
         }
         for (final c in _threadControllers.values) {
-          c.dispose;
+          c.dispose();
         }
-        _threadControllers.clear;
+        _threadControllers.clear();
         for (final id in _toolsById.keys) {
-          _threadControllers[id] = TextEditingController;
+          _threadControllers[id] = TextEditingController();
         }
         _applyDraft(draft);
         _loading = false;
       });
     } catch (e) {
-      setState( {
-        _error = e.toString;
+      setState(() {
+        _error = e.toString();
         _loading = false;
       });
     }
@@ -235,11 +235,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// already-fetched [_toolsRaw]/[_databasesRaw] in the new language -- no
   /// network call, and active tools/flag params (keyed by tool id, not by
   /// the ToolDef object) survive untouched.
-  void _rebuildForLocale {
+  void _rebuildForLocale() {
     final lang = ref.read(localeProvider).languageCode;
-    setState( {
+    setState(() {
       if (_toolsRaw.isNotEmpty) {
-        final categories = _toolsRaw.map((e) => ToolCategory.fromJson(e as Map<String, dynamic>, lang)).toList;
+        final categories = _toolsRaw.map((e) => ToolCategory.fromJson(e as Map<String, dynamic>, lang)).toList();
         _categories = categories;
         _toolsById = {for (final t in categories.expand((c) => c.tools)) t.id: t};
       }
@@ -258,11 +258,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
 
     final inputDirs = draft['input_dirs'] as Map<String, dynamic>?;
     if (inputDirs != null) {
-      _inputDirs..clear..addAll(inputDirs.map((k, v) => MapEntry(k, v as String)));
+      _inputDirs..clear()..addAll(inputDirs.map((k, v) => MapEntry(k, v as String)));
     }
     final toggledInputDirs = draft['toggled_input_dirs'] as List?;
     if (toggledInputDirs != null) {
-      _toggledInputDirs..clear..addAll(toggledInputDirs.map((e) => e as String));
+      _toggledInputDirs..clear()..addAll(toggledInputDirs.map((e) => e as String));
     }
     final outputDir = draft['output_dir'] as String?;
     if (outputDir != null && outputDir.isNotEmpty) _outputDir = outputDir;
@@ -272,14 +272,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     if (referenceFile != null && referenceFile.isNotEmpty) _referenceFile = referenceFile;
     final referenceOverrides = draft['reference_overrides'] as Map<String, dynamic>?;
     if (referenceOverrides != null) {
-      _referenceOverrides..clear..addAll(referenceOverrides.map((k, v) => MapEntry(k, v as String)));
+      _referenceOverrides..clear()..addAll(referenceOverrides.map((k, v) => MapEntry(k, v as String)));
     }
     final referenceSkipped = draft['reference_skipped'] as List?;
     if (referenceSkipped != null) {
-      _referenceSkipped..clear..addAll(referenceSkipped.map((e) => e as String));
+      _referenceSkipped..clear()..addAll(referenceSkipped.map((e) => e as String));
     }
-    if (draft['ram_gb'] != null) _ramController.text = draft['ram_gb'].toString;
-    if (draft['cores'] != null) _coresController.text = draft['cores'].toString;
+    if (draft['ram_gb'] != null) _ramController.text = draft['ram_gb'].toString();
+    if (draft['cores'] != null) _coresController.text = draft['cores'].toString();
     final savedPlatform = draft['long_read_platform'] as String?;
     if (savedPlatform != null && savedPlatform.isNotEmpty) _longReadPlatform = savedPlatform;
     final savedPreset = draft['amplicon_preset'] as String?;
@@ -295,15 +295,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     if (threadOverrides != null) {
       for (final entry in threadOverrides.entries) {
         final controller = _threadControllers[entry.key];
-        if (controller != null) controller.text = entry.value.toString;
+        if (controller != null) controller.text = entry.value.toString();
       }
     }
 
     final activeTools = draft['active_tools'] as List?;
     if (activeTools != null) {
-      final valid = activeTools.map((e) => e as String).where(_toolsById.containsKey).toSet;
+      final valid = activeTools.map((e) => e as String).where(_toolsById.containsKey).toSet();
       if (valid.isNotEmpty) {
-        _activeTools..clear..addAll(valid);
+        _activeTools..clear()..addAll(valid);
       }
     }
 
@@ -312,7 +312,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       for (final entry in activeTracks.entries) {
         final tool = _toolsById[entry.key];
         if (tool == null || tool.tracks.isEmpty) continue;
-        final tracks = (entry.value as List).map((e) => e as String).where(tool.tracks.containsKey).toSet;
+        final tracks = (entry.value as List).map((e) => e as String).where(tool.tracks.containsKey).toSet();
         _activeTracks[entry.key] = tracks;
       }
     }
@@ -323,27 +323,27 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         final state = _toolParams[entry.key];
         if (state == null) continue;
         final saved = entry.value as Map<String, dynamic>;
-        final enabled = (saved['enabledFlags'] as List?)?.map((e) => e as String).toSet;
+        final enabled = (saved['enabledFlags'] as List?)?.map((e) => e as String).toSet();
         if (enabled != null) {
-          state.enabledFlags..clear..addAll(enabled);
+          state.enabledFlags..clear()..addAll(enabled);
         }
         final values = saved['flagValues'] as Map<String, dynamic>?;
         if (values != null) {
-          state.flagValues..clear..addAll(values.map((k, v) => MapEntry(k, v as String)));
+          state.flagValues..clear()..addAll(values.map((k, v) => MapEntry(k, v as String)));
         }
         state.extraParams = saved['extraParams'] as String? ?? '';
       }
     }
   }
 
-  Map<String, dynamic> _draftPayload => {
+  Map<String, dynamic> _draftPayload() => {
         'input_dirs': _inputDirs,
-        'toggled_input_dirs': _toggledInputDirs.toList,
+        'toggled_input_dirs': _toggledInputDirs.toList(),
         'output_dir': _outputDir,
         'reference_mode': _referenceMode,
         'reference_file': _referenceFile,
         'reference_overrides': _referenceOverrides,
-        'reference_skipped': _referenceSkipped.toList,
+        'reference_skipped': _referenceSkipped.toList(),
         'ram_gb': _ramController.text,
         'cores': _coresController.text,
         'long_read_platform': _longReadPlatform,
@@ -352,14 +352,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         'amplicon_rev_primers': _revPrimersController.text,
         'thread_overrides': {
           for (final entry in _threadControllers.entries)
-            if (entry.value.text.trim.isNotEmpty) entry.key: entry.value.text.trim,
+            if (entry.value.text.trim().isNotEmpty) entry.key: entry.value.text.trim(),
         },
-        'active_tools': _activeTools.toList,
-        'active_tracks': {for (final entry in _activeTracks.entries) entry.key: entry.value.toList},
+        'active_tools': _activeTools.toList(),
+        'active_tracks': {for (final entry in _activeTracks.entries) entry.key: entry.value.toList()},
         'tool_params': {
           for (final entry in _toolParams.entries)
             entry.key: {
-              'enabledFlags': entry.value.enabledFlags.toList,
+              'enabledFlags': entry.value.enabledFlags.toList(),
               'flagValues': entry.value.flagValues,
               'extraParams': entry.value.extraParams,
             },
@@ -367,18 +367,18 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       };
 
   /// Best-effort -- draft persistence failing shouldn't block Save/Start.
-  Future<void> _saveDraft async {
+  Future<void> _saveDraft() async {
     final api = ref.read(apiClientProvider);
     try {
-      await api.post('/api/pipelines/${widget.pipelineId}/draft', _draftPayload);
+      await api.post('/api/pipelines/${widget.pipelineId}/draft', _draftPayload());
     } catch (_) {}
   }
 
-  Future<void> _reloadDatabases async {
+  Future<void> _reloadDatabases() async {
     final api = ref.read(apiClientProvider);
     final dbsRaw = await api.get('/api/pipelines/${widget.pipelineId}/databases') as Map<String, dynamic>;
     final lang = ref.read(localeProvider).languageCode;
-    setState( {
+    setState(() {
       _databasesRaw = dbsRaw;
       _databases = dbsRaw.map((k, v) => MapEntry(k, DatabaseDef.fromJson(k, v as Map<String, dynamic>, lang)));
     });
@@ -391,7 +391,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// (inputs/databases/tools tabs) into `<output_dir>/config/`. Shared by the
   /// standalone "Salvar" action and by `_start`, which saves then launches.
   Future<Map<String, dynamic>> _buildAndSaveConfig async {
-    await _saveDraft;
+    await _saveDraft();
 
     final api = ref.read(apiClientProvider);
     final payload = {
@@ -426,7 +426,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
 
     final threadOverrides = {
       for (final entry in _threadControllers.entries)
-        if (entry.value.text.trim.isNotEmpty) entry.key: entry.value.text.trim,
+        if (entry.value.text.trim().isNotEmpty) entry.key: entry.value.text.trim(),
     };
 
     // Toggle-type input_dirs (currently just DOGMA's paired MAGMA run) and
@@ -448,7 +448,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
 
     final configPayload = {
       'output_dir': _outputDir,
-      'active_tools': _activeTools.toList,
+      'active_tools': _activeTools.toList(),
       'tool_flags': toolFlags,
       'tsv_path': samplesRes['tsv_path'],
       'ram_gb': int.tryParse(_ramController.text) ?? 0,
@@ -465,9 +465,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// Refreshes the Review tab's preview (final Snakemake command, samples.tsv,
   /// config.yaml) from the current in-memory state -- also writes both files
   /// to disk via _buildAndSaveConfig, same as Salvar.
-  Future<void> _refreshPreview async {
+  Future<void> _refreshPreview() async {
     if (_outputDir == null || _outputDir!.isEmpty) {
-      setState( {
+      setState(() {
         _previewCommand = null;
         _previewSamples = null;
         _previewConfig = null;
@@ -475,7 +475,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       });
       return;
     }
-    setState( {
+    setState(() {
       _previewLoading = true;
       _previewError = null;
     });
@@ -492,7 +492,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         if (omit.isNotEmpty) '--omit-from ${omit.join(' ')}',
       ].join(' ');
       if (!mounted) return;
-      setState( {
+      setState(() {
         _previewCommand = cmd;
         _previewSamples = res['tsv_content'] as String? ?? '';
         _previewConfig = res['content'] as String? ?? '';
@@ -500,27 +500,27 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       });
     } catch (e) {
       if (mounted) {
-        setState( {
-          _previewError = e.toString;
+        setState(() {
+          _previewError = e.toString();
           _previewLoading = false;
         });
       }
     }
   }
 
-  Future<void> _saveAndContinue async {
-    setState( => _saving = true);
+  Future<void> _saveAndContinue() async {
+    setState(() => _saving = true);
     try {
-      await _saveDraft;
+      await _saveDraft();
       if (!mounted) return;
       _tabController.animateTo(_tabController.index + 1);
     } finally {
-      if (mounted) setState( => _saving = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
-  Future<void> _saveConfig async {
-    setState( => _saving = true);
+  Future<void> _saveConfig() async {
+    setState(() => _saving = true);
     try {
       final configRes = await _buildAndSaveConfig;
       if (!mounted) return;
@@ -532,18 +532,18 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${_tr('error_saving')}: $e')));
       }
     } finally {
-      if (mounted) setState( => _saving = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
-  Future<void> _start async {
-    setState( => _starting = true);
+  Future<void> _start() async {
+    setState(() => _starting = true);
     try {
       // Last-chance gate: catches any per_sample sample left unresolved
       // (never explicitly skipped or given a manual reference) before the
       // run actually starts, even if the user dismissed/ignored the check
       // earlier in the Inputs tab.
-      await _checkReferenceMatches;
+      await _checkReferenceMatches();
       if (!mounted) return;
       final configRes = await _buildAndSaveConfig;
 
@@ -563,7 +563,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${_tr('error_starting')}: $e')));
       }
     } finally {
-      if (mounted) setState( => _starting = false);
+      if (mounted) setState(() => _starting = false);
     }
   }
 
@@ -572,7 +572,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// full-screen pushed route would.
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator);
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text('${ref.t('error_prefix')}: $_error'));
 
     ref.listen(localeProvider, (previous, next) {
@@ -590,7 +590,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
               IconButton(
                 icon: const Icon(Icons.arrow_back),
                 tooltip: ref.t('back_to_hub'),
-                onPressed:  => ref.read(embeddedPipelineProvider.notifier).state = null,
+                onPressed: () => ref.read(embeddedPipelineProvider.notifier).state = null,
               ),
               Expanded(
                 child: Text(widget.pipelineName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -599,7 +599,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: TextButton.icon(
-                    onPressed:  => ref.read(embeddedMonitorProvider.notifier).state = true,
+                    onPressed: () => ref.read(embeddedMonitorProvider.notifier).state = true,
                     icon: Icon(run.finished ? Icons.fact_check_outlined: Icons.play_circle_outline, size: 18),
                     label: Text(run.finished ? ref.t('view_last_run'): ref.t('view_running_pipeline')),
                   ),
@@ -624,7 +624,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         Expanded(
           child: TabBarView(
             controller: _tabController,
-            children: [_buildInputsTab, _buildToolsTab, _buildDatabasesTab, _buildResourcesTab, _buildReviewTab],
+            children: [_buildInputsTab(), _buildToolsTab(), _buildDatabasesTab(), _buildResourcesTab(), _buildReviewTab()],
           ),
         ),
         _buildBottomBar(colors),
@@ -667,7 +667,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// without a reference the user didn't explicitly sign off on. A no-op
   /// outside 'per_sample' mode, or for samples already resolved by a
   /// previous check (an override on file, or an explicit skip).
-  Future<void> _checkReferenceMatches async {
+  Future<void> _checkReferenceMatches() async {
     if (_referenceMode != 'per_sample') return;
     final refDir = _inputDirs['reference_dir'];
     if (refDir == null || refDir.isEmpty) return;
@@ -686,7 +686,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     }
     if (!mounted) return;
 
-    final rows = (res['samples'] as List?)?.cast<Map<String, dynamic>> ?? [];
+    final rows = (res['samples'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final unmatched = [
       for (final r in rows)
         if (((r['fq1'] as String?)?.isNotEmpty ?? false) || ((r['fq_long'] as String?)?.isNotEmpty ?? false))
@@ -704,8 +704,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       skipped: _referenceSkipped,
     );
     if (!mounted) return;
-    setState( {});
-    _markDirty;
+    setState(() {});
+    _markDirty();
   }
 
   /// Every input_dirs entry is a plain folder picker, except: SIGMA's
@@ -724,8 +724,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         label: _inputDirLabel(spec),
         path: _inputDirs[key],
         onPicked: (p) {
-          setState( => _inputDirs[key] = p);
-          _markDirty;
+          setState(() => _inputDirs[key] = p);
+          _markDirty();
         },
       );
     }
@@ -742,8 +742,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
                 ? Text(_inputDirToggleHint(key)!, style: TextStyle(fontSize: 12, color: context.colors.textSecondary)): null,
             value: on,
             onChanged: (v) {
-              setState( => v ? _toggledInputDirs.add(key): _toggledInputDirs.remove(key));
-              _markDirty;
+              setState(() => v ? _toggledInputDirs.add(key): _toggledInputDirs.remove(key));
+              _markDirty();
             },
           ),
           if (on)...[
@@ -752,8 +752,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
               label: _inputDirLabel(spec),
               path: _inputDirs[key],
               onPicked: (p) {
-                setState( => _inputDirs[key] = p);
-                _markDirty;
+                setState(() => _inputDirs[key] = p);
+                _markDirty();
               },
             ),
           ],
@@ -765,8 +765,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         label: _inputDirLabel(spec),
         path: _inputDirs[key],
         onPicked: (p) {
-          setState( => _inputDirs[key] = p);
-          _markDirty;
+          setState(() => _inputDirs[key] = p);
+          _markDirty();
           if (key == 'short_reads_dir' || key == 'long_reads_dir') _checkReferenceMatches;
         },
       );
@@ -791,8 +791,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
           selected: {_referenceMode},
           onSelectionChanged: (selection) {
             final mode = selection.first;
-            setState( => _referenceMode = mode);
-            _markDirty;
+            setState(() => _referenceMode = mode);
+            _markDirty();
             if (mode == 'per_sample') _checkReferenceMatches;
           },
         ),
@@ -804,8 +804,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
             label: ref.t('input_reference_single_file'),
             path: _referenceFile,
             onPicked: (p) {
-              setState( => _referenceFile = p);
-              _markDirty;
+              setState(() => _referenceFile = p);
+              _markDirty();
             },
           )
         else if (_referenceMode == 'per_sample')...[
@@ -813,9 +813,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
             label: _inputDirLabel(spec),
             path: _inputDirs[key],
             onPicked: (p) {
-              setState( => _inputDirs[key] = p);
-              _markDirty;
-              _checkReferenceMatches;
+              setState(() => _inputDirs[key] = p);
+              _markDirty();
+              _checkReferenceMatches();
             },
           ),
           const SizedBox(height: 8),
@@ -848,10 +848,10 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildInputsTab {
+  Widget _buildInputsTab() {
     final inputDirsSpec = (_manifest?['sample_sheet']?['input_dirs'] as List?) ?? [];
-    final platforms = (_manifest?['long_read_platforms'] as List?)?.cast<Map<String, dynamic>> ?? [];
-    final ampliconPresets = (_manifest?['amplicon_presets'] as List?)?.cast<Map<String, dynamic>> ?? [];
+    final platforms = (_manifest?['long_read_platforms'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final ampliconPresets = (_manifest?['amplicon_presets'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -874,8 +874,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
                   DropdownMenuItem(value: p['id'] as String, child: Text(p['label'] as String, style: const TextStyle(fontSize: 13))),
               ],
               onChanged: (v) {
-                setState( => _longReadPlatform = v);
-                _markDirty;
+                setState(() => _longReadPlatform = v);
+                _markDirty();
               },
             ),
             const SizedBox(height: 4),
@@ -901,11 +901,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
                   ),
               ],
               onChanged: (v) {
-                setState( {
+                setState(() {
                   _ampliconPreset = v;
                   _seedPrimersFromPreset(v, force: true);
                 });
-                _markDirty;
+                _markDirty();
               },
             ),
             const SizedBox(height: 4),
@@ -915,7 +915,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
             Builder(builder: (_) {
               final sel = ampliconPresets.firstWhere(
                 (p) => p['id'] == _ampliconPreset,
-                orElse:  => const <String, dynamic>{},
+                orElse: () => const <String, dynamic>{},
               );
               final note = (sel['note'] as Map?)?[ref.watch(localeProvider).languageCode == 'en' ? 'en': 'pt'] as String?;
               return Text(
@@ -945,8 +945,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
             label: ref.t('output_folder'),
             path: _outputDir,
             onPicked: (p) {
-              setState( => _outputDir = p);
-              _markDirty;
+              setState(() => _outputDir = p);
+              _markDirty();
             },
           ),
         ],
@@ -962,16 +962,16 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// manifest's special_overrides.ram_gb_targets actually read it (it fills
   /// in their -m/--memory flag), so its field sits next to those tools'
   /// thread field instead of at the top like it used to.
-  Widget _buildResourcesTab {
+  Widget _buildResourcesTab() {
     final colors = context.colors;
     final defaultThreads = (_manifest?['default_threads'] as Map<String, dynamic>?) ?? {};
     final ramTargets = ((_manifest?['special_overrides'] as Map<String, dynamic>?)?['ram_gb_targets'] as List?)
-            ?.map((e) => e.toString).toSet ??
+            ?.map((e) => e.toString()).toSet() ??
         {};
     final relevantCategories = _categories.map((c) => ToolCategory(
               category: c.category,
-              tools: c.tools.where((t) => _activeTools.contains(t.id) && defaultThreads.containsKey(t.id)).toList,
-            )).where((c) => c.tools.isNotEmpty).toList;
+              tools: c.tools.where((t) => _activeTools.contains(t.id) && defaultThreads.containsKey(t.id)).toList(),
+            )).where((c) => c.tools.isNotEmpty).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -1014,14 +1014,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
               ),
               TextButton.icon(
-                onPressed:  {
-                  setState( {
+                onPressed: () {
+                  setState(() {
                     for (final c in _threadControllers.values) {
-                      c.clear;
+                      c.clear();
                     }
-                    _ramController.clear;
+                    _ramController.clear();
                   });
-                  _markDirty;
+                  _markDirty();
                 },
                 icon: const Icon(Icons.restart_alt, size: 16),
                 label: Text(ref.t('resources_reset_all')),
@@ -1057,9 +1057,9 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// Read-only status check -- actual configuration (path/download) now lives
   /// in the Hub-level Databases screen, shared across every pipeline that
   /// references the same database, instead of being repeated per pipeline.
-  Widget _buildDatabasesTab {
+  Widget _buildDatabasesTab() {
     final colors = context.colors;
-    final dbs = _databases.values.toList..sort((a, b) => a.name.compareTo(b.name));
+    final dbs = _databases.values.toList()..sort((a, b) => a.name.compareTo(b.name));
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -1115,14 +1115,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
 
   /// Every currently-on (toolId) or (toolId:track) unit -- used to diff
   /// before/after settle so we know exactly what cascade turned off.
-  Set<String> _unitSnapshot {
+  Set<String> _unitSnapshot() {
     final units = <String>{};
     for (final id in _activeTools) {
       final tool = _toolsById[id];
       if (tool == null || tool.tracks.isEmpty) {
         units.add(id);
       } else {
-        final tracks = _activeTracks[id] ?? tool.tracks.keys.toSet;
+        final tracks = _activeTracks[id] ?? tool.tracks.keys.toSet();
         units.addAll(tracks.map((t) => '$id:$t'));
       }
     }
@@ -1131,7 +1131,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
 
   /// Runs settle and records whatever it turns off as cascade-caused (as
   /// opposed to a direct user click), so it's eligible for _reviveCascaded.
-  void _settleAndTrackCascade {
+  void _settleAndTrackCascade() {
     final before = _unitSnapshot;
     _graph.settle(_activeTools, _activeTracks);
     _cascadeDisabled.addAll(before.difference(_unitSnapshot));
@@ -1141,11 +1141,11 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// because *that* cascaded away earlier and is now satisfiable again -- /// e.g. re-enabling Prodigal/sample should also revive eggNOG/sample, but
   /// not a track the user turned off on purpose. Iterates to a fixed point:
   /// reviving one unit can satisfy another's requirement in turn.
-  void _reviveCascaded {
+  void _reviveCascaded() {
     var changed = true;
     while (changed) {
       changed = false;
-      for (final unit in _cascadeDisabled.toList) {
+      for (final unit in _cascadeDisabled.toList()) {
         final sep = unit.indexOf(':');
         final toolId = sep < 0 ? unit: unit.substring(0, sep);
         final track = sep < 0 ? null: unit.substring(sep + 1);
@@ -1158,7 +1158,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         if (!canEnable) continue;
         _cascadeDisabled.remove(unit);
         _activeTools.add(toolId);
-        if (track != null) _activeTracks.putIfAbsent(toolId,  => {}).add(track);
+        if (track != null) _activeTracks.putIfAbsent(toolId, () => {}).add(track);
         changed = true;
       }
     }
@@ -1166,22 +1166,22 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
 
   void _onToggleTool(String id) {
     if (_activeTools.contains(id)) {
-      setState( {
+      setState(() {
         _activeTools.remove(id);
         _activeTracks.remove(id);
         _cascadeDisabled.remove(id);
-        _settleAndTrackCascade;
+        _settleAndTrackCascade();
       });
-      _markDirty;
+      _markDirty();
     } else if (_graph.canEnable(id, _activeTools, _activeTracks)) {
-      setState( {
+      setState(() {
         _activeTools.add(id);
         final tool = _toolsById[id];
-        if (tool != null && tool.tracks.isNotEmpty) _activeTracks[id] = tool.tracks.keys.toSet;
+        if (tool != null && tool.tracks.isNotEmpty) _activeTracks[id] = tool.tracks.keys.toSet();
         _cascadeDisabled.remove(id);
-        _reviveCascaded;
+        _reviveCascaded();
       });
-      _markDirty;
+      _markDirty();
     } else {
       final missing = _graph.missingRequirementLabel(id, _activeTools, _activeTracks);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1195,8 +1195,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// was cascade, not deliberate); turning one back on revives whatever was
   /// only off because of that -- see _settleAndTrackCascade/_reviveCascaded.
   void _onToggleTrack(String toolId, String track) {
-    setState( {
-      final tracks = _activeTracks.putIfAbsent(toolId,  => {});
+    setState(() {
+      final tracks = _activeTracks.putIfAbsent(toolId, () => {});
       final turningOn = !tracks.contains(track);
       if (turningOn) {
         tracks.add(track);
@@ -1211,15 +1211,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       }
       _cascadeDisabled.remove('$toolId:$track');
       if (turningOn) {
-        _reviveCascaded;
+        _reviveCascaded();
       } else {
-        _settleAndTrackCascade;
+        _settleAndTrackCascade();
       }
     });
-    _markDirty;
+    _markDirty();
   }
 
-  Widget _buildToolsTab {
+  Widget _buildToolsTab() {
     return ListView.builder(
       padding: const EdgeInsets.all(24),
       itemCount: _categories.length,
@@ -1234,15 +1234,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
           onToggle: _onToggleTool,
           onToggleTrack: _onToggleTrack,
           onParamsChanged:  {
-            setState( {});
-            _markDirty;
+            setState(() {});
+            _markDirty();
           },
         ),
       ),
     );
   }
 
-  Widget _buildReviewTab {
+  Widget _buildReviewTab() {
     final colors = context.colors;
     if (_outputDir == null || _outputDir!.isEmpty) {
       return Center(
@@ -1303,7 +1303,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
           Text('${_activeTools.length} ${ref.t('active_tools_suffix')}', style: TextStyle(color: colors.textSecondary)),
           const SizedBox(width: 16),
           _AutosaveIndicator(dirty: _dirty, saving: _autosaving, everSaved: _everSaved),
-          const Spacer,
+          const Spacer(),
           if (!onReviewTab)
             ElevatedButton.icon(
               onPressed: !_saving ? _saveAndContinue: null,
@@ -1394,7 +1394,7 @@ class _ResourceCardGrid extends StatelessWidget {
   final List<ToolDef> tools;
   final Set<String> ramTargets;
   final Map<String, dynamic> defaultThreads;
-  final Map<String, TextEditingController> threadControllers;
+  final Map<String, TextEditingController()> threadControllers;
   final TextEditingController ramController;
   final VoidCallback onChanged;
   static const double _targetColumnWidth = 210;
@@ -1413,7 +1413,7 @@ class _ResourceCardGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = ((constraints.maxWidth + _spacing) / (_targetColumnWidth + _spacing)).floor.clamp(1, 8);
+        final columns = ((constraints.maxWidth + _spacing) / (_targetColumnWidth + _spacing)).floor().clamp(1, 8);
         final columnWidth = (constraints.maxWidth - _spacing * (columns - 1)) / columns;
         return Wrap(
           spacing: _spacing,
@@ -1426,7 +1426,7 @@ class _ResourceCardGrid extends StatelessWidget {
                 child: _ResourceCard(
                   tool: tool,
                   showRam: ramTargets.contains(tool.id),
-                  defaultThreadsHint: defaultThreads[tool.id]?.toString ?? '',
+                  defaultThreadsHint: defaultThreads[tool.id]?.toString() ?? '',
                   threadController: threadControllers[tool.id],
                   ramController: ramController,
                   onChanged: onChanged,
@@ -1443,7 +1443,7 @@ class _ResourceCard extends ConsumerWidget {
   final ToolDef tool;
   final bool showRam;
   final String defaultThreadsHint;
-  final TextEditingController? threadController;
+  final TextEditingController()? threadController;
   final TextEditingController ramController;
   final VoidCallback onChanged;
 

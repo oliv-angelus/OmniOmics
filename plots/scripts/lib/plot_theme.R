@@ -142,7 +142,7 @@ with_title_bar <- function(plot, title, size = 10, title_height = 0.1, font_fami
     # clipped text.
     title <- wrap_title_to_width(title, plot_width_in * 0.65, size, font_family)
   }
-  n_lines <- length(strsplit(title, "\n", fixed = TRUE)1)
+  n_lines <- length(strsplit(title, "\n", fixed = TRUE)[[1]])
   title_height <- title_height * n_lines
   title_bar(title, size = size, font_family = font_family) / plot + patchwork::plot_layout(heights = c(title_height, 1))
 }

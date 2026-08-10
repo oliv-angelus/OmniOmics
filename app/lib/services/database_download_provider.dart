@@ -67,7 +67,7 @@ class DatabaseDownloadsNotifier extends Notifier<Map<String, DatabaseDownloadSta
   final Map<String, WsClient> _sockets = {};
 
   @override
-  Map<String, DatabaseDownloadState> build => {};
+  Map<String, DatabaseDownloadState> build() => {};
 
   void start({
     required String pipelineId,
@@ -77,7 +77,7 @@ class DatabaseDownloadsNotifier extends Notifier<Map<String, DatabaseDownloadSta
     required String destDir,
   }) {
     final key = databaseDownloadKey(pipelineId, dbKey);
-    _sockets[key]?.close;
+    _sockets[key]?.close();
 
     state = {...state,
       key: DatabaseDownloadState(
@@ -94,13 +94,13 @@ class DatabaseDownloadsNotifier extends Notifier<Map<String, DatabaseDownloadSta
       switch (event['type']) {
         case 'log':
           state = {...state,
-            key: current.copyWith(log: [...current.log, (event['text'] as String).trimRight]),
+            key: current.copyWith(log: [...current.log, (event['text'] as String).trimRight()]),
           };
           break;
         case 'progress':
           state = {...state,
             key: current.copyWith(
-              percent: (event['percent'] as num?)?.toDouble ?? current.percent,
+              percent: (event['percent'] as num?)?.toDouble() ?? current.percent,
               progressText: '${event['done']} / ${event['total']} ${event['unit']}',
             ),
           };
@@ -129,7 +129,7 @@ class DatabaseDownloadsNotifier extends Notifier<Map<String, DatabaseDownloadSta
 
   void cancel(String pipelineId, String dbKey) {
     final key = databaseDownloadKey(pipelineId, dbKey);
-    _sockets[key]?.close;
+    _sockets[key]?.close();
     _sockets.remove(key);
     final next = {...state}..remove(key);
     state = next;
@@ -155,7 +155,7 @@ class DatabaseDownloadsNotifier extends Notifier<Map<String, DatabaseDownloadSta
   /// Clears every download that isn't still running -- used by the top-bar
   /// indicator so acknowledging it (by tapping through to Databases) clears
   /// finished/errored entries but leaves active downloads' badges in place.
-  void dismissFinished {
+  void dismissFinished() {
     final next = {
       for (final entry in state.entries)
         if (entry.value.phase == DownloadPhase.running) entry.key: entry.value,

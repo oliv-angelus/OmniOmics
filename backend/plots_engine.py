@@ -25,7 +25,7 @@ R_ENV_NAME = "r-plots"
 _cache: dict | None = None
 
 
-def _load_manifest -> dict:
+def _load_manifest() -> dict:
     global _cache
     if _cache is not None:
         return _cache
@@ -34,7 +34,7 @@ def _load_manifest -> dict:
     return _cache
 
 
-def reload_manifest:
+def reload_manifest() :
     """Drop the in-memory cache so the next call re-reads manifest.yaml from disk."""
     global _cache
     _cache = None
@@ -42,14 +42,14 @@ def reload_manifest:
 
 def get_analysis_list(pipeline_id: str | None = None) -> list:
     """All analyses, or only those whose applies_to includes pipeline_id."""
-    analyses = _load_manifest.get("analyses", [])
+    analyses = _load_manifest().get("analyses", [])
     if pipeline_id is None:
         return analyses
     return [a for a in analyses if pipeline_id in a.get("applies_to", [])]
 
 
 def get_analysis(analysis_id: str) -> dict:
-    for a in _load_manifest.get("analyses", []):
+    for a in _load_manifest().get("analyses", []):
         if a["id"] == analysis_id:
             return a
     raise KeyError(f"Unknown analysis: {analysis_id}")
@@ -104,10 +104,10 @@ def build_params_args(analysis_id: str, param_states: list) -> list:
     return args
 
 
-def _subprocess_env -> dict:
+def _subprocess_env() -> dict:
     """Same PATH-stripping as main._subprocess_env (see its docstring) -- duplicated here rather than imported so plots_engine has no dependency on
     main.py, matching the rest of this module's standalone engine files."""
-    env = os.environ.copy
+    env = os.environ.copy()
     roots = {p for p in (env.pop("VIRTUAL_ENV", None),
                          sys.prefix if sys.prefix != sys.base_prefix else None) if p}
     if roots:
@@ -149,7 +149,7 @@ def check_r_env(conda_path: str | None) -> dict:
         return {"installed": False, "path": None, "version": None}
     try:
         result = subprocess.run([rscript, "--version"], capture_output=True, text=True, env=_subprocess_env)
-        version = (result.stdout or result.stderr).strip
+        version = (result.stdout or result.stderr).strip()
         return {"installed": True, "path": rscript, "version": version}
     except Exception:
         return {"installed": False, "path": None, "version": None}
@@ -169,7 +169,7 @@ async def install_r_env(conda_path: str) -> dict:
         stderr=asyncio.subprocess.STDOUT,
         env=_subprocess_env,
     )
-    await proc.wait
+    await proc.wait()
 
     if proc.returncode == 0:
         return {"success": True}

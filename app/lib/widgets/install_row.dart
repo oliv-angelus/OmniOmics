@@ -40,7 +40,7 @@ class InstallRow extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<InstallRow> createState => _InstallRowState;
+  ConsumerState<InstallRow> createState() => _InstallRowState();
 }
 
 class _InstallRowState extends ConsumerState<InstallRow> {
@@ -51,20 +51,20 @@ class _InstallRowState extends ConsumerState<InstallRow> {
   InstallOption? _selectedOption;
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     if (widget.options != null && widget.options!.isNotEmpty) {
       _selectedOption = widget.options!.first;
     }
   }
 
-  void _install {
+  void _install() {
     final api = ref.read(apiClientProvider);
     final url = api.wsUrl(widget.wsPath);
-    setState( {
+    setState(() {
       _running = true;
       _expanded = true;
-      _log.clear;
+      _log.clear();
     });
     final ws = WsClient.connect(url);
     _ws = ws;
@@ -74,33 +74,33 @@ class _InstallRowState extends ConsumerState<InstallRow> {
     ws.events.listen((event) {
       final type = event['type'];
       if (type == 'log') {
-        setState( => _log.add((event['text'] as String).trimRight));
+        setState(() => _log.add((event['text'] as String).trimRight()));
       } else if (type == 'done') {
-        setState( => _running = false);
-        widget.onDone;
+        setState(() => _running = false);
+        widget.onDone();
       } else if (type == 'error') {
-        setState( {
+        setState(() {
           _running = false;
           _log.add('${ref.t('error_prefix')}: ${event['text']}');
         });
       }
     }, onDone:  {
-      if (mounted) setState( => _running = false);
+      if (mounted) setState(() => _running = false);
     });
   }
 
-  void _cancel {
-    _ws?.close;
-    setState( {
+  void _cancel() {
+    _ws?.close();
+    setState(() {
       _running = false;
       _log.add(ref.read(localeProvider).languageCode == 'en' ? 'Cancelled.': 'Cancelado.');
     });
   }
 
   @override
-  void dispose {
-    _ws?.close;
-    super.dispose;
+  void dispose() {
+    _ws?.close();
+    super.dispose();
   }
 
   @override
@@ -147,7 +147,7 @@ class _InstallRowState extends ConsumerState<InstallRow> {
                 contentPadding: EdgeInsets.zero,
                 value: opt,
                 groupValue: _selectedOption,
-                onChanged: (v) => setState( => _selectedOption = v),
+                onChanged: (v) => setState(() => _selectedOption = v),
                 title: Text(opt.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 subtitle: Text(opt.description, style: const TextStyle(fontSize: 11.5)),
               )),

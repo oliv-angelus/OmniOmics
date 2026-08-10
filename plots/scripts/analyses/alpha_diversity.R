@@ -1,7 +1,7 @@
 # Real alpha diversity analysis (Observed/Chao1/ACE/Shannon/Simpson/Pielou +
 # per-metric Kruskal-Wallis test), direct translation of microbiome.R's
 # section 7. See plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -89,7 +89,7 @@ palette <- resolve_palette(alpha_finalgroup_var, style)
 plot_metric <- function(metric, title_text) {
   p_value <- run_kruskal(metric)
   title <- paste0(title_text, " (", format_p_value(p_value), ")")
-  p <- ggplot(alpha_final, aes(x =.datagroup_var, y =.datametric, fill =.datagroup_var)) +
+  p <- ggplot(alpha_final, aes(x =.data[[group_var]], y =.data[[metric]], fill =.data[[group_var]])) +
     geom_boxplot(color = "black", outlier.shape = NA, alpha = 0.8) +
     geom_jitter(width = 0.2, size = 2.5, shape = 21, fill = "red", color = "black", stroke = 0.3) +
     scale_fill_manual(values = palette) +

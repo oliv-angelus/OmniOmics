@@ -52,9 +52,9 @@ class PlotStylePanel extends ConsumerWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed:  => Navigator.of(dialogContext).pop, child: Text(cancelLabel)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop, child: Text(cancelLabel)),
           ElevatedButton(
-            onPressed:  {
+            onPressed: () {
               // NOT picked.toHexString(...) -- flutter_colorpicker 1.1.0's
               // own extension method has a real upstream bug: it ignores
               // every argument passed to it and hardcodes
@@ -85,7 +85,7 @@ class PlotStylePanel extends ConsumerWidget {
     final colors = context.colors;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
-      onTap:  => _pickColor(context, ref, colorValue, onPicked),
+      onTap: () => _pickColor(context, ref, colorValue, onPicked),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
@@ -127,7 +127,7 @@ class PlotStylePanel extends ConsumerWidget {
                   const SizedBox(height: 4),
                   _swatch(context, ref, ref.t('plots_customize_background'), style.background, (v) {
                     style.background = v;
-                    onChanged;
+                    onChanged();
                   }),
                 ],
               ),
@@ -151,7 +151,7 @@ class PlotStylePanel extends ConsumerWidget {
                     onChanged: (v) {
                       if (v != null) {
                         style.fontFamily = v;
-                        onChanged;
+                        onChanged();
                       }
                     },
                   ),
@@ -183,7 +183,7 @@ class PlotStylePanel extends ConsumerWidget {
                         divisions: 18,
                         onChanged: (v) {
                           style.fontScale = v;
-                          onChanged;
+                          onChanged();
                         },
                       ),
                     ),
@@ -199,7 +199,7 @@ class PlotStylePanel extends ConsumerWidget {
                   value: style.hideXAxis,
                   onChanged: (v) {
                     style.hideXAxis = v ?? false;
-                    onChanged;
+                    onChanged();
                   },
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -212,7 +212,7 @@ class PlotStylePanel extends ConsumerWidget {
                   value: style.hideYAxis,
                   onChanged: (v) {
                     style.hideYAxis = v ?? false;
-                    onChanged;
+                    onChanged();
                   },
                   dense: true,
                   contentPadding: EdgeInsets.zero,
@@ -229,7 +229,7 @@ class PlotStylePanel extends ConsumerWidget {
           const SizedBox(height: 4),
           _swatch(context, ref, ref.t('plots_customize_colors'), style.accentColor!, (v) {
             style.accentColor = v;
-            onChanged;
+            onChanged();
           }),
         ],
         if (style.palette.isNotEmpty)...[
@@ -241,8 +241,8 @@ class PlotStylePanel extends ConsumerWidget {
             runSpacing: 4,
             children: style.palette.entries.map((e) => _swatch(context, ref, e.key, e.value, (v) {
                       style.palette[e.key] = v;
-                      onChanged;
-                    })).toList,
+                      onChanged();
+                    })).toList(),
           ),
         ],
       ],

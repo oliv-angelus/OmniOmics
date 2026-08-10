@@ -23,7 +23,7 @@ class DatabaseCard extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DatabaseCard> createState => _DatabaseCardState;
+  ConsumerState<DatabaseCard> createState() => _DatabaseCardState();
 }
 
 class _DatabaseCardState extends ConsumerState<DatabaseCard> {
@@ -35,8 +35,8 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
   String get _downloadKey => databaseDownloadKey(widget.pipelineId, widget.database.key);
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     // The download itself lives in databaseDownloadsProvider, independent of
     // this card's lifecycle -- but _destDir/_expanded are still local so a
     // fresh mount (e.g. after navigating away from Databases and back, which
@@ -56,13 +56,13 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
   /// no download involved. Needed because that shortcut never touches
   /// `_destDir`, so without this the Baixar button below would stay
   /// permanently disabled for an already-configured database.
-  Future<void> _pickDownloadDestDir async {
+  Future<void> _pickDownloadDestDir() async {
     final path = await getDirectoryPath;
     if (path == null) return;
-    setState( => _destDir = path);
+    setState(() => _destDir = path);
   }
 
-  Future<void> _pickPath async {
+  Future<void> _pickPath() async {
     final path = await getDirectoryPath;
     if (path == null) return;
     if (widget.database.configured) {
@@ -71,22 +71,22 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
         'key': widget.database.key,
         'path': path,
       });
-      widget.onChanged;
+      widget.onChanged();
     } else {
       // Not configured yet -- this is the destination for the upcoming download.
       // Auto-expand so the validate/download controls (only rendered while
       // expanded) are immediately visible instead of leaving the user
       // staring at just the "Destino:..." line with no button under it.
-      setState( {
+      setState(() {
         _destDir = path;
         _expanded = true;
       });
     }
   }
 
-  Future<void> _validate async {
+  Future<void> _validate() async {
     if (_destDir == null || _validating) return;
-    setState( => _validating = true);
+    setState(() => _validating = true);
     try {
       final res = await widget.api.post(
         '/api/pipelines/${widget.pipelineId}/databases/${widget.database.key}/validate',
@@ -97,7 +97,7 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
           'key': widget.database.key,
           'path': res['path'],
         });
-        widget.onChanged;
+        widget.onChanged();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('validate_db_success'))));
         }
@@ -105,11 +105,11 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('validate_db_failed'))));
       }
     } finally {
-      if (mounted) setState( => _validating = false);
+      if (mounted) setState(() => _validating = false);
     }
   }
 
-  void _download {
+  void _download() {
     if (_selectedOption == null || _destDir == null) return;
     ref.read(databaseDownloadsProvider.notifier).start(
           pipelineId: widget.pipelineId,
@@ -120,7 +120,7 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
         );
   }
 
-  void _cancelDownload {
+  void _cancelDownload() {
     ref.read(databaseDownloadsProvider.notifier).cancel(widget.pipelineId, widget.database.key);
   }
 
@@ -183,7 +183,7 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
                   ),
                 ),
                 InkWell(
-                  onTap:  => setState( => _expanded = !_expanded),
+                  onTap: () => setState(() => _expanded = !_expanded),
                   child: Icon(_expanded ? Icons.expand_less: Icons.expand_more, color: colors.textMuted),
                 ),
               ],
@@ -224,7 +224,7 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
                     contentPadding: EdgeInsets.zero,
                     value: opt,
                     groupValue: _selectedOption,
-                    onChanged: (v) => setState( => _selectedOption = v),
+                    onChanged: (v) => setState(() => _selectedOption = v),
                     title: Text(opt.label, style: const TextStyle(fontSize: 13)),
                     subtitle: Text(opt.description, style: const TextStyle(fontSize: 11.5)),
                   )),

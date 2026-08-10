@@ -20,8 +20,8 @@ class LanguageToggle extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _LangButton(label: 'PT', selected: locale.languageCode == 'pt', onTap:  => ref.read(localeProvider.notifier).state = const Locale('pt')),
-          _LangButton(label: 'EN', selected: locale.languageCode == 'en', onTap:  => ref.read(localeProvider.notifier).state = const Locale('en')),
+          _LangButton(label: 'PT', selected: locale.languageCode == 'pt', onTap: () => ref.read(localeProvider.notifier).state = const Locale('pt')),
+          _LangButton(label: 'EN', selected: locale.languageCode == 'en', onTap: () => ref.read(localeProvider.notifier).state = const Locale('en')),
         ],
       ),
     );
@@ -69,7 +69,7 @@ class ThemeToggle extends ConsumerWidget {
     return IconButton(
       icon: Icon(isDark ? Icons.dark_mode: Icons.light_mode_outlined),
       tooltip: isDark ? ref.t('dark'): ref.t('light'),
-      onPressed:  => ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light: ThemeMode.dark,
+      onPressed: () => ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light: ThemeMode.dark,
     );
   }
 }

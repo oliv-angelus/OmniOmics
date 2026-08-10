@@ -15,7 +15,7 @@ class DependencyGateScreen extends ConsumerStatefulWidget {
   const DependencyGateScreen({super.key, required this.next});
 
   @override
-  ConsumerState<DependencyGateScreen> createState => _DependencyGateScreenState;
+  ConsumerState<DependencyGateScreen> createState() => _DependencyGateScreenState();
 }
 
 class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
@@ -24,25 +24,25 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
   String? _error;
 
   @override
-  void initState {
-    super.initState;
-    _load;
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  Future<void> _load async {
+  Future<void> _load() async {
     try {
       final api = ref.read(apiClientProvider);
       final status = await api.get('/api/setup/status') as Map<String, dynamic>;
       final lang = ref.read(localeProvider).languageCode;
       final raw = await api.get('/api/setup/conda-distributions?lang=$lang') as List;
-      _condaOptions = raw.map((e) => InstallOption(id: e['id'] as String, name: e['name'] as String, description: e['description'] as String)).toList;
-      if (mounted) setState( => _status = status);
+      _condaOptions = raw.map((e) => InstallOption(id: e['id'] as String, name: e['name'] as String, description: e['description'] as String)).toList();
+      if (mounted) setState(() => _status = status);
     } catch (e) {
-      if (mounted) setState( => _error = e.toString);
+      if (mounted) setState(() => _error = e.toString());
     }
   }
 
-  void _enter {
+  void _enter() {
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => widget.next));
   }
 
@@ -79,7 +79,7 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
                   constraints: const BoxConstraints(maxWidth: 560),
                   child: _error != null
                       ? Text('${ref.t('error_prefix')}: $_error'): _status == null
-                          ? const Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator): _buildBody(colors),
+                          ? const Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()): _buildBody(colors),
                 ),
               ),
             ),

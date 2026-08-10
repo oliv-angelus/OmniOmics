@@ -20,7 +20,7 @@ rule fastp:
         r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
         r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz",
         html="results/01_QC/{sample}/{sample}_fastp.html",
-        json="results/01_QC/{sample}/{sample}_fastp.json"
+        json="results/01_QC/{sample}/{sample}_fastp.json()"
     params:
         extra=config["params"]["fastp"],
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
@@ -30,9 +30,9 @@ rule fastp:
     shell:
         """
         if [ "{params.rtype}" == "short" ] || [ "{params.rtype}" == "hybrid" ]; then
-            fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -h {output.html} -j {output.json} 2> {log}
+            fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} -h {output.html} -j {output.json()} 2> {log}
         else
-            touch {output.r1} {output.r2} {output.html} {output.json}
+            touch {output.r1} {output.r2} {output.html} {output.json()}
         fi
         """
 
@@ -163,9 +163,9 @@ rule consolidate_taxonomy:
         df = pd.concat([read_sample(f) for f in input.mpas], axis=1).fillna(0).astype(int)
         df.index = [str(i).replace("|", ";") for i in df.index]
         df = df[df.index != ""]
-        df = df.groupby(df.index).sum
+        df = df.groupby(df.index).sum()
         df["total"] = df.sum(axis=1)
-        final_table = df.reset_index.rename(columns={"index": "tax"})
+        final_table = df.reset_index().rename(columns={"index": "tax"})
         final_table = final_table.sort_values(by="total", ascending=False)
         final_table.to_csv(output.final_table, sep="\t", index=False)
 
@@ -223,12 +223,12 @@ rule consolidate_taxonomy_kaiju:
         def read_sample(f):
             name = os.path.basename(f).replace("_kaiju_species.tsv", "")
             df = pd.read_csv(f, sep="\t")
-            df = df"taxon_name", "reads".rename(columns={"reads": name})
+            df = df[["taxon_name", "reads"]].rename(columns={"reads": name})
             return df.set_index("taxon_name")
 
         df = pd.concat([read_sample(f) for f in input.tables], axis=1).fillna(0).astype(int)
-        df = df.groupby(df.index).sum
+        df = df.groupby(df.index).sum()
         df["total"] = df.sum(axis=1)
-        final_table = df.reset_index.rename(columns={"index": "taxon_name"})
+        final_table = df.reset_index().rename(columns={"index": "taxon_name"})
         final_table = final_table.sort_values(by="total", ascending=False)
         final_table.to_csv(output.final_table, sep="\t", index=False)

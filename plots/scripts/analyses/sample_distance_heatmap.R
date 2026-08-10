@@ -4,7 +4,7 @@
 # Huber & Anders 2014, DOI 10.1186/s13059-014-0550-8), for spotting outlier
 # samples or unexpected clustering before trusting any downstream DE result.
 # DEFINE-only; see plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

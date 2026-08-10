@@ -7,7 +7,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 /// ({"type": "log"|"progress"|"job_start"|"job_done"|"done"|"error",...}).
 class WsClient {
   final WebSocketChannel _channel;
-  final _controller = StreamController<Map<String, dynamic>>.broadcast;
+  final _controller = StreamController<Map<String, dynamic>>.broadcast();
 
   WsClient._(this._channel) {
     _channel.stream.listen(
@@ -20,7 +20,7 @@ class WsClient {
         }
       },
       onError: (e) => _controller.addError(e),
-      onDone:  => _controller.close,
+      onDone: () => _controller.close(),
     );
   }
 
@@ -30,8 +30,8 @@ class WsClient {
 
   void send(Map<String, dynamic> message) => _channel.sink.add(jsonEncode(message));
 
-  Future<void> close async {
-    await _controller.close;
-    await _channel.sink.close;
+  Future<void> close() async {
+    await _controller.close();
+    await _channel.sink.close();
   }
 }

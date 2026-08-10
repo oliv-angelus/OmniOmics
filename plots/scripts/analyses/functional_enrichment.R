@@ -12,7 +12,7 @@
 # TERM2GENE interface is documented by the authors themselves as exactly for
 # "unsupported organisms... customized annotations". DEFINE-only; see
 # plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -105,7 +105,7 @@ build_term2gene <- function(gene_info, column) {
   split_fn <- if (column == "COG_category") function(x) strsplit(x, "") else function(x) strsplit(x, ",")
   pairs <- Map(function(g, v) {
     if (is.na(v) || v == "" || v == "-") return(NULL)
-    terms <- trimws(split_fn(v)1)
+    terms <- trimws(split_fn(v)[[1]])
     terms <- terms[terms != "" & terms != "-"]
     if (length(terms) == 0) return(NULL)
     data.frame(term = terms, gene = g, stringsAsFactors = FALSE)

@@ -7,7 +7,7 @@ def check_snakemake(conda_info: dict) -> dict:
     if path:
         try:
             result = subprocess.run([path, "--version"], capture_output=True, text=True)
-            version = result.stdout.strip
+            version = result.stdout.strip()
             return {"installed": True, "path": path, "version": version}
         except Exception:
             pass
@@ -20,16 +20,16 @@ def check_snakemake(conda_info: dict) -> dict:
                 capture_output=True, text=True
             )
             if result.returncode == 0:
-                version = result.stdout.strip
+                version = result.stdout.strip()
                 return {"installed": True, "path": "conda:snakemake", "version": version}
         except Exception:
             pass
 
     return {"installed": False, "path": None, "version": None}
 
-async def install_snakemake -> dict:
+async def install_snakemake() -> dict:
     from settings_store import load_settings
-    settings = load_settings
+    settings = load_settings()
     conda = settings.get("conda_path", "conda")
 
     proc = await asyncio.create_subprocess_exec(
@@ -39,7 +39,7 @@ async def install_snakemake -> dict:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-    await proc.wait
+    await proc.wait()
 
     if proc.returncode == 0:
         return {"success": True}

@@ -10,7 +10,7 @@ import '../../widgets/extra_tag.dart';
 final pipelinesProvider = FutureProvider<List<PipelineSummary>>((ref) async {
   final api = ref.watch(apiClientProvider);
   final raw = await api.get('/api/pipelines') as List;
-  return raw.map((e) => PipelineSummary.fromJson(e as Map<String, dynamic>)).toList;
+  return raw.map((e) => PipelineSummary.fromJson(e as Map<String, dynamic>)).toList();
 });
 
 class HubScreen extends ConsumerWidget {
@@ -22,16 +22,16 @@ class HubScreen extends ConsumerWidget {
     final colors = context.colors;
 
     return pipelinesAsync.when(
-      loading:  => const Center(child: CircularProgressIndicator),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('${ref.t('hub_load_error')}: $err')),
       data: (pipelines) {
         // placeholderCategories is the full "coming soon" wishlist -- filter
         // out whichever ones a real pipeline already covers (e.g. DOGMA ships
         // metatranscriptomics today), so a real pipeline's card never sits
         // next to a redundant "coming soon" placeholder for the same layer.
-        final realCategoryIds = pipelines.map((p) => p.category).toSet;
+        final realCategoryIds = pipelines.map((p) => p.category).toSet();
         final visiblePlaceholders =
-            placeholderCategories.where((c) => !realCategoryIds.contains(c.id)).toList;
+            placeholderCategories.where((c) => !realCategoryIds.contains(c.id)).toList();
         return Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -80,7 +80,7 @@ class _PipelineCard extends ConsumerWidget {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap:  {
+        onTap: () {
           ref.read(embeddedPipelineProvider.notifier).state =
               EmbeddedPipelineRoute(pipelineId: pipeline.id, pipelineName: pipeline.name);
         },
@@ -167,7 +167,7 @@ class _PlaceholderCard extends ConsumerWidget {
                   for (final tag in placeholderExtraTags[category] ?? const []) ExtraTag(tag: tag, english: english),
                 ],
               ),
-              const Spacer,
+              const Spacer(),
             ],
           ),
         ),

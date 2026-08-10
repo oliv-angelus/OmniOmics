@@ -22,7 +22,7 @@ REV_PATTERN = "1+-,1-+,2++,2--"
 
 
 def parse_report(path):
-    text = open(path).read
+    text = open(path).read()
     fwd = re.search(r'"' + re.escape(FWD_PATTERN) + r'":\s*([\d.]+)', text)
     rev = re.search(r'"' + re.escape(REV_PATTERN) + r'":\s*([\d.]+)', text)
     undetermined = re.search(r"Fraction of reads failed to determine:\s*([\d.]+)", text)
@@ -33,7 +33,7 @@ def parse_report(path):
     }
 
 
-def main:
+def main() :
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reports", nargs="+", required=True)
     parser.add_argument("--samples", nargs="+", required=True)

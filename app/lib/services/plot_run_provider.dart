@@ -43,7 +43,7 @@ class PlotRunNotifier extends Notifier<PlotRunState?> {
   WsClient? _ws;
 
   @override
-  PlotRunState? build => null;
+  PlotRunState? build() => null;
 
   bool get isRunning => state != null && !state!.finished;
 
@@ -54,7 +54,7 @@ class PlotRunNotifier extends Notifier<PlotRunState?> {
     required List<Map<String, dynamic>> parameters,
     String? styleJson,
   }) async {
-    _ws?.close;
+    _ws?.close();
     final api = ref.read(apiClientProvider);
     final res = await api.post('/api/plots/$analysisId/run', {
       'parent_run_id': parentRunId,
@@ -82,7 +82,7 @@ class PlotRunNotifier extends Notifier<PlotRunState?> {
       if (current == null || current.runId != runId) return;
       switch (event['type']) {
         case 'log':
-          state = current.copyWith(log: [...current.log, (event['text'] as String).trimRight]);
+          state = current.copyWith(log: [...current.log, (event['text'] as String).trimRight()]);
           break;
         case 'done':
           state = current.copyWith(finished: true, exitCode: event['code'] as int?);
@@ -94,8 +94,8 @@ class PlotRunNotifier extends Notifier<PlotRunState?> {
   /// Clears the state once the user has seen a finished run (or wants to
   /// start a different analysis) -- does not touch the backend, the R
   /// process is already over by the time this is called.
-  void dismiss {
-    _ws?.close;
+  void dismiss() {
+    _ws?.close();
     _ws = null;
     state = null;
   }

@@ -26,7 +26,7 @@ class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  ConsumerState<AppShell> createState => _AppShellState;
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
@@ -100,7 +100,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           Expanded(
             child: Column(
               children: [
-                const _TopBar,
+                const _TopBar(),
                 const Divider(height: 1),
                 Expanded(
                   child: embeddedMonitor
@@ -118,7 +118,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 }
 
 class _TopBar extends ConsumerWidget {
-  const _TopBar;
+  const _TopBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -130,21 +130,21 @@ class _TopBar extends ConsumerWidget {
       child: Row(
         children: [
           Text(ref.t('app_name'), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: colors.textPrimary)),
-          const Spacer,
-          const _RunningPipelineBanner,
+          const Spacer(),
+          const _RunningPipelineBanner(),
           const SizedBox(width: 12),
-          const _DownloadAllIndicator,
+          const _DownloadAllIndicator(),
           const SizedBox(width: 12),
-          const _DatabaseDownloadsIndicator,
+          const _DatabaseDownloadsIndicator(),
           const SizedBox(width: 12),
-          const LanguageToggle,
+          const LanguageToggle(),
           const SizedBox(width: 12),
-          const ThemeToggle,
+          const ThemeToggle(),
           const SizedBox(width: 12),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: ref.t('settings'),
-            onPressed:  => Navigator.of(context).push(
+            onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => Scaffold(
                   appBar: AppBar(
@@ -156,7 +156,7 @@ class _TopBar extends ConsumerWidget {
                       SizedBox(width: 12),
                     ],
                   ),
-                  body: const SettingsScreen,
+                  body: const SettingsScreen(),
                 ),
               ),
             ),
@@ -171,7 +171,7 @@ class _TopBar extends ConsumerWidget {
 /// or just finished -- lets the user get back to the Monitor screen after
 /// having navigated away from it, without restarting anything.
 class _RunningPipelineBanner extends ConsumerWidget {
-  const _RunningPipelineBanner;
+  const _RunningPipelineBanner();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -182,7 +182,7 @@ class _RunningPipelineBanner extends ConsumerWidget {
     final running = !run.finished;
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap:  => ref.read(embeddedMonitorProvider.notifier).state = true,
+      onTap: () => ref.read(embeddedMonitorProvider.notifier).state = true,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -222,7 +222,7 @@ class _RunningPipelineBanner extends ConsumerWidget {
 /// this, a background batch had no visible sign and no way back to its progress
 /// -- tapping here reopens the progress dialog (reattaching, never restarting).
 class _DownloadAllIndicator extends ConsumerWidget {
-  const _DownloadAllIndicator;
+  const _DownloadAllIndicator();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -255,7 +255,7 @@ class _DownloadAllIndicator extends ConsumerWidget {
       message: tooltip,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap:  => showDownloadAllDatabasesDialog(
+        onTap: () => showDownloadAllDatabasesDialog(
           context: context,
           ref: ref,
           api: ref.read(apiClientProvider),
@@ -291,7 +291,7 @@ class _DownloadAllIndicator extends ConsumerWidget {
 /// that screen. Tapping it jumps to the Databases tab and, for entries the
 /// user has now had a chance to see, clears anything that isn't still running.
 class _DatabaseDownloadsIndicator extends ConsumerWidget {
-  const _DatabaseDownloadsIndicator;
+  const _DatabaseDownloadsIndicator();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -323,7 +323,7 @@ class _DatabaseDownloadsIndicator extends ConsumerWidget {
       message: tooltip,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap:  {
+        onTap: () {
           ref.read(selectedTabProvider.notifier).state = 1; // Databases tab
           ref.read(embeddedPipelineProvider.notifier).state = null;
           ref.read(embeddedMonitorProvider.notifier).state = false;

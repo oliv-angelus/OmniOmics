@@ -67,7 +67,7 @@ class DownloadAllNotifier extends Notifier<Map<String, DownloadAllState>> {
   final Map<String, WsClient> _sockets = {};
 
   @override
-  Map<String, DownloadAllState> build => {};
+  Map<String, DownloadAllState> build() => {};
 
   bool isRunning(String pipelineId) => state[pipelineId]?.phase == DownloadAllPhase.running;
 
@@ -80,13 +80,13 @@ class DownloadAllNotifier extends Notifier<Map<String, DownloadAllState>> {
     required Map<String, String> options,
     required List<DbTarget> targets,
   }) {
-    _sockets[pipelineId]?.close;
+    _sockets[pipelineId]?.close();
     state = {...state, pipelineId: DownloadAllState(pipelineId: pipelineId, targets: targets)};
 
     final api = ref.read(apiClientProvider);
     final ws = WsClient.connect(api.wsUrl('/ws/pipelines/$pipelineId/databases/download-all'));
     _sockets[pipelineId] = ws;
-    ws.send({'base_dir': baseDir, 'options': options, 'selected': targets.map((t) => t.key).toList});
+    ws.send({'base_dir': baseDir, 'options': options, 'selected': targets.map((t) => t.key).toList()});
     _listen(pipelineId, ws);
   }
 
@@ -111,7 +111,7 @@ class DownloadAllNotifier extends Notifier<Map<String, DownloadAllState>> {
       if (current == null) return;
       switch (event['type']) {
         case 'log':
-          state = {...state, pid: current.copyWith(log: [...current.log, (event['text'] as String).trimRight])};
+          state = {...state, pid: current.copyWith(log: [...current.log, (event['text'] as String).trimRight()])};
           break;
         case 'db_start':
           state = {...state, pid: current.copyWith(dbStatus: {...current.dbStatus, event['key'] as String: DbBatchState.running})};
@@ -154,7 +154,7 @@ class DownloadAllNotifier extends Notifier<Map<String, DownloadAllState>> {
   /// Actually stops the batch on the backend (closing our socket alone only
   /// drops us as a viewer -- the detached task keeps running otherwise).
   void cancel(String pipelineId) {
-    _sockets[pipelineId]?.close;
+    _sockets[pipelineId]?.close();
     _sockets.remove(pipelineId);
     final next = {...state}..remove(pipelineId);
     state = next;
@@ -164,7 +164,7 @@ class DownloadAllNotifier extends Notifier<Map<String, DownloadAllState>> {
 
   /// Drops a finished/errored batch from the map once the user has seen it -- /// does not touch the backend (the batch is already over either way).
   void dismiss(String pipelineId) {
-    _sockets[pipelineId]?.close;
+    _sockets[pipelineId]?.close();
     _sockets.remove(pipelineId);
     final next = {...state}..remove(pipelineId);
     state = next;

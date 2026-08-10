@@ -42,12 +42,12 @@ CONDA_DISTRIBUTIONS = {
 def conda_distribution_list(lang: str = "pt") -> list:
     return [
         {"id": k, "name": v["name"], "description": v["description"].get(lang, v["description"]["pt"]), "url": v["url"]}
-        for k, v in CONDA_DISTRIBUTIONS.items
+        for k, v in CONDA_DISTRIBUTIONS.items()
     ]
 
 
-def check_conda -> dict:
-    settings = load_settings
+def check_conda() -> dict:
+    settings = load_settings()
     saved_path = settings.get("conda_path")
 
     candidates = [saved_path] if saved_path else []
@@ -62,7 +62,7 @@ def check_conda -> dict:
         if path and os.path.isfile(path):
             try:
                 result = subprocess.run([path, "--version"], capture_output=True, text=True)
-                version = result.stdout.strip or result.stderr.strip
+                version = result.stdout.strip() or result.stderr.strip()
                 save_settings({"conda_path": path})
                 return {"installed": True, "path": path, "version": version}
             except Exception:
@@ -89,7 +89,7 @@ async def install_conda(install_path: str, distribution: str = "miniforge") -> d
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
-    await proc.wait
+    await proc.wait()
 
     conda_bin = os.path.join(install_path, "bin", "conda")
     if os.path.isfile(conda_bin):

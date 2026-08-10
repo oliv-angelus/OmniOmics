@@ -41,13 +41,13 @@ Future<void> showDownloadAllDatabasesDialog({
       barrierDismissible: false,
       builder: (_) => _DownloadAllProgressDialog(pipelineId: pipelineId),
     );
-    onChanged;
+    onChanged();
     return;
   }
 
   // Only databases with an automatic download option are candidates -- the rest
   // need manual setup and can't be bulk-downloaded.
-  final downloadable = missing.where((d) => d.downloadOptions.isNotEmpty).toList;
+  final downloadable = missing.where((d) => d.downloadOptions.isNotEmpty).toList();
   if (downloadable.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('download_all_none_missing'))));
     return;
@@ -67,7 +67,7 @@ Future<void> showDownloadAllDatabasesDialog({
   );
   if (confirmed == null || !context.mounted) return;
 
-  final selectedKeys = confirmed.selected.toSet;
+  final selectedKeys = confirmed.selected.toSet();
   final targets = [
     for (final d in downloadable)
       if (selectedKeys.contains(d.key)) DbTarget(d.key, d.name),
@@ -86,7 +86,7 @@ Future<void> showDownloadAllDatabasesDialog({
     barrierDismissible: false,
     builder: (_) => _DownloadAllProgressDialog(pipelineId: pipelineId),
   );
-  onChanged;
+  onChanged();
 }
 
 class _PickBaseDirDialog extends ConsumerStatefulWidget {
@@ -95,7 +95,7 @@ class _PickBaseDirDialog extends ConsumerStatefulWidget {
   const _PickBaseDirDialog({required this.initialPath, required this.candidates});
 
   @override
-  ConsumerState<_PickBaseDirDialog> createState => _PickBaseDirDialogState;
+  ConsumerState<_PickBaseDirDialog> createState() => _PickBaseDirDialogState();
 }
 
 class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
@@ -104,8 +104,8 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
   late final Set<String> _selected; // db keys ticked to download (all by default)
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     _path = widget.initialPath;
     // Default every multi-option database to its first option (e.g. Kraken2's
     // Standard-8) -- the dropdown lets the user override.
@@ -116,14 +116,14 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
     _selected = {for (final db in widget.candidates) db.key};
   }
 
-  Future<void> _pick async {
+  Future<void> _pick() async {
     final result = await getDirectoryPath;
-    if (result != null) setState( => _path = result);
+    if (result != null) setState(() => _path = result);
   }
 
   void _toggleAll(bool? on) {
-    setState( {
-      _selected.clear;
+    setState(() {
+      _selected.clear();
       if (on ?? false) _selected.addAll(widget.candidates.map((d) => d.key));
     });
   }
@@ -195,10 +195,10 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed:  => Navigator.of(context).pop, child: Text(ref.t('cancel'))),
+        TextButton(onPressed: () => Navigator.of(context).pop, child: Text(ref.t('cancel'))),
         ElevatedButton(
           onPressed: (_path?.isNotEmpty == true && _selected.isNotEmpty)
-              ?  => Navigator.of(context).pop(_BaseDirChoice(_path!, _selectedOptions, _selected.toList)): null,
+              ?  => Navigator.of(context).pop(_BaseDirChoice(_path!, _selectedOptions, _selected.toList())): null,
           child: Text(ref.t('download_all_dialog_start')),
         ),
       ],
@@ -215,12 +215,12 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(8),
-            onTap:  => setState( => checked ? _selected.remove(db.key): _selected.add(db.key)),
+            onTap: () => setState(() => checked ? _selected.remove(db.key): _selected.add(db.key)),
             child: Row(
               children: [
                 Checkbox(
                   value: checked,
-                  onChanged: (v) => setState( => (v ?? false) ? _selected.add(db.key): _selected.remove(db.key)),
+                  onChanged: (v) => setState(() => (v ?? false) ? _selected.add(db.key): _selected.remove(db.key)),
                 ),
                 Expanded(
                   child: Text('${db.name}$sizeLabel',
@@ -242,8 +242,8 @@ class _PickBaseDirDialogState extends ConsumerState<_PickBaseDirDialog> {
                           value: opt.id,
                           child: Text('${opt.label} — ${opt.description}',
                               style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
-                        )).toList,
-                onChanged: (v) => setState( => _selectedOptions[db.key] = v!),
+                        )).toList(),
+                onChanged: (v) => setState(() => _selectedOptions[db.key] = v!),
               ),
             ),
         ],
@@ -283,7 +283,7 @@ class _DownloadAllProgressDialog extends ConsumerWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: targets.map((t) => _DbChip(name: t.name, state: dbStatus[t.key] ?? DbBatchState.pending)).toList,
+              children: targets.map((t) => _DbChip(name: t.name, state: dbStatus[t.key] ?? DbBatchState.pending)).toList(),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -306,11 +306,11 @@ class _DownloadAllProgressDialog extends ConsumerWidget {
       actions: [
         if (!finished)...[
           TextButton(
-            onPressed:  => Navigator.of(context).pop,
+            onPressed: () => Navigator.of(context).pop,
             child: Text(ref.t('download_all_close_keep')),
           ),
           TextButton(
-            onPressed:  {
+            onPressed: () {
               ref.read(downloadAllProvider.notifier).cancel(pipelineId);
               Navigator.of(context).pop;
             },
@@ -318,7 +318,7 @@ class _DownloadAllProgressDialog extends ConsumerWidget {
           ),
         ] else
           ElevatedButton(
-            onPressed:  {
+            onPressed: () {
               ref.read(downloadAllProvider.notifier).dismiss(pipelineId);
               Navigator.of(context).pop;
             },

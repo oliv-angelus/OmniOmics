@@ -6,7 +6,7 @@
 # family,...), per sample x domain. See plots/manifest.yaml for parameter
 # descriptions and lib/build_dogma_table.R for the real per-ORF merge +
 # DOGMA_ANNOTATION_COLUMNS this reads from.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -54,7 +54,7 @@ if (!("salmon_NumReads" %in% colnames(long_table))) {
 # the reads go" plot (as opposed to DESeq2 testing, where a giant
 # catch-all pseudo-gene isn't a meaningful unit).
 df <- long_table %>%
-  mutate(family = ifelse(is.na(.dataannotation_col) |.dataannotation_col == "", "Unclassified",.dataannotation_col)) %>%
+  mutate(family = ifelse(is.na(.data[[annotation_col]]) |.data[[annotation_col]] == "", "Unclassified",.data[[annotation_col]])) %>%
   filter(!is.na(salmon_NumReads)) %>%
   group_by(sample_domain, family) %>%
   summarise(reads = sum(salmon_NumReads),.groups = "drop") %>%

@@ -59,9 +59,9 @@ class DatabaseDef {
         settingKey: json['setting_key'] as String,
         configKey: json['config_key'] as String?,
         sizeGb: json['size_gb'] as num? ?? 0,
-        downloadOptions: (json['download_options'] as List? ?? const []).map((e) => DownloadOption.fromJson(e as Map<String, dynamic>, lang)).toList,
+        downloadOptions: (json['download_options'] as List? ?? const []).map((e) => DownloadOption.fromJson(e as Map<String, dynamic>, lang)).toList(),
         path: json['path'] as String?,
         configured: json['configured'] as bool? ?? false,
-        usedBy: (json['used_by'] as List?)?.map((e) => e.toString).toList,
+        usedBy: (json['used_by'] as List?)?.map((e) => e.toString()).toList(),
       );
 }

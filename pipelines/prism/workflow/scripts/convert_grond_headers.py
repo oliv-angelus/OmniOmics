@@ -59,7 +59,7 @@ def load_taxonomy(path):
     return tax
 
 
-def main:
+def main() :
     ap = argparse.ArgumentParser
     ap.add_argument("--fasta", required=True, help="GROND *_nrRep.fna.gz (or *_full.fna.gz)")
     ap.add_argument("--taxonomy", required=True, help="matching GROND *_taxRep.tsv (or *_taxFull.tsv)")
@@ -77,7 +77,7 @@ def main:
             if line.startswith(">"):
                 # FASTA id is the whole header token (no description field in
                 # GROND's real output, but split defensively anyway).
-                cluster_id = line[1:].split[0].strip
+                cluster_id = line[1:].split()[0].strip()
                 lineage = tax.get(cluster_id)
                 if lineage is None:
                     # A sequence with no taxonomy row can't be classified

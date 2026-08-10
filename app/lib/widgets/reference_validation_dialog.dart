@@ -40,7 +40,7 @@ class _ReferenceValidationDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_ReferenceValidationDialog> createState => _ReferenceValidationDialogState;
+  ConsumerState<_ReferenceValidationDialog> createState() => _ReferenceValidationDialogState();
 }
 
 class _ReferenceValidationDialogState extends ConsumerState<_ReferenceValidationDialog> {
@@ -51,14 +51,14 @@ class _ReferenceValidationDialogState extends ConsumerState<_ReferenceValidation
       ],
     );
     if (result == null) return;
-    setState( {
+    setState(() {
       widget.skipped.remove(sample);
       widget.overrides[sample] = result.path;
     });
   }
 
   void _skip(String sample) {
-    setState( {
+    setState(() {
       widget.overrides.remove(sample);
       widget.skipped.add(sample);
     });
@@ -132,9 +132,9 @@ class _ReferenceValidationDialogState extends ConsumerState<_ReferenceValidation
             const SizedBox(height: 8),
             Row(
               children: [
-                TextButton(onPressed:  => _skip(sample), child: Text(ref.t('reference_validation_skip_button'))),
+                TextButton(onPressed: () => _skip(sample), child: Text(ref.t('reference_validation_skip_button'))),
                 const SizedBox(width: 8),
-                OutlinedButton(onPressed:  => _pickFile(sample), child: Text(ref.t('reference_validation_pick_button'))),
+                OutlinedButton(onPressed: () => _pickFile(sample), child: Text(ref.t('reference_validation_pick_button'))),
               ],
             ),
           ],

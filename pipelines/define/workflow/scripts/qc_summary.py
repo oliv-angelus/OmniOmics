@@ -14,7 +14,7 @@ import re
 import pandas as pd
 
 
-def main:
+def main() :
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fastp", nargs="+", required=True)
     parser.add_argument("--bowtie2-logs", nargs="+", required=True)
@@ -36,7 +36,7 @@ def main:
 
     alignment = {}
     for path, sample in zip(args.bowtie2_logs, samples):
-        text = open(path).read
+        text = open(path).read()
         m = re.search(r"([\d.]+)% overall alignment rate", text)
         alignment[sample] = float(m.group(1)) if m else None
 

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 /// after main.dart confirms the backend sidecar process is up and healthy.
 class ApiClient {
   final String baseUrl;
-  final http.Client _client = http.Client;
+  final http.Client _client = http().Client;
 
   ApiClient({required this.baseUrl});
 
@@ -35,10 +35,10 @@ class ApiClient {
 
   String wsUrl(String path) {
     final uri = Uri.parse('$baseUrl$path');
-    return uri.replace(scheme: uri.scheme == 'https' ? 'wss': 'ws').toString;
+    return uri.replace(scheme: uri.scheme == 'https' ? 'wss': 'ws').toString();
   }
 
-  void dispose => _client.close;
+  void dispose() => _client.close();
 }
 
 class ApiException implements Exception {
@@ -47,5 +47,5 @@ class ApiException implements Exception {
   ApiException(this.statusCode, this.body);
 
   @override
-  String toString => 'ApiException($statusCode): $body';
+  String toString() => 'ApiException($statusCode): $body';
 }

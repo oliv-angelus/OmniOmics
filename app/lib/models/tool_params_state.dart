@@ -14,7 +14,7 @@ class ToolParamsState {
   ToolParamsState.fromDefaults(ToolDef tool) {
     for (final flag in tool.flags) {
       if (flag.enabledByDefault) enabledFlags.add(flag.flag);
-      if (flag.defaultValue != null) flagValues[flag.flag] = flag.defaultValue.toString;
+      if (flag.defaultValue != null) flagValues[flag.flag] = flag.defaultValue.toString();
     }
   }
 }
@@ -28,11 +28,11 @@ String buildToolParamsString(ToolDef tool, ToolParamsState state) {
     if (flag.type == 'bool') {
       parts.add(flag.flag);
     } else {
-      final val = state.flagValues[flag.flag] ?? flag.defaultValue?.toString ?? '';
+      final val = state.flagValues[flag.flag] ?? flag.defaultValue?.toString() ?? '';
       if (val.isNotEmpty) parts.add('${flag.flag} $val');
     }
   }
   final assembled = parts.join(' ');
-  final extra = state.extraParams.trim;
+  final extra = state.extraParams.trim();
   return [assembled, extra].where((s) => s.isNotEmpty).join(' ');
 }

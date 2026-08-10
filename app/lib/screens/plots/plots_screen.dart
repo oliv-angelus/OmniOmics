@@ -20,7 +20,7 @@ class PlotsScreen extends ConsumerStatefulWidget {
   const PlotsScreen({super.key});
 
   @override
-  ConsumerState<PlotsScreen> createState => _PlotsScreenState;
+  ConsumerState<PlotsScreen> createState() => _PlotsScreenState();
 }
 
 class _PlotsScreenState extends ConsumerState<PlotsScreen> {
@@ -29,21 +29,21 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
   String? _error;
 
   @override
-  void initState {
-    super.initState;
-    _loadRuns;
+  void initState() {
+    super.initState();
+    _loadRuns();
   }
 
-  Future<void> _loadRuns async {
-    setState( => _loading = true);
+  Future<void> _loadRuns() async {
+    setState(() => _loading = true);
     try {
       final api = ref.read(apiClientProvider);
       final raw = await api.get('/api/runs') as List;
-      final runs = raw.map((e) => RunRecord.fromJson(e as Map<String, dynamic>)).where((r) => r.status == 'done').toList;
+      final runs = raw.map((e) => RunRecord.fromJson(e as Map<String, dynamic>)).where((r) => r.status == 'done').toList();
       if (!mounted) return;
-      setState( { _runs = runs; _loading = false; _error = null; });
+      setState(() { _runs = runs; _loading = false; _error = null; });
     } catch (e) {
-      if (mounted) setState( { _error = e.toString; _loading = false; });
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -80,7 +80,7 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
   }
 
   Widget _buildBody(AppPalette colors, AsyncValue<List<PipelineSummary>> pipelinesAsync) {
-    if (_loading || pipelinesAsync.isLoading) return const Center(child: CircularProgressIndicator);
+    if (_loading || pipelinesAsync.isLoading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
       return Center(child: Text('${ref.t('error_prefix')}: $_error', style: TextStyle(color: colors.statusError)));
     }
@@ -108,7 +108,7 @@ class _RunCard extends ConsumerWidget {
   const _RunCard({required this.run, required this.pipeline});
 
   String _formatWhen(DateTime dt) {
-    two(int n) => n.toString.padLeft(2, '0');
+    two(int n) => n.toString().padLeft(2, '0');
     return '${two(dt.day)}/${two(dt.month)}/${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
   }
 
@@ -121,7 +121,7 @@ class _RunCard extends ConsumerWidget {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap:  => ref.read(embeddedPlotRunProvider.notifier).state = run,
+        onTap: () => ref.read(embeddedPlotRunProvider.notifier).state = run,
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -160,13 +160,13 @@ class _RunCard extends ConsumerWidget {
               Text(run.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
               Text(run.pipelineName, style: TextStyle(fontSize: 12.5, color: colors.textSecondary)),
-              const Spacer,
+              const Spacer(),
               Row(
                 children: [
                   Icon(Icons.schedule, size: 13, color: colors.textMuted),
                   const SizedBox(width: 4),
                   Text(_formatWhen(run.startedAtDate), style: TextStyle(fontSize: 11.5, color: colors.textMuted)),
-                  const Spacer,
+                  const Spacer(),
                   Icon(Icons.arrow_forward, size: 18, color: colors.textMuted),
                 ],
               ),

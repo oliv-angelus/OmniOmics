@@ -5,7 +5,7 @@
 # added at the user's request, same as venn_diagram. Set computation is a
 # direct copy of venn_diagram.R's (kept independently checkable there too);
 # only the plotting library and the no-cap validation differ.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -43,7 +43,7 @@ if (!(group_var %in% colnames(sample_data(ps)))) {
                group_var, paste(colnames(sample_data(ps)), collapse = ", ")))
 }
 
-groups <- unique(as.character(data.frame(sample_data(ps))group_var))
+groups <- unique(as.character(data.frame(sample_data(ps))[[group_var]]))
 groups <- groups[!is.na(groups)]
 # No upper cap -- that's the entire point of this analysis vs. venn_diagram's
 # 4-set limit. Still needs >= 2 sets to compare, same as Venn.
@@ -60,14 +60,14 @@ taxon_label <- function(taxon_id) {
 }
 
 present_sets <- lapply(groups, function(g) {
-  ps_g <- prune_samples(sample_names(ps_glom)[data.frame(sample_data(ps_glom))group_var == g], ps_glom)
+  ps_g <- prune_samples(sample_names(ps_glom)[data.frame(sample_data(ps_glom))[[group_var]] == g], ps_glom)
   mean_abund <- taxa_sums(ps_g) / nsamples(ps_g)
   taxon_ids <- names(mean_abund)[mean_abund > min_abundance]
   unique(vapply(taxon_ids, taxon_label, character(1)))
 })
 names(present_sets) <- groups
 
-log_line("[upset_plot] set sizes: %s", paste(sprintf("%s=%d", groups, lengths(present_sets)), collapse = ", "))
+log_line("[upset_plot] set sizes: %s", paste(sprintf("%s=%d[[", groups, lengths(present_sets)), collapse = "]], "))
 
 all_taxa <- unique(unlist(present_sets))
 if (length(all_taxa) == 0) stop("No taxon met --min_abundance in any group -- try lowering it.")

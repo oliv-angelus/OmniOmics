@@ -81,7 +81,7 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
   WsClient? _ws;
 
   @override
-  PipelineRunState? build => null;
+  PipelineRunState? build() => null;
 
   bool get isRunning => state != null && !state!.finished;
 
@@ -92,7 +92,7 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
     required int cores,
     required List<String> omitFrom,
   }) {
-    _ws?.close;
+    _ws?.close();
     state = PipelineRunState(
       pipelineId: pipelineId,
       pipelineName: pipelineName,
@@ -120,7 +120,7 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
           state = current.copyWith(runId: event['id'] as String?);
           break;
         case 'log':
-          state = current.copyWith(log: [...current.log, (event['text'] as String).trimRight]);
+          state = current.copyWith(log: [...current.log, (event['text'] as String).trimRight()]);
           break;
         case 'job_start':
           final id = event['jobid'] as int;
@@ -174,7 +174,7 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
     });
   }
 
-  Future<void> stop async {
+  Future<void> stop() async {
     final current = state;
     if (current == null) return;
     state = current.copyWith(
@@ -187,8 +187,8 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
 
   /// Clears the banner/state once the user has seen a finished run -- does not
   /// touch the backend (the run is already over by the time this is called).
-  void dismiss {
-    _ws?.close;
+  void dismiss() {
+    _ws?.close();
     _ws = null;
     state = null;
   }

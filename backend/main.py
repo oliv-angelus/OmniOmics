@@ -44,7 +44,7 @@ def clean_output(raw: bytes) -> str:
     result = []
     for line in text.split('\n'):
         # \r used by conda/wget for in-place progress: keep last segment
-        segs = [s for s in line.split('\r') if s.strip]
+        segs = [s for s in line.split('\r') if s.strip()]
         if segs:
             result.append(segs[-1])
     return ('\n'.join(result) + '\n') if result else ''
@@ -74,9 +74,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Setup (global, pipeline-agnostic) --- REQUIRED_PY_PACKAGES = ["fastapi", "uvicorn", "httpx", "aiofiles", "psutil", "yaml"]
+# --- Setup (global, pipeline-agnostic) ---
 
-def check_python_deps -> dict:
+REQUIRED_PY_PACKAGES = ["fastapi", "uvicorn", "httpx", "aiofiles", "psutil", "yaml"]
+
+def check_python_deps() -> dict:
     """Check that all required Python packages are importable."""
     import importlib
     missing = []
@@ -91,7 +93,7 @@ def check_python_deps -> dict:
         "packages":  REQUIRED_PY_PACKAGES,
     }
 
-def check_vibrant_tools -> dict:
+def check_vibrant_tools() -> dict:
     """Check if HMMER3 (hmmfetch, hmmpress) and wget are available."""
     hmmfetch = shutil.which("hmmfetch")
     hmmpress = shutil.which("hmmpress")
@@ -105,11 +107,11 @@ def check_vibrant_tools -> dict:
     }
 
 @app.get("/api/setup/status")
-def setup_status:
-    conda         = check_conda
+def setup_status() :
+    conda         = check_conda()
     snakemake     = check_snakemake(conda)
-    vibrant_tools = check_vibrant_tools
-    python_deps   = check_python_deps
+    vibrant_tools = check_vibrant_tools()
+    python_deps   = check_python_deps()
     return {"conda": conda, "snakemake": snakemake,
             "vibrant_tools": vibrant_tools, "python_deps": python_deps}
 
@@ -119,7 +121,7 @@ async def install_python_deps_ws(websocket: WebSocket):
     await websocket.accept
     proc = None
     try:
-        deps = check_python_deps
+        deps = check_python_deps()
         if deps["installed"]:
             await websocket.send_json({"type": "done", "status": deps})
             return
@@ -137,7 +139,7 @@ async def install_python_deps_ws(websocket: WebSocket):
             text = clean_output(line)
             if text:
                 await websocket.send_json({"type": "log", "text": text})
-        rc = await proc.wait
+        rc = await proc.wait()
 
         if rc == 0:
             await websocket.send_json({"type": "done", "status": check_python_deps})
@@ -146,7 +148,7 @@ async def install_python_deps_ws(websocket: WebSocket):
                 "text": "pip install falhou. Tente: pip install -r backend/requirements.txt"})
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
-            proc.terminate
+            proc.terminate()
     except Exception as e:
         try:
             await websocket.send_json({"type": "error", "text": str(e)})
@@ -159,7 +161,7 @@ async def install_conda_route(path: str = "/home/" + os.environ.get("USER", "use
     return result
 
 @app.post("/api/setup/install-snakemake")
-async def install_snakemake_route:
+async def install_snakemake_route() :
     result = await install_snakemake
     return result
 
@@ -207,7 +209,7 @@ async def install_conda_ws(websocket: WebSocket):
         # problem was upstream. Catch it here with a clear message instead.
         with open(installer, "rb") as f:
             head = f.read(64)
-        if not head.lstrip.startswith(b"#!"):
+        if not head.lstrip().startswith(b"#!"):
             await websocket.send_json({"type": "error",
                 "text": f"Download inválido: {installer} não parece ser um instalador shell "
                         f"(a URL pode estar fora do ar ou ter mudado). Início do arquivo: {head[:40]!r}\n"})
@@ -225,7 +227,7 @@ async def install_conda_ws(websocket: WebSocket):
             text = clean_output(line)
             if text:
                 await websocket.send_json({"type": "log", "text": text})
-        await proc.wait
+        await proc.wait()
 
         conda_bin = os.path.join(install_path, "bin", "conda")
         if proc.returncode == 0 and os.path.isfile(conda_bin):
@@ -240,7 +242,7 @@ async def install_conda_ws(websocket: WebSocket):
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
-            proc.terminate
+            proc.terminate()
     except Exception as e:
         try:
             await websocket.send_json({"type": "error", "text": str(e)})
@@ -254,7 +256,7 @@ async def install_snakemake_ws(websocket: WebSocket):
     proc = None
     try:
         from settings_store import load_settings
-        settings = load_settings
+        settings = load_settings()
         conda = settings.get("conda_path") or shutil.which("conda") or "conda"
 
         await websocket.send_json({"type": "log", "text": f"Usando conda: {conda}\n"})
@@ -271,7 +273,7 @@ async def install_snakemake_ws(websocket: WebSocket):
             text = clean_output(line)
             if text:
                 await websocket.send_json({"type": "log", "text": text})
-        await proc.wait
+        await proc.wait()
 
         if proc.returncode == 0:
             await websocket.send_json({"type": "done"})
@@ -280,7 +282,7 @@ async def install_snakemake_ws(websocket: WebSocket):
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
-            proc.terminate
+            proc.terminate()
     except Exception as e:
         try:
             await websocket.send_json({"type": "error", "text": str(e)})
@@ -293,7 +295,7 @@ async def install_vibrant_tools_ws(websocket: WebSocket):
     await websocket.accept
     proc = None
     try:
-        conda = check_conda
+        conda = check_conda()
         if not conda["installed"]:
             await websocket.send_json({"type": "error",
                 "text": "Conda not found. Install conda first."})
@@ -315,17 +317,17 @@ async def install_vibrant_tools_ws(websocket: WebSocket):
             text = clean_output(line)
             if text:
                 await websocket.send_json({"type": "log", "text": text})
-        rc = await proc.wait
+        rc = await proc.wait()
 
         if rc == 0:
-            status = check_vibrant_tools
+            status = check_vibrant_tools()
             await websocket.send_json({"type": "done", "status": status})
         else:
             await websocket.send_json({"type": "error",
                 "text": "conda install exited with errors."})
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
-            proc.terminate
+            proc.terminate()
     except Exception as e:
         try:
             await websocket.send_json({"type": "error", "text": str(e)})
@@ -333,7 +335,7 @@ async def install_vibrant_tools_ws(websocket: WebSocket):
             pass
 
 # --- Sistema (global) --- @app.get("/api/system/info")
-def system_info:
+def system_info() :
     return get_system_info
 
 @app.websocket("/ws/system")
@@ -341,23 +343,23 @@ async def system_monitor_ws(websocket: WebSocket):
     await websocket.accept
     try:
         while True:
-            data = get_system_info
+            data = get_system_info()
             await websocket.send_json(data)
             await asyncio.sleep(2)
     except WebSocketDisconnect:
         pass
 
 # --- Pipeline registry (Hub) --- @app.get("/api/pipelines")
-def pipelines_list:
+def pipelines_list() :
     return pipelines.list_pipelines
 
 @app.get("/api/pipelines/running")
-def pipelines_running:
+def pipelines_running() :
     """Pipeline ids with a run currently in progress -- lets the UI offer a
     'back to monitor' affordance after navigating away, or on app restart.
     Registered before /api/pipelines/{pid} so "running" isn't swallowed as a pid.
     """
-    return {"running": [pid for pid, p in pipeline_processes.items if p.returncode is None]}
+    return {"running": [pid for pid, p in pipeline_processes.items() if p.returncode is None]}
 
 @app.get("/api/pipelines/{pid}")
 def pipelines_get(pid: str):
@@ -379,7 +381,7 @@ def tools_params_string(pid: str, data: dict):
     return {"params": tools_engine.build_params_string(pid, tool_id, flags)}
 
 # --- Databases (per pipeline) --- @app.get("/api/databases")
-def all_databases_status:
+def all_databases_status() :
     """Hub-level, cross-pipeline database list -- lets the user configure a
     database (e.g. CheckM2, shared by MAGMA and SIGMA) once, before picking a
     pipeline. Each entry names a (source_pipeline_id, source_key) pair the
@@ -428,7 +430,7 @@ def databases_set_base_dir(pid: str, data: dict):
 def databases_get_base_dir(pid: str):
     """Last folder used for downloads/detection -- lets the UI pre-fill the
     'download all missing' dialog with wherever the user already keeps databases."""
-    return {"base_dir": load_settings.get("db_base_dir", "")}
+    return {"base_dir": load_settings().get("db_base_dir", "")}
 
 @app.post("/api/pipelines/{pid}/databases/detect")
 def databases_detect(pid: str, data: dict):
@@ -454,7 +456,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
     dest_dir_preexisted = os.path.isdir(dest_dir)
     os.makedirs(dest_dir, exist_ok=True)
 
-    def _cleanup_partial:
+    def _cleanup_partial() :
         for p in created_paths:
             try:
                 if os.path.isdir(p) and not os.path.islink(p):
@@ -484,7 +486,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
                 if not filename:
                     cd = resp.headers.get("content-disposition", "")
                     m = re.search(r'filename\*?=(?:UTF-8\'\')?["\']?([^\"\';]+)', cd, re.I)
-                    filename = m.group(1).strip if m else "download"
+                    filename = m.group(1).strip() if m else "download"
                 dest_file = os.path.join(dest_dir, filename)
                 if dest_file not in created_paths:
                     created_paths.append(dest_file)
@@ -534,7 +536,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
             out = path[:-3]
             await send({"type": "log", "text": f"Decompressing {fname}…\n"})
             loop = asyncio.get_event_loop
-            def _gunzip:
+            def _gunzip() :
                 with gzip.open(path, "rb") as fi, open(out, "wb") as fo:
                     shutil.copyfileobj(fi, fo)
                 os.remove(path)
@@ -561,7 +563,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
                 text = clean_output(line)
                 if text:
                     await send({"type": "log", "text": text})
-            await proc.wait
+            await proc.wait()
             # Track every top-level entry the archive added (diffing the dir is
             # simpler and more robust than parsing tar's member list), then drop
             # the archive itself from tracking since it's about to be removed.
@@ -586,7 +588,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
             text = clean_output(line)
             if text:
                 await send({"type": "log", "text": text})
-        return await proc.wait
+        return await proc.wait()
 
     # ── VIBRANT special setup ─────────────────────────────────────────────
     if opt.get("vibrant_setup"):
@@ -599,7 +601,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
-            return (await proc.wait) == 0
+            return (await proc.wait()) == 0
 
         for tool in ("wget", "hmmfetch", "hmmpress"):
             if not await tool_exists(tool):
@@ -719,7 +721,7 @@ async def _download_task(key: str, pid: str, db_key: str, opt_id: str, dest_dir:
         await _emit_download(key, {"type": "done", "path": path})
     except asyncio.CancelledError:
         # Explicit /cancel -- that route already set status/emitted "cancelled"
-        # and popped download_tasks before calling task.cancel, so there's
+        # and popped download_tasks before calling task.cancel(), so there's
         # nothing left to report here. Must not fall into `except Exception`
         # below (CancelledError doesn't inherit from it on py>=3.8 anyway, but
         # spelled out since silently swallowing it would also stop it from
@@ -747,8 +749,8 @@ async def _cancel_download(key: str) -> bool:
     an interrupted/failed download already did before this existed.
     """
     task = download_tasks.pop(key, None)
-    if task and not task.done:
-        task.cancel
+    if task and not task.done():
+        task.cancel()
     was_running = download_status.get(key) == "running"
     download_status[key] = "cancelled"
     await _emit_download(key, {"type": "cancelled"})
@@ -936,8 +938,8 @@ async def _download_all_task(batch_id: str, base_dir: str, chosen_options: dict,
 
 async def _cancel_download_all(pid: str) -> bool:
     task = download_all_tasks.pop(pid, None)
-    if task and not task.done:
-        task.cancel
+    if task and not task.done():
+        task.cancel()
     was_running = download_all_status.get(pid) == "running"
     download_all_status[pid] = "cancelled"
     await _emit_download_all(pid, {"type": "cancelled"})
@@ -974,7 +976,7 @@ async def database_download_all_ws(websocket: WebSocket, pid: str):
     # Snapshot backlog + subscribe with no await in between (see the same note
     # in database_download_ws for why the ordering matters on a fresh start).
     backlog = list(download_all_log.get(pid, []))
-    progress_snapshot = list(download_all_progress.get(pid, {}).values)
+    progress_snapshot = list(download_all_progress.get(pid, {}).values())
     status = download_all_status.get(pid)
     q: asyncio.Queue = asyncio.Queue
     download_all_subscribers.setdefault(pid, []).append(q)
@@ -1011,11 +1013,11 @@ def get_launch_draft(pid: str):
     Separate from config.yaml on purpose: config.yaml only exists once an output
     folder is chosen and Salvar/Iniciar was pressed, and doesn't round-trip cleanly
     back into per-tool UI state -- this is the raw form data instead."""
-    return load_settings.get("launch_drafts", {}).get(pid, {})
+    return load_settings().get("launch_drafts", {}).get(pid, {})
 
 @app.post("/api/pipelines/{pid}/draft")
 def save_launch_draft(pid: str, data: dict):
-    settings = load_settings
+    settings = load_settings()
     drafts = settings.get("launch_drafts", {})
     drafts[pid] = data
     save_settings({"launch_drafts": drafts})
@@ -1076,14 +1078,14 @@ pipeline_current_run: dict = {}  # pid -> runs_store run id, for /stop and the R
 def _kill_process_group(proc):
     """Terminates the whole process tree, not just the top-level PID -- snakemake
     (and `conda run` wrapping it) spawn further worker subprocesses that a plain
-    proc.terminate wouldn't reach, leaving them running after 'stop'."""
+    proc.terminate() wouldn't reach, leaving them running after 'stop'."""
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     except ProcessLookupError:
         pass
 
 
-def _subprocess_env -> dict:
+def _subprocess_env() -> dict:
     """Environment for every subprocess this backend spawns and lets run
     scripts of its own (Snakemake, and now the Plots tab's Rscript jobs) -- generic despite the historical name, kept as one shared helper rather than
     per-subsystem copies.
@@ -1106,7 +1108,7 @@ def _subprocess_env -> dict:
     must not shadow the r-plots conda env's package versions when spawning
     Rscript for the Plots tab (see plots_engine.resolve_rscript).
     """
-    env = os.environ.copy
+    env = os.environ.copy()
     roots = {p for p in (env.pop("VIRTUAL_ENV", None),
                          sys.prefix if sys.prefix != sys.base_prefix else None) if p}
     if roots:
@@ -1136,7 +1138,7 @@ def _parse_snk_line(text: str, state: dict) -> list:
     state is a mutable dict shared across calls (accumulates rule block fields).
     """
     events = []
-    s = text.rstrip
+    s = text.rstrip()
 
     # Any non-indented, non-empty line flushes a pending block
     if s and not s[0].isspace:
@@ -1171,11 +1173,11 @@ def _parse_snk_line(text: str, state: dict) -> list:
         m = re.match(r'\s+wildcards:\s*(.+)', s)
         if m:
             for part in m.group(1).split(','):
-                part = part.strip
+                part = part.strip()
                 if '=' in part:
                     k, v = part.split('=', 1)
-                    if k.strip == 'sample':
-                        blk['sample'] = v.strip
+                    if k.strip() == 'sample':
+                        blk['sample'] = v.strip()
 
     # Finished job
     m = re.match(r'Finished job (\d+)\.', s)
@@ -1253,17 +1255,17 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
             await _emit(pid, {"type": "log", "text": text})
             for event in _parse_snk_line(text, parser_state):
                 await _emit(pid, event)
-        await proc.wait
+        await proc.wait()
         exit_code = proc.returncode
     except Exception as e:
         # Whatever went wrong reading the process's output, the run itself may
         # still be alive -- make sure it isn't left behind, and always fall
         # through to emitting "done" so any attached viewer doesn't hang forever.
         try:
-            proc.kill
+            proc.kill()
         except ProcessLookupError:
             pass
-        await proc.wait
+        await proc.wait()
         exit_code = proc.returncode
         await _emit(pid, {"type": "log", "text": f"[erro interno monitorando a execução: {e}]\n"})
     finally:
@@ -1273,7 +1275,7 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
         current = next((r for r in runs_store.list_runs if r["id"] == run_id), None)
         if not current or current.get("status") != "stopped":
             runs_store.update_run(run_id, status="done" if exit_code == 0 else "error",
-                                   exit_code=exit_code, finished_at=time.time)
+                                   exit_code=exit_code, finished_at=time.time())
             current = next((r for r in runs_store.list_runs if r["id"] == run_id), None)
 
         # Provenance/reproducibility report -- written even for a stopped/failed
@@ -1335,7 +1337,7 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         conda = None
         if not snakemake_bin:
             from settings_store import load_settings
-            settings = load_settings
+            settings = load_settings()
             conda = settings.get("conda_path") or shutil.which("conda") or "conda"
             if conda and os.path.isfile(conda):
                 candidate = os.path.join(os.path.dirname(os.path.dirname(conda)), "envs", "snakemake", "bin", "snakemake")
@@ -1376,9 +1378,9 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
                 env=_subprocess_env,
             )
             try:
-                await asyncio.wait_for(unlock_proc.communicate, timeout=30)
+                await asyncio.wait_for(unlock_proc.communicate(), timeout=30)
             except asyncio.TimeoutError:
-                unlock_proc.kill
+                unlock_proc.kill()
 
         # Parar clicked before the real process even existed (still resolving
         # the binary / running --unlock above) -- pipeline_processes has
@@ -1399,7 +1401,7 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         log_dir = os.path.join(output_dir, "logs")
         os.makedirs(log_dir, exist_ok=True)
         log_path = os.path.join(log_dir, "omniomics_events.jsonl")
-        open(log_path, "w").close
+        open(log_path, "w").close()
         pipeline_log_paths[pid] = log_path
 
         pipeline_finished[pid] = False
@@ -1421,7 +1423,7 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
     if log_path and os.path.isfile(log_path):
         async with aiofiles.open(log_path, "r") as f:
             async for line in f:
-                line = line.strip
+                line = line.strip()
                 if not line:
                     continue
                 try:
@@ -1454,7 +1456,7 @@ async def stop_pipeline(pid: str):
     if proc and proc.returncode is None:
         run_id = pipeline_current_run.get(pid)
         if run_id:
-            runs_store.update_run(run_id, status="stopped", finished_at=time.time)
+            runs_store.update_run(run_id, status="stopped", finished_at=time.time())
         _kill_process_group(proc)
         return {"stopped": True}
     # Nothing to kill yet -- most likely the request landed while still
@@ -1468,7 +1470,7 @@ async def stop_pipeline(pid: str):
     return {"stopped": True}
 
 @app.get("/api/runs")
-def api_list_runs:
+def api_list_runs() :
     """Backs the Results page's run list -- every run ever started, most recent
     first, across all pipelines. File browsing itself happens client-side
     (dart:io) directly against each run's output_dir, no endpoint needed for that."""
@@ -1518,7 +1520,7 @@ def delete_runs(data: dict):
     all_runs = runs_store.list_runs
     by_id = {r["id"]: r for r in all_runs}
 
-    active_run_ids = set(pipeline_current_run.values)
+    active_run_ids = set(pipeline_current_run.values())
     blocked_active = sorted(requested_ids & active_run_ids)
     requested_ids = {rid for rid in requested_ids if rid in by_id and rid not in active_run_ids}
 
@@ -1566,7 +1568,7 @@ def rename_run(run_id: str, data: dict):
     a display label -- deletion and every other lookup key off the run's own
     id, so renaming (including to something duplicated) can't cause a run to
     be confused with another one."""
-    name = (data.get("name") or "").strip
+    name = (data.get("name") or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Name cannot be empty.")
     runs_store.update_run(run_id, name=name)
@@ -1646,7 +1648,7 @@ async def load_plot_data(data: dict):
     if not parent_run:
         raise HTTPException(status_code=404, detail="Parent run not found.")
 
-    settings = load_settings
+    settings = load_settings()
     rscript = plots_engine.resolve_rscript(settings.get("conda_path"))
     if not rscript:
         raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
@@ -1675,15 +1677,15 @@ async def load_plot_data(data: dict):
         env=_subprocess_env,
     )
     try:
-        stdout, _ = await asyncio.wait_for(proc.communicate, timeout=120)
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
     except asyncio.TimeoutError:
-        proc.kill
+        proc.kill()
         raise HTTPException(status_code=504, detail="Carregamento demorou demais (timeout).")
 
     if proc.returncode != 0:
         raise HTTPException(status_code=400, detail=clean_output(stdout))
 
-    columns_path = os.path.join(out_dir, "metadata_columns.json")
+    columns_path = os.path.join(out_dir, "metadata_columns.json()")
     with open(columns_path, encoding="utf-8") as f:
         columns_data = json.load(f)
 
@@ -1742,21 +1744,21 @@ async def _run_plot_task(run_id: str, cmd: list, cwd: str, plot_run_id: str | No
             if not text:
                 continue
             await _emit_plot(run_id, {"type": "log", "text": text})
-        await proc.wait
+        await proc.wait()
         exit_code = proc.returncode
     except Exception as e:
         try:
-            proc.kill
+            proc.kill()
         except ProcessLookupError:
             pass
-        await proc.wait
+        await proc.wait()
         exit_code = proc.returncode
         await _emit_plot(run_id, {"type": "log", "text": f"[erro interno monitorando a execução: {e}]\n"})
     finally:
         plot_finished[run_id] = True
         if plot_run_id:
             plot_runs_store.update_plot_run(
-                plot_run_id, status="done" if exit_code == 0 else "error", finished_at=time.time
+                plot_run_id, status="done" if exit_code == 0 else "error", finished_at=time.time()
             )
         await _emit_plot(run_id, {"type": "done", "code": exit_code})
         plot_processes.pop(run_id, None)
@@ -1766,7 +1768,7 @@ async def _run_plot_task(run_id: str, cmd: list, cwd: str, plot_run_id: str | No
 @app.post("/api/plots/{analysis_id}/run")
 async def run_plot_analysis(analysis_id: str, data: dict):
     """Starts an analysis's R compute step against a finished pipeline run's
-    output. Writes data.json/default_style.json/<analysis>.rds under
+    output. Writes data.json()/default_style.json()/<analysis>.rds under
     <parent_run.output_dir>/plots/<analysis_id>_<timestamp>/ -- lands inside
     the parent run's own folder so it shows up in the Results tab's existing
     file tree for free (see the Plots-tab architecture note in
@@ -1781,7 +1783,7 @@ async def run_plot_analysis(analysis_id: str, data: dict):
     if not parent_run:
         raise HTTPException(status_code=404, detail="Parent run not found.")
 
-    settings = load_settings
+    settings = load_settings()
     rscript = plots_engine.resolve_rscript(settings.get("conda_path"))
     if not rscript:
         raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
@@ -1822,7 +1824,7 @@ async def run_plot_analysis(analysis_id: str, data: dict):
     cmd += plots_engine.build_params_args(analysis_id, param_states)
 
     log_path = os.path.join(out_dir, "run_events.jsonl")
-    open(log_path, "w").close
+    open(log_path, "w").close()
     plot_log_paths[run_id] = log_path
     plot_finished[run_id] = False
     plot_subscribers.setdefault(run_id, [])
@@ -1842,7 +1844,7 @@ async def plots_ws(websocket: WebSocket, run_id: str):
     if log_path and os.path.isfile(log_path):
         async with aiofiles.open(log_path, "r") as f:
             async for line in f:
-                line = line.strip
+                line = line.strip()
                 if not line:
                     continue
                 try:
@@ -1872,15 +1874,15 @@ async def plots_ws(websocket: WebSocket, run_id: str):
 
 @app.post("/api/plots/{run_id}/export")
 async def export_plot(run_id: str, data: dict):
-    """Runs the generic export/render_final.R against a compute run's cached.rds + style.json at the user's chosen format/DPI/size. Phase 1: style.json
-    is still whatever the compute step wrote (default_style.json) -- the
+    """Runs the generic export/render_final.R against a compute run's cached.rds + style.json() at the user's chosen format/DPI/size. Phase 1: style.json()
+    is still whatever the compute step wrote (default_style.json()) -- the
     interactive preview widget that lets a user edit it doesn't exist yet
     (Phase 2 of the Plots-tab plan)."""
     run = plot_runs_store.get_plot_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Plot run not found.")
 
-    settings = load_settings
+    settings = load_settings()
     rscript = plots_engine.resolve_rscript(settings.get("conda_path"))
     if not rscript:
         raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
@@ -1898,9 +1900,9 @@ async def export_plot(run_id: str, data: dict):
     if data.get("height"):
         cmd += ["--height", str(data["height"])]
 
-    export_run_id = f"{run_id}_export_{int(time.time)}"
+    export_run_id = f"{run_id}_export_{int(time.time())}"
     log_path = os.path.join(run_dir, "export_events.jsonl")
-    open(log_path, "w").close
+    open(log_path, "w").close()
     plot_log_paths[export_run_id] = log_path
     plot_finished[export_run_id] = False
     plot_subscribers.setdefault(export_run_id, [])
@@ -1914,26 +1916,26 @@ def api_list_plot_runs(parent_run_id: str | None = None):
 
 
 @app.get("/api/plots/r-env/status")
-def api_r_env_status:
-    settings = load_settings
+def api_r_env_status() :
+    settings = load_settings()
     return plots_engine.check_r_env(settings.get("conda_path"))
 
 
 @app.post("/api/plots/r-env/install")
-async def api_install_r_env:
-    settings = load_settings
+async def api_install_r_env() :
+    settings = load_settings()
     conda = settings.get("conda_path") or shutil.which("conda") or "conda"
     return await plots_engine.install_r_env(conda)
 
 
 @app.on_event("shutdown")
-async def _stop_all_pipelines_on_exit:
+async def _stop_all_pipelines_on_exit() :
     """Only real app shutdown reaches here (see BackendLauncher / didChangeAppLifecycleState
     on the Flutter side) -- navigating within the app never triggers this."""
-    for proc in pipeline_processes.values:
+    for proc in pipeline_processes.values():
         if proc.returncode is None:
             _kill_process_group(proc)
-    for proc in plot_processes.values:
+    for proc in plot_processes.values():
         if proc.returncode is None:
             _kill_process_group(proc)
     if _dev_reload_observer is not None:

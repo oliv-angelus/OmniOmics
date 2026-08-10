@@ -16,7 +16,7 @@ class ResultsScreen extends ConsumerStatefulWidget {
   const ResultsScreen({super.key});
 
   @override
-  ConsumerState<ResultsScreen> createState => _ResultsScreenState;
+  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
 }
 
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
@@ -30,28 +30,28 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   final _treeKey = GlobalKey<ResultsFileTreeState>;
 
   @override
-  void initState {
-    super.initState;
-    _loadRuns;
+  void initState() {
+    super.initState();
+    _loadRuns();
     // Keep the run list itself fresh (statuses/new runs) regardless of which
     // one is selected -- cheap since it's just local JSON, not a big listing.
     _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _loadRuns(silent: true));
   }
 
   @override
-  void dispose {
-    _pollTimer?.cancel;
-    super.dispose;
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadRuns({bool silent = false}) async {
-    if (!silent) setState( => _loading = true);
+    if (!silent) setState(() => _loading = true);
     try {
       final api = ref.read(apiClientProvider);
       final raw = await api.get('/api/runs') as List;
-      final runs = raw.map((e) => RunRecord.fromJson(e as Map<String, dynamic>)).toList;
+      final runs = raw.map((e) => RunRecord.fromJson(e as Map<String, dynamic>)).toList();
       if (!mounted) return;
-      setState( {
+      setState(() {
         _runs = runs;
         // Keep the same run selected across polls (matched by id); refresh its
         // record (status may have changed) rather than losing the selection.
@@ -62,9 +62,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         _loading = false;
         _error = null;
       });
-      if (_selected?.isRunning ?? false) _treeKey.currentState?.refresh;
+      if (_selected?.isRunning ?? false) _treeKey.currentState()?.refresh;
     } catch (e) {
-      if (mounted) setState( { _error = e.toString; _loading = false; });
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -91,7 +91,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       if (_checkedIds.isNotEmpty)
                         TextButton.icon(
                           onPressed: _deleting
-                              ? null:  => _confirmAndDelete(_runs.where((r) => _checkedIds.contains(r.id)).toList),
+                              ? null: () => _confirmAndDelete(_runs.where((r) => _checkedIds.contains(r.id)).toList()),
                           style: TextButton.styleFrom(foregroundColor: colors.statusError, padding: EdgeInsets.zero),
                           icon: const Icon(Icons.delete_outline, size: 16),
                           label: Text('${ref.t('results_delete_selected')} (${_checkedIds.length})', style: const TextStyle(fontSize: 12)),
@@ -103,13 +103,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: InkWell(
-                      onTap:  {
+                      onTap: () {
                         final deletable = _runs.where((r) => !r.isRunning).map((r) => r.id);
-                        setState( {
+                        setState(() {
                           if (_checkedIds.length == deletable.length) {
-                            _checkedIds.clear;
+                            _checkedIds.clear();
                           } else {
-                            _checkedIds..clear..addAll(deletable);
+                            _checkedIds..clear()..addAll(deletable);
                           }
                         });
                       },
@@ -143,7 +143,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Widget _buildRunList(AppPalette colors) {
-    if (_loading) return const Center(child: CircularProgressIndicator);
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text('${ref.t('error_prefix')}: $_error', style: TextStyle(color: colors.statusError)));
     if (_runs.isEmpty) {
       return Center(
@@ -160,7 +160,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         final selected = run.id == _selected?.id;
         final checked = _checkedIds.contains(run.id);
         return InkWell(
-          onTap:  => setState( => _selected = run),
+          onTap: () => setState(() => _selected = run),
           child: Container(
             color: selected ? colors.surfaceAlt: null,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -169,7 +169,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 Checkbox(
                   value: checked,
                   onChanged: run.isRunning
-                      ? null: (v) => setState( {
+                      ? null: (v) => setState(() {
                             if (v == true) {
                               _checkedIds.add(run.id);
                             } else {
@@ -193,7 +193,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   icon: const Icon(Icons.delete_outline, size: 18),
                   tooltip: run.isRunning ? ref.t('results_delete_running_blocked'): ref.t('results_delete_one_tooltip'),
                   visualDensity: VisualDensity.compact,
-                  onPressed: run.isRunning || _deleting ? null:  => _confirmAndDelete([run]),
+                  onPressed: run.isRunning || _deleting ? null: () => _confirmAndDelete([run]),
                 ),
               ],
             ),
@@ -223,7 +223,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         ),
                         InkWell(
                           borderRadius: BorderRadius.circular(4),
-                          onTap:  => _renameRun(run),
+                          onTap: () => _renameRun(run),
                           child: Padding(
                             padding: const EdgeInsets.all(4),
                             child: Icon(Icons.edit_outlined, size: 15, color: colors.textMuted),
@@ -243,7 +243,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: ref.t('review_refresh'),
-                onPressed:  => _treeKey.currentState?.refresh,
+                onPressed: () => _treeKey.currentState()?.refresh,
               ),
             ],
           ),
@@ -271,7 +271,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   String _formatWhen(DateTime dt) {
-    two(int n) => n.toString.padLeft(2, '0');
+    two(int n) => n.toString().padLeft(2, '0');
     return '${two(dt.day)}/${two(dt.month)} ${two(dt.hour)}:${two(dt.minute)}';
   }
 
@@ -291,22 +291,22 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           onSubmitted: (v) => Navigator.of(dialogContext).pop(v),
         ),
         actions: [
-          TextButton(onPressed:  => Navigator.of(dialogContext).pop, child: Text(ref.t('cancel'))),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop, child: Text(ref.t('cancel'))),
           ElevatedButton(
-            onPressed:  => Navigator.of(dialogContext).pop(controller.text),
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
             child: Text(ref.t('results_rename_save')),
           ),
         ],
       ),
     );
-    controller.dispose;
-    final trimmed = newName?.trim;
+    controller.dispose();
+    final trimmed = newName?.trim();
     if (trimmed == null || trimmed.isEmpty || trimmed == run.name || !mounted) return;
 
     final api = ref.read(apiClientProvider);
     try {
       await api.post('/api/runs/${run.id}/rename', {'name': trimmed});
-      await _loadRuns;
+      await _loadRuns();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${ref.t('error_prefix')}: $e')));
@@ -320,7 +320,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   /// the backend's own block).
   Future<void> _confirmAndDelete(List<RunRecord> targets) async {
     final colors = context.colors;
-    final deletable = targets.where((r) => !r.isRunning).toList;
+    final deletable = targets.where((r) => !r.isRunning).toList();
     final blockedByRunning = targets.length - deletable.length;
     if (deletable.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('results_delete_running_blocked'))));
@@ -375,10 +375,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed:  => Navigator.of(dialogContext).pop(false), child: Text(ref.t('cancel'))),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(ref.t('cancel'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: colors.statusError, foregroundColor: Colors.white),
-            onPressed:  => Navigator.of(dialogContext).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(ref.t('results_delete_button')),
           ),
         ],
@@ -386,17 +386,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState( => _deleting = true);
+    setState(() => _deleting = true);
     try {
       final api = ref.read(apiClientProvider);
-      final res = await api.post('/api/runs/delete', {'run_ids': deletable.map((r) => r.id).toList}) as Map<String, dynamic>;
+      final res = await api.post('/api/runs/delete', {'run_ids': deletable.map((r) => r.id).toList()}) as Map<String, dynamic>;
       if (!mounted) return;
       final failedDirs = (res['failed_dirs'] as List?) ?? const [];
       if (failedDirs.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('results_delete_partial_failure'))));
       }
-      final deletedIds = ((res['deleted'] as List?) ?? const []).cast<String>.toSet;
-      setState( {
+      final deletedIds = ((res['deleted'] as List?) ?? const []).cast<String>().toSet();
+      setState(() {
         if (_selected != null && deletedIds.contains(_selected!.id)) _selected = null;
         _checkedIds.removeAll(deletedIds);
       });
@@ -404,9 +404,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       // state, separate from this history list -- without this it would keep
       // pointing at a run that no longer has anything behind it.
       ref.read(pipelineRunProvider.notifier).dismissIfIdIn(deletedIds);
-      await _loadRuns;
+      await _loadRuns();
     } finally {
-      if (mounted) setState( => _deleting = false);
+      if (mounted) setState(() => _deleting = false);
     }
   }
 }

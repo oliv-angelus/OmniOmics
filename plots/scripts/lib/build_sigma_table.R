@@ -25,7 +25,8 @@ suppressMessages({
 # matter here, CheckM2's `Name` column is also the one tool of the three
 # "dense" ones whose own internal identity column IS reliable, since
 # `checkm2 predict` names the row after the input filename it was actually
-# given, `{sample}.fa`)..discover_sigma_samples <- function(results_dir) {
+# given, `{sample}.fa`).
+.discover_sigma_samples <- function(results_dir) {
   checkm2_reports <- list.files(file.path(results_dir, "05_QUALITY"), pattern = "^quality_report\\.tsv$", recursive = TRUE, full.names = TRUE)
   if (length(checkm2_reports) == 0) {
     stop(sprintf("No results/05_QUALITY/*/checkm2/quality_report.tsv files found under %s -- has this SIGMA run reached the genome-quality stage at all?", results_dir))
@@ -39,7 +40,8 @@ suppressMessages({
 #' sample's only assembly). Real column names confirmed from QUAST 5.3.0's
 #' own reporting.py Fields class -- "# contigs"/"Total length" (bare, no
 #' size threshold) are real, distinct strings from the thresholded variants
-#' ("# contigs (>= 1000 bp)",...), so exact-name lookup is unambiguous..read_quast <- function(results_dir, sample) {
+#' ("# contigs (>= 1000 bp)",...), so exact-name lookup is unambiguous.
+.read_quast <- function(results_dir, sample) {
   path <- file.path(results_dir, "05_QUALITY", sample, "quast", "transposed_report.tsv")
   if (!file.exists(path)) return(NULL)
   df <- read.delim(path, header = TRUE, check.names = FALSE)
@@ -47,19 +49,20 @@ suppressMessages({
   row <- df[1,, drop = FALSE]  # always exactly one assembly; row's own "Assembly" value is NOT the sample name, ignore it
   data.frame(
     sample = sample,
-    quast_num_contigs = suppressWarnings(as.integer(row"# contigs")),
-    quast_total_length = suppressWarnings(as.numeric(row"Total length")),
-    quast_largest_contig = suppressWarnings(as.numeric(row"Largest contig")),
-    quast_gc_pct = suppressWarnings(as.numeric(row"GC (%)")),
-    quast_n50 = suppressWarnings(as.numeric(row"N50")),
-    quast_l50 = suppressWarnings(as.integer(row"L50")),
+    quast_num_contigs = suppressWarnings(as.integer(row[["# contigs"]])),
+    quast_total_length = suppressWarnings(as.numeric(row[["Total length"]])),
+    quast_largest_contig = suppressWarnings(as.numeric(row[["Largest contig"]])),
+    quast_gc_pct = suppressWarnings(as.numeric(row[["GC (%)"]])),
+    quast_n50 = suppressWarnings(as.numeric(row[["N50"]])),
+    quast_l50 = suppressWarnings(as.integer(row[["L50"]])),
     stringsAsFactors = FALSE
   )
 }
 
 #' CheckM2's quality_report.tsv -- real 14-column v1.1.0 schema (`auto`
 #' mode, no --debug_cos). `Name` is a reliable join key here (unlike QUAST/
-#' CoverM) but the sample-derived id is used regardless, for consistency..read_checkm2 <- function(results_dir, sample) {
+#' CoverM) but the sample-derived id is used regardless, for consistency.
+.read_checkm2 <- function(results_dir, sample) {
   path <- file.path(results_dir, "05_QUALITY", sample, "checkm2", "quality_report.tsv")
   if (!file.exists(path)) return(NULL)
   df <- read.delim(path, header = TRUE, check.names = FALSE)
@@ -67,11 +70,11 @@ suppressMessages({
   row <- df[1,, drop = FALSE]
   data.frame(
     sample = sample,
-    checkm2_completeness = suppressWarnings(as.numeric(row"Completeness")),
-    checkm2_contamination = suppressWarnings(as.numeric(row"Contamination")),
-    checkm2_genome_size = suppressWarnings(as.numeric(row"Genome_Size")),
-    checkm2_gc_content = suppressWarnings(as.numeric(row"GC_Content")),
-    checkm2_coding_sequences = suppressWarnings(as.integer(row"Total_Coding_Sequences")),
+    checkm2_completeness = suppressWarnings(as.numeric(row[["Completeness"]])),
+    checkm2_contamination = suppressWarnings(as.numeric(row[["Contamination"]])),
+    checkm2_genome_size = suppressWarnings(as.numeric(row[["Genome_Size"]])),
+    checkm2_gc_content = suppressWarnings(as.numeric(row[["GC_Content"]])),
+    checkm2_coding_sequences = suppressWarnings(as.integer(row[["Total_Coding_Sequences"]])),
     stringsAsFactors = FALSE
   )
 }
@@ -86,7 +89,8 @@ suppressMessages({
 #' string; `user_genome` is NOT used as the join key (same
 #' don't-trust-the-tool's-own-identity-column caution as QUAST/CoverM,
 #' even though it likely IS reliable here since SIGMA copies the genome in
-#' as `{sample}.fa` -- consistency over assuming)..read_gtdbtk <- function(results_dir, sample) {
+#' as `{sample}.fa` -- consistency over assuming).
+.read_gtdbtk <- function(results_dir, sample) {
   gtdbtk_dir <- file.path(results_dir, "06_TAXONOMY", sample, "gtdbtk")
   candidates <- c(file.path(gtdbtk_dir, "gtdbtk.bac120.summary.tsv"), file.path(gtdbtk_dir, "gtdbtk.ar53.summary.tsv"))
   path <- candidates[file.exists(candidates)]
@@ -94,8 +98,8 @@ suppressMessages({
   df <- read.delim(path[1], header = TRUE, check.names = FALSE)
   if (nrow(df) == 0) return(NULL)
   row <- df[1,, drop = FALSE]
-  lineage <- as.character(row"classification")
-  ranks <- strsplit(lineage, ";", fixed = TRUE)1
+  lineage <- as.character(row[["classification"]])
+  ranks <- strsplit(lineage, ";", fixed = TRUE)[[1]]
   ranks <- c(ranks, rep(NA_character_, length(.GTDB_RANK_COLS) - length(ranks)))[seq_along(.GTDB_RANK_COLS)]
   # Strip the d__/p__/.../s__ rank prefixes for readable columns (kept in
   # the raw `gtdbtk_lineage` field below for anyone who wants the original).
@@ -111,7 +115,8 @@ suppressMessages({
 #' column ("{sample} Trimmed Mean" etc, space-separated, Title Case) -- read
 #' generically by column-name SUFFIX match rather than assuming a fixed
 #' position, and never trust the "Genome" column's own value (same
-#' "final_polished" collision QUAST has)..read_coverm <- function(results_dir, sample) {
+#' "final_polished" collision QUAST has).
+.read_coverm <- function(results_dir, sample) {
   path <- file.path(results_dir, "07_COVERAGE", sample, "coverm_coverage.tsv")
   if (!file.exists(path)) return(NULL)
   df <- read.delim(path, header = TRUE, check.names = FALSE)
@@ -137,11 +142,12 @@ suppressMessages({
 #' calls themselves aren't needed for a summary table. An unmatched genome
 #' reports literal "-" for both SCHEME and ST (confirmed real, not merely
 #' "missing"), kept as-is rather than recoded to NA -- it's a real,
-#' meaningful result ("no scheme matched"), not an absence of data..read_mlst <- function(results_dir, sample) {
+#' meaningful result ("no scheme matched"), not an absence of data.
+.read_mlst <- function(results_dir, sample) {
   path <- file.path(results_dir, "09_TYPING", sample, "mlst.tsv")
   if (!file.exists(path) || file.size(path) == 0) return(NULL)
   line <- readLines(path, n = 1)
-  fields <- strsplit(line, "\t", fixed = TRUE)1
+  fields <- strsplit(line, "\t", fixed = TRUE)[[1]]
   data.frame(
     sample = sample,
     mlst_scheme = if (length(fields) >= 2) fields[2] else NA_character_,
@@ -175,17 +181,18 @@ build_sigma_table <- function(results_dir) {
 #' older AMRFinderPlus releases -- e.g. "Element symbol"/"Element name",
 #' not "Gene symbol"/"Sequence name" -- a real version-drift correction,
 #' not a stylistic choice). `--plus` (always passed) does NOT add columns,
-#' only broadens which genes are searched..read_amrfinder <- function(results_dir, sample) {
+#' only broadens which genes are searched.
+.read_amrfinder <- function(results_dir, sample) {
   path <- file.path(results_dir, "08_ANNOTATION", sample, "amrfinder", "amrfinder_results.tsv")
   if (!file.exists(path) || file.size(path) == 0) return(NULL)
   df <- read.delim(path, header = TRUE, check.names = FALSE)
   if (nrow(df) == 0) return(NULL)
   data.frame(
     sample = sample, source = "amrfinder",
-    gene = df"Element symbol", product = df"Element name",
-    class = df"Class", subclass = df"Subclass",
-    pct_identity = suppressWarnings(as.numeric(df"% Identity to reference")),
-    pct_coverage = suppressWarnings(as.numeric(df"% Coverage of reference")),
+    gene = df[["Element symbol"]], product = df[["Element name"]],
+    class = df[["Class"]], subclass = df[["Subclass"]],
+    pct_identity = suppressWarnings(as.numeric(df[["% Identity to reference"]])),
+    pct_coverage = suppressWarnings(as.numeric(df[["% Coverage of reference"]])),
     stringsAsFactors = FALSE
   )
 }
@@ -193,17 +200,18 @@ build_sigma_table <- function(results_dir) {
 #' ABRicate's real 15-column schema (header literally starts "#FILE") --
 #' shared by all 3 real invocations SIGMA makes (ncbi/card/vfdb databases).
 #' A header-only (zero-hit) file is real, valid ABRicate behavior (the
-#' header prints unconditionally before any per-hit rows) -- not an error..read_abricate <- function(results_dir, sample, db_label, rel_path) {
+#' header prints unconditionally before any per-hit rows) -- not an error.
+.read_abricate <- function(results_dir, sample, db_label, rel_path) {
   path <- file.path(results_dir, "08_ANNOTATION", sample, rel_path)
   if (!file.exists(path) || file.size(path) == 0) return(NULL)
   df <- read.delim(path, header = TRUE, check.names = FALSE)
   if (nrow(df) == 0) return(NULL)
   data.frame(
     sample = sample, source = paste0("abricate_", db_label),
-    gene = df"GENE", product = df"PRODUCT",
-    class = df"RESISTANCE", subclass = NA_character_,
-    pct_identity = suppressWarnings(as.numeric(df"%IDENTITY")),
-    pct_coverage = suppressWarnings(as.numeric(df"%COVERAGE")),
+    gene = df[["GENE"]], product = df[["PRODUCT"]],
+    class = df[["RESISTANCE"]], subclass = NA_character_,
+    pct_identity = suppressWarnings(as.numeric(df[["%IDENTITY"]])),
+    pct_coverage = suppressWarnings(as.numeric(df[["%COVERAGE"]])),
     stringsAsFactors = FALSE
   )
 }

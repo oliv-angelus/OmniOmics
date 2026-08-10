@@ -31,7 +31,7 @@ class PlotWorkspaceScreen extends ConsumerStatefulWidget {
   const PlotWorkspaceScreen({super.key, required this.run});
 
   @override
-  ConsumerState<PlotWorkspaceScreen> createState => _PlotWorkspaceScreenState;
+  ConsumerState<PlotWorkspaceScreen> createState() => _PlotWorkspaceScreenState();
 }
 
 class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
@@ -69,19 +69,19 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   String? _exportMessage;
   bool _showLog = true;
   /// Keeps the log view pinned to its latest line -- see _scrollLogToBottom.
-  final _logScrollController = ScrollController;
+  final _logScrollController = ScrollController();
 
   @override
-  void initState {
-    super.initState;
-    _loadAnalyses;
+  void initState() {
+    super.initState();
+    _loadAnalyses();
   }
 
   @override
-  void dispose {
-    _dpiController.dispose;
-    _logScrollController.dispose;
-    super.dispose;
+  void dispose() {
+    _dpiController.dispose();
+    _logScrollController.dispose();
+    super.dispose();
   }
 
   /// Auto-follows the tail of the log, like a terminal -- previously the
@@ -89,28 +89,28 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// scrolling down manually to notice it (a real reported bug: "não abaixa
   /// sozinho"). Scheduled after the frame that adds the new line actually
   /// lays out, since maxScrollExtent isn't valid until then.
-  void _scrollLogToBottom {
+  void _scrollLogToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_logScrollController.hasClients) return;
       _logScrollController.jumpTo(_logScrollController.position.maxScrollExtent);
     });
   }
 
-  Future<void> _loadAnalyses async {
+  Future<void> _loadAnalyses() async {
     try {
       final api = ref.read(apiClientProvider);
       final raw = await api.get('/api/plots/analyses?pipeline_id=${widget.run.pipelineId}') as List;
       final lang = ref.read(localeProvider).languageCode;
-      final analyses = raw.map((e) => PlotAnalysis.fromJson(e as Map<String, dynamic>, lang)).toList;
+      final analyses = raw.map((e) => PlotAnalysis.fromJson(e as Map<String, dynamic>, lang)).toList();
       if (!mounted) return;
-      setState( {
+      setState(() {
         _analysesRaw = raw;
         _analyses = analyses;
         _loadingAnalyses = false;
       });
     } catch (e) {
       if (mounted) {
-        setState( => _loadingAnalyses = false);
+        setState(() => _loadingAnalyses = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${ref.t('error_prefix')}: $e')));
       }
     }
@@ -124,13 +124,13 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// was active at the moment the list was first fetched -- the manifest
   /// content doesn't share app_strings.dart's ref.t mechanism, which is
   /// what makes the surrounding chrome (buttons, labels) react on its own.
-  void _rebuildForLocale {
+  void _rebuildForLocale() {
     if (_analysesRaw.isEmpty) return;
     final lang = ref.read(localeProvider).languageCode;
-    setState( {
-      _analyses = _analysesRaw.map((e) => PlotAnalysis.fromJson(e as Map<String, dynamic>, lang)).toList;
+    setState(() {
+      _analyses = _analysesRaw.map((e) => PlotAnalysis.fromJson(e as Map<String, dynamic>, lang)).toList();
       if (_selectedAnalysis != null) {
-        _selectedAnalysis = _analyses.firstWhere((a) => a.id == _selectedAnalysis!.id, orElse:  => _selectedAnalysis!);
+        _selectedAnalysis = _analyses.firstWhere((a) => a.id == _selectedAnalysis!.id, orElse: () => _selectedAnalysis!);
       }
     });
   }
@@ -142,18 +142,18 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// app. Does not build the phyloseq object yet; see _confirmMetadata for
   /// that (unchanged from before -- same POST /api/plots/load contract).
   Future<void> _pickMetadata(String path) async {
-    setState( {
+    setState(() {
       _metadataPath = path;
       _rawMetadataText = null;
       _loadError = null;
       _loadedData = null;
     });
     try {
-      final text = await File(path).readAsString;
+      final text = await File(path).readAsString();
       if (!mounted) return;
-      setState( => _rawMetadataText = text);
+      setState(() => _rawMetadataText = text);
     } catch (e) {
-      if (mounted) setState( => _loadError = e.toString);
+      if (mounted) setState(() => _loadError = e.toString());
     }
   }
 
@@ -163,7 +163,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// from that copy exactly as the old direct-on-pick flow did. Every
   /// analysis picked afterward reuses the resulting PlotLoadedData.
   Future<void> _confirmMetadata(String editedTsv) async {
-    setState( { _loadingData = true; _loadError = null; _loadedData = null; });
+    setState(() { _loadingData = true; _loadError = null; _loadedData = null; });
     try {
       final dir = Directory('${widget.run.outputDir}/plots/_metadata');
       dir.createSync(recursive: true);
@@ -175,17 +175,17 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
         'metadata_path': file.path,
       }) as Map<String, dynamic>;
       if (!mounted) return;
-      setState( {
+      setState(() {
         _loadedData = PlotLoadedData.fromJson(res);
         _loadingData = false;
       });
     } catch (e) {
-      if (mounted) setState( { _loadError = e.toString; _loadingData = false; });
+      if (mounted) setState(() { _loadError = e.toString(); _loadingData = false; });
     }
   }
 
-  void _changeMetadata {
-    setState( {
+  void _changeMetadata() {
+    setState(() {
       _metadataPath = null;
       _rawMetadataText = null;
       _loadedData = null;
@@ -196,7 +196,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   }
 
   void _selectAnalysis(PlotAnalysis analysis) {
-    setState( {
+    setState(() {
       _selectedAnalysis = analysis;
       _paramsState = PlotParamsState.fromDefaults(analysis);
       // A different analysis has a differently-shaped palette (different
@@ -216,7 +216,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('plots_run_missing_required'))));
       return;
     }
-    setState( { _starting = true; _showLog = true; });
+    setState(() { _starting = true; _showLog = true; });
     try {
       await ref.read(plotRunProvider.notifier).start(
             analysisId: analysis.id,
@@ -227,11 +227,11 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           );
     } on ApiException catch (e) {
       if (mounted) {
-        final msg = e.statusCode == 400 ? ref.t('plots_r_env_missing'): e.toString;
+        final msg = e.statusCode == 400 ? ref.t('plots_r_env_missing'): e.toString();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
-      if (mounted) setState( => _starting = false);
+      if (mounted) setState(() => _starting = false);
     }
   }
 
@@ -243,9 +243,9 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   void _initStyleFromRun(String outDir) {
     try {
       final file = File('$outDir/default_style.json');
-      if (!file.existsSync) return;
-      final json = jsonDecode(file.readAsStringSync) as Map<String, dynamic>;
-      if (mounted) setState( => _styleState = PlotStyleState.fromJson(json));
+      if (!file.existsSync()) return;
+      final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      if (mounted) setState(() => _styleState = PlotStyleState.fromJson(json));
     } catch (_) {
       // Best-effort -- the customize panel just stays hidden if this fails.
     }
@@ -257,28 +257,28 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// starts a fresh run with it. Works even if the user only changed a
   /// parameter (rank, top_n,...) via the inline form and never touched a
   /// color: the last-known-good style just gets carried through unchanged.
-  Future<void> _replot async {
-    setState( => _replotting = true);
+  Future<void> _replot() async {
+    setState(() => _replotting = true);
     try {
       String? styleJsonPath;
       if (_styleState != null) {
         final dir = Directory('${widget.run.outputDir}/plots/_style');
         dir.createSync(recursive: true);
         final file = File('${dir.path}/current_style.json');
-        file.writeAsStringSync(jsonEncode(_styleState!.toJson));
+        file.writeAsStringSync(jsonEncode(_styleState!.toJson()));
         styleJsonPath = file.path;
       }
       await _run(styleJsonPath: styleJsonPath);
     } finally {
-      if (mounted) setState( => _replotting = false);
+      if (mounted) setState(() => _replotting = false);
     }
   }
 
   /// Back to the analyses list for this SAME run+metadata -- loading is
   /// per-run, not per-analysis, so there's nothing to redo here.
-  void _newAnalysis {
+  void _newAnalysis() {
     ref.read(plotRunProvider.notifier).dismiss;
-    setState( {
+    setState(() {
       _selectedAnalysis = null;
       _paramsState = null;
       _exportMessage = null;
@@ -302,7 +302,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   }
 
   Future<void> _export(PlotRunState runState) async {
-    setState( { _exporting = true; _exportMessage = null; });
+    setState(() { _exporting = true; _exportMessage = null; });
     try {
       final api = ref.read(apiClientProvider);
       await api.post('/api/plots/${runState.runId}/export', {
@@ -310,11 +310,11 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
         'format': _exportFormat,
         'dpi': int.tryParse(_dpiController.text) ?? 600,
       });
-      if (mounted) setState( => _exportMessage = ref.t('plots_export_success'));
+      if (mounted) setState(() => _exportMessage = ref.t('plots_export_success'));
     } catch (e) {
-      if (mounted) setState( => _exportMessage = '${ref.t('error_prefix')}: $e');
+      if (mounted) setState(() => _exportMessage = '${ref.t('error_prefix')}: $e');
     } finally {
-      if (mounted) setState( => _exporting = false);
+      if (mounted) setState(() => _exporting = false);
     }
   }
 
@@ -367,14 +367,14 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
       return;
     }
     if (_selectedAnalysis != null) {
-      setState( { _selectedAnalysis = null; _paramsState = null; });
+      setState(() { _selectedAnalysis = null; _paramsState = null; });
       return;
     }
     if (_loadedData != null || _rawMetadataText != null) {
       // Covers both "already loaded" (back to picking a different file) and
       // "still on the editable preview, not loaded yet" (back to the picker
       // too, discarding the in-progress edit) -- one step back either way.
-      _changeMetadata;
+      _changeMetadata();
       return;
     }
     ref.read(embeddedPlotRunProvider.notifier).state = null;
@@ -397,7 +397,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: _backTooltip(runState),
-            onPressed:  => _goBack(runState),
+            onPressed: () => _goBack(runState),
           ),
           Expanded(
             child: Column(
@@ -522,7 +522,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           const SizedBox(height: 16),
           Expanded(
             child: _loadingAnalyses
-                ? const Center(child: CircularProgressIndicator): _analyses.isEmpty
+                ? const Center(child: CircularProgressIndicator()): _analyses.isEmpty
                     ? Text(ref.t('plots_no_analyses'), style: TextStyle(color: colors.textMuted))
                     // A plain Wrap (the previous fix for the truncation bug
                     // below) let every card keep its own intrinsic height,
@@ -556,7 +556,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     // still get normal-width cards left-aligned with empty stretched slots
     // filling out the row, not a couple of columns stretched to abnormal
     // width just because there happened to be few items.
-    final columns = math.max(1, ((availableWidth + _analysisCardSpacing) / (_analysisCardWidth + _analysisCardSpacing)).floor);
+    final columns = math.max(1, ((availableWidth + _analysisCardSpacing) / (_analysisCardWidth + _analysisCardSpacing)).floor());
     final rows = <Widget>[];
     for (var i = 0; i < _analyses.length; i += columns) {
       if (rows.isNotEmpty) rows.add(const SizedBox(height: _analysisCardSpacing));
@@ -569,7 +569,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           // letting its real cards grow wider to fill the row -- keeps every
           // card the same width regardless of which row it's in.
           child: index < _analyses.length
-              ? _AnalysisCard(analysis: _analyses[index], onTap:  => _selectAnalysis(_analyses[index])): const SizedBox,
+              ? _AnalysisCard(analysis: _analyses[index], onTap: () => _selectAnalysis(_analyses[index])): const SizedBox(),
         ));
       }
       rows.add(IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: rowChildren)));
@@ -601,7 +601,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
                       analysis: analysis,
                       state: params,
                       loadedData: loaded,
-                      onChanged:  => setState( {}),
+                      onChanged: () => setState(() {}),
                     ),
                   ],
                 ),
@@ -625,7 +625,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
 
   Widget _buildRunPanel(AppPalette colors, PlotRunState runState) {
     final previewFile = File('${runState.outDir}/preview.png');
-    final hasPreview = runState.finished && runState.succeeded && previewFile.existsSync;
+    final hasPreview = runState.finished && runState.succeeded && previewFile.existsSync();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -669,7 +669,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
             Center(
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap:  => _showPreviewDialog(previewFile),
+                onTap: () => _showPreviewDialog(previewFile),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 420, maxWidth: 760),
                   child: ClipRRect(
@@ -695,7 +695,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           ],
           const SizedBox(height: 16),
           InkWell(
-            onTap:  => setState( => _showLog = !_showLog),
+            onTap: () => setState(() => _showLog = !_showLog),
             child: Row(
               children: [
                 Icon(_showLog ? Icons.expand_less: Icons.expand_more, size: 18, color: colors.textMuted),
@@ -712,7 +712,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
               // nothing of a live log) and follows the tail automatically;
               // once finished it shrinks back since the preview above is
               // the main thing to look at.
-              _scrollLogToBottom;
+              _scrollLogToBottom();
               return Container(
                 width: double.infinity,
                 height: runState.finished ? 220: 380,
@@ -753,7 +753,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             InkWell(
-              onTap:  => setState( => _customizeExpanded = !_customizeExpanded),
+              onTap: () => setState(() => _customizeExpanded = !_customizeExpanded),
               child: Row(
                 children: [
                   Icon(_customizeExpanded ? Icons.expand_less: Icons.expand_more, size: 18, color: colors.textMuted),
@@ -766,10 +766,10 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
               const SizedBox(height: 12),
               Text(ref.t('plots_params_title'), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: colors.textSecondary)),
               const SizedBox(height: 8),
-              PlotParamForm(analysis: analysis, state: params, loadedData: loaded, onChanged:  => setState( {})),
+              PlotParamForm(analysis: analysis, state: params, loadedData: loaded, onChanged: () => setState(() {})),
               if (_styleState != null)...[
                 const Divider(height: 28),
-                PlotStylePanel(style: _styleState!, analysisId: analysis.id, onChanged:  => setState( {})),
+                PlotStylePanel(style: _styleState!, analysisId: analysis.id, onChanged: () => setState(() {})),
               ],
               const SizedBox(height: 16),
               Align(
@@ -808,7 +808,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
                       DropdownMenuItem(value: 'png', child: Text('PNG')),
                       DropdownMenuItem(value: 'svg', child: Text('SVG')),
                     ],
-                    onChanged: (v) => setState( => _exportFormat = v ?? 'tiff'),
+                    onChanged: (v) => setState(() => _exportFormat = v ?? 'tiff'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -826,7 +826,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
             Row(
               children: [
                 ElevatedButton.icon(
-                  onPressed: _exporting ? null:  => _export(runState),
+                  onPressed: _exporting ? null: () => _export(runState),
                   icon: _exporting
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)): const Icon(Icons.file_download_outlined),
                   label: Text(_exporting ? ref.t('plots_export_running'): ref.t('plots_export_button')),
@@ -895,7 +895,7 @@ class _AnalysisCard extends ConsumerWidget {
                     child: Icon(_analysisIcon(analysis.id), size: 19, color: colors.primaryDark),
                   ),
                   if (!analysis.implemented)...[
-                    const Spacer,
+                    const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(color: colors.surfaceAlt, borderRadius: BorderRadius.circular(6)),

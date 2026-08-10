@@ -12,7 +12,7 @@
 # here, not just incidental data (unlike MAGMA/DOGMA, where a real
 # metadata.tsv the user prepared is the only source of grouping variables).
 # User-supplied --metadata is still optional and additive on top of this.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -84,6 +84,6 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_sigma_table] detected %d genome(s): %s", length(samples), paste(samples, collapse = ", "))
-log_line("[load_sigma_table] detected %d groupable column(s): %s", length(columns), paste(columns, collapse = ", "))
+log_line("[load_sigma_table] detected %d genome(s): %s[[", length(samples), paste(samples, collapse = "]], "))
+log_line("[load_sigma_table] detected %d groupable column(s): %s[[", length(columns), paste(columns, collapse = "]], "))
 log_line("[load_sigma_table] wrote sigma_table.rds, metadata_columns.json")

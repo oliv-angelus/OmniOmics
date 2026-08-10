@@ -17,7 +17,7 @@ class DatabasesScreen extends ConsumerStatefulWidget {
   const DatabasesScreen({super.key});
 
   @override
-  ConsumerState<DatabasesScreen> createState => _DatabasesScreenState;
+  ConsumerState<DatabasesScreen> createState() => _DatabasesScreenState();
 }
 
 class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
@@ -30,12 +30,12 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
   String? _error;
 
   @override
-  void initState {
-    super.initState;
-    _load;
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  Future<void> _load async {
+  Future<void> _load() async {
     // Only the very first load blanks the screen with a spinner. Reloads
     // triggered afterwards (e.g. `onChanged` from validating/picking a path
     // on one card) must not unmount the whole card grid -- doing so tears
@@ -43,7 +43,7 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
     // and their dispose closes that download's WebSocket.
     final isInitialLoad = _databasesRaw.isEmpty;
     if (isInitialLoad) {
-      setState( {
+      setState(() {
         _loading = true;
         _error = null;
       });
@@ -52,15 +52,15 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
       final api = ref.read(apiClientProvider);
       final raw = await api.get('/api/databases') as List;
       if (!mounted) return;
-      setState( {
+      setState(() {
         _databasesRaw = raw;
         _databases = _buildDatabasesMap(raw);
         _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState( {
-        _error = e.toString;
+      setState(() {
+        _error = e.toString();
         _loading = false;
       });
     }
@@ -78,7 +78,7 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
     return map;
   }
 
-  Future<void> _detectInFolder async {
+  Future<void> _detectInFolder() async {
     final baseDir = await getDirectoryPath;
     if (baseDir == null) return;
     final api = ref.read(apiClientProvider);
@@ -91,7 +91,7 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
         'path': info['path'],
       });
     }
-    await _load;
+    await _load();
     if (!mounted) return;
     final names = found.keys.map((settingKey) => _databases[settingKey]?.name ?? settingKey).join(', ');
     final message = found.isEmpty ? ref.t('detect_none_found'): names;
@@ -99,11 +99,11 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _downloadDatabases async {
+  Future<void> _downloadDatabases() async {
     // Every not-yet-configured database across all pipelines; the dialog itself
     // filters to the ones with an automatic download option and lets the user
     // pick a subset ("todos ou alguns").
-    final missing = _databases.values.where((d) => !d.configured).toList;
+    final missing = _databases.values.where((d) => !d.configured).toList();
     await showDownloadAllDatabasesDialog(
       context: context,
       ref: ref,
@@ -117,12 +117,12 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    if (_loading) return const Center(child: CircularProgressIndicator);
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) return Center(child: Text('${ref.t('error_prefix')}: $_error'));
 
     ref.listen(localeProvider, (previous, next) {
       if (previous != next && _databasesRaw.isNotEmpty) {
-        setState( => _databases = _buildDatabasesMap(_databasesRaw));
+        setState(() => _databases = _buildDatabasesMap(_databasesRaw));
       }
     });
 

@@ -11,7 +11,7 @@ class PlotParamsState {
 
   PlotParamsState.fromDefaults(PlotAnalysis analysis) {
     for (final p in analysis.parameters) {
-      if (p.defaultValue != null) values[p.flag] = p.defaultValue.toString;
+      if (p.defaultValue != null) values[p.flag] = p.defaultValue.toString();
     }
   }
 
@@ -21,8 +21,8 @@ class PlotParamsState {
     return analysis.parameters.map((p) => {
               'flag': p.flag,
               'enabled': true,
-              'value': values[p.flag] ?? p.defaultValue?.toString ?? '',
-            }).toList;
+              'value': values[p.flag] ?? p.defaultValue?.toString() ?? '',
+            }).toList();
   }
 
   /// A parameter with an empty-string default (legacy free-text required
@@ -32,7 +32,7 @@ class PlotParamsState {
   bool isComplete(PlotAnalysis analysis) {
     for (final p in analysis.parameters) {
       final required = p.defaultValue == '' || p.type == 'column' || p.type == 'level';
-      if (required && (values[p.flag] ?? '').trim.isEmpty) return false;
+      if (required && (values[p.flag] ?? '').trim().isEmpty) return false;
     }
     return true;
   }

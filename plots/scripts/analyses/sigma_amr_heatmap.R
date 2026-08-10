@@ -6,7 +6,7 @@
 # --genome picker needed -- the whole point is comparing genomes side by
 # side; sigma_genome_summary already covers "what does THIS ONE genome
 # have" in more detail.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

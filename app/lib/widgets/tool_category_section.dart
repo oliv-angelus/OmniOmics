@@ -58,7 +58,7 @@ class ToolCategorySection extends ConsumerWidget {
                     blocked ? graph.missingRequirementLabel(tool.id, activeTools, activeTracks, english: english): '',
                 requiresLabel: requiresLabel,
                 params: toolParams[tool.id],
-                onToggle:  => onToggle(tool.id),
+                onToggle: () => onToggle(tool.id),
                 onToggleTrack: (track) => onToggleTrack(tool.id, track),
                 onParamsChanged: onParamsChanged,
               );
@@ -116,7 +116,7 @@ class _ToolRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             onTap: p == null ? null:  {
               p.expanded = !p.expanded;
-              onParamsChanged;
+              onParamsChanged();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -204,8 +204,8 @@ class _ToolFlagEditor extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final common = tool.flags.where((f) => f.enabledByDefault).toList;
-    final advanced = tool.flags.where((f) => !f.enabledByDefault).toList;
+    final common = tool.flags.where((f) => f.enabledByDefault).toList();
+    final advanced = tool.flags.where((f) => !f.enabledByDefault).toList();
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -219,9 +219,9 @@ class _ToolFlagEditor extends ConsumerWidget {
           if (advanced.isNotEmpty)...[
             const Divider(height: 20),
             InkWell(
-              onTap:  {
+              onTap: () {
                 state.showAdvanced = !state.showAdvanced;
-                onChanged;
+                onChanged();
               },
               child: Row(
                 children: [
@@ -249,7 +249,7 @@ class _ToolFlagEditor extends ConsumerWidget {
             ),
             onChanged: (v) {
               state.extraParams = v;
-              onChanged;
+              onChanged();
             },
           ),
         ],
@@ -282,7 +282,7 @@ class _FlagRow extends StatelessWidget {
               } else {
                 state.enabledFlags.remove(flag.flag);
               }
-              onChanged;
+              onChanged();
             },
           ),
           Expanded(
@@ -320,18 +320,18 @@ class _FlagValueInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = state.flagValues[flag.flag] ?? flag.defaultValue?.toString ?? '';
+    final current = state.flagValues[flag.flag] ?? flag.defaultValue?.toString() ?? '';
 
     if (flag.type == 'choice' && flag.choices != null) {
       return DropdownButtonFormField<String>(
         initialValue: flag.choices!.contains(current) ? current: null,
         isDense: true,
         decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
-        items: flag.choices!.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12)))).toList,
+        items: flag.choices!.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12)))).toList(),
         onChanged: !enabled ? null: (v) {
           if (v != null) {
             state.flagValues[flag.flag] = v;
-            onChanged;
+            onChanged();
           }
         },
       );
@@ -346,7 +346,7 @@ class _FlagValueInput extends StatelessWidget {
       decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
       onChanged: (v) {
         state.flagValues[flag.flag] = v;
-        onChanged;
+        onChanged();
       },
     );
   }

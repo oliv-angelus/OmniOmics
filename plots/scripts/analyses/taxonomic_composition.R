@@ -1,7 +1,7 @@
 # Real taxonomic composition analysis (stacked relative-abundance bars,
 # top N taxa + "Others"), direct translation of microbiome.R's section 9.
 # See plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -48,10 +48,10 @@ build_rank_panel <- function(rank) {
   dfrank <- as.character(dfrank)
   dfrank[is.na(dfrank)] <- "Unclassified"
 
-  summary_tab <- df %>% group_by(.datarank) %>% summarise(Mean = mean(Abundance),.groups = "drop") %>% arrange(desc(Mean))
-  top_taxa <- summary_tab %>% slice_head(n = top_n_taxa) %>% pull(.datarank)
+  summary_tab <- df %>% group_by(.data[[rank]]) %>% summarise(Mean = mean(Abundance),.groups = "drop") %>% arrange(desc(Mean))
+  top_taxa <- summary_tab %>% slice_head(n = top_n_taxa) %>% pull(.data[[rank]])
 
-  df_renamed <- df %>% mutate(Taxon_Plot = ifelse(.datarank %in% top_taxa,.datarank, "Others"))
+  df_renamed <- df %>% mutate(Taxon_Plot = ifelse(.data[[rank]] %in% top_taxa,.data[[rank]], "Others"))
   df_agg <- df_renamed %>% group_by(Sample, Taxon_Plot) %>% summarise(Abundance = sum(Abundance),.groups = "drop")
 
   order <- if ("Others" %in% df_agg$Taxon_Plot) c(top_taxa, "Others") else top_taxa

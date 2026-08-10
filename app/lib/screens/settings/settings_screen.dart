@@ -9,7 +9,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  ConsumerState<SettingsScreen> createState => _SettingsScreenState;
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
@@ -17,18 +17,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   List<InstallOption> _condaOptions = [];
 
   @override
-  void initState {
-    super.initState;
-    _load;
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  Future<void> _load async {
+  Future<void> _load() async {
     final api = ref.read(apiClientProvider);
     final status = await api.get('/api/setup/status') as Map<String, dynamic>;
     final lang = ref.read(localeProvider).languageCode;
     final raw = await api.get('/api/setup/conda-distributions?lang=$lang') as List;
-    _condaOptions = raw.map((e) => InstallOption(id: e['id'] as String, name: e['name'] as String, description: e['description'] as String)).toList;
-    if (mounted) setState( => _status = status);
+    _condaOptions = raw.map((e) => InstallOption(id: e['id'] as String, name: e['name'] as String, description: e['description'] as String)).toList();
+    if (mounted) setState(() => _status = status);
   }
 
   @override
@@ -62,7 +62,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Text(ref.t('shared_by_pipelines'), style: TextStyle(color: colors.textSecondary, fontSize: 13)),
                     const SizedBox(height: 16),
                     if (s == null)
-                      const Center(child: CircularProgressIndicator)
+                      const Center(child: CircularProgressIndicator())
                     else...[
                       InstallRow(
                         title: ref.t('conda_label'),

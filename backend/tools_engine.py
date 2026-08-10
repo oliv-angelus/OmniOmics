@@ -32,7 +32,7 @@ def get_tool_list(pipeline_id: str) -> list:
     categories = manifest.get("categories", [])
 
     grouped: dict[str, list] = {}
-    for tool_id, tool in tools.items:
+    for tool_id, tool in tools.items():
         cat = tool.get("category", "Other")
         grouped.setdefault(cat, []).append({
             "id": tool_id,
@@ -45,7 +45,7 @@ def get_tool_list(pipeline_id: str) -> list:
         if cat in grouped:
             result.append({"category": cat, "tools": grouped.pop(cat)})
     # Any category the manifest forgot to list still shows up, appended at the end.
-    for cat, cat_tools in grouped.items:
+    for cat, cat_tools in grouped.items():
         result.append({"category": cat, "tools": cat_tools})
     return result
 

@@ -38,7 +38,7 @@ rule vsearch_cluster:
         fasta="results/03_CHIMERA/{sample}/{sample}_clustered.fasta",
         uc="results/03_CHIMERA/{sample}/{sample}_clustered.uc"
     params:
-        id=lambda wc: config["params"]["vsearch_chimera"].split("--id")[-1].strip.split[0]
+        id=lambda wc: config["params"]["vsearch_chimera"].split("--id")[-1].strip().split()[0]
             if "--id" in config["params"]["vsearch_chimera"] else "0.95"
     conda: "../envs/vsearch.yaml"
     threads: config["threads"]["vsearch_chimera"]
@@ -56,7 +56,7 @@ rule vsearch_chimera:
         chimeras="results/03_CHIMERA/{sample}/{sample}_chimeras.fasta",
         nonchimeric="results/03_CHIMERA/{sample}/{sample}_nonchimeric.fastq.gz"
     params:
-        abskew=lambda wc: config["params"]["vsearch_chimera"].split("--abskew")[-1].strip.split[0]
+        abskew=lambda wc: config["params"]["vsearch_chimera"].split("--abskew")[-1].strip().split()[0]
             if "--abskew" in config["params"]["vsearch_chimera"] else "2.0"
     conda: "../envs/vsearch.yaml"
     threads: config["threads"]["vsearch_chimera"]

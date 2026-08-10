@@ -9,7 +9,7 @@ class ResourcesScreen extends ConsumerStatefulWidget {
   const ResourcesScreen({super.key});
 
   @override
-  ConsumerState<ResourcesScreen> createState => _ResourcesScreenState;
+  ConsumerState<ResourcesScreen> createState() => _ResourcesScreenState();
 }
 
 class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
@@ -17,20 +17,20 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
   Map<String, dynamic>? _info;
 
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     final api = ref.read(apiClientProvider);
     final ws = WsClient.connect(api.wsUrl('/ws/system'));
     _ws = ws;
     ws.events.listen((event) {
-      if (mounted) setState( => _info = event);
+      if (mounted) setState(() => _info = event);
     });
   }
 
   @override
-  void dispose {
-    _ws?.close;
-    super.dispose;
+  void dispose() {
+    _ws?.close();
+    super.dispose();
   }
 
   @override
@@ -46,7 +46,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
           Text(ref.t('resources_title'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 24),
           if (info == null)
-            const CircularProgressIndicator
+            const CircularProgressIndicator()
           else
             Wrap(
               spacing: 16,
@@ -56,7 +56,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                   icon: Icons.memory,
                   title: ref.t('resources_cpu'),
                   primary: '${info['cpu']['cores']} ${ref.t('resources_cores')}',
-                  percent: (info['cpu']['percent'] as num).toDouble / 100,
+                  percent: (info['cpu']['percent'] as num).toDouble() / 100,
                   detail: '${info['cpu']['percent']}% ${ref.t('resources_used')}',
                   colors: colors,
                 ),
@@ -64,7 +64,7 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
                   icon: Icons.developer_board,
                   title: ref.t('resources_ram'),
                   primary: '${info['ram']['total_gb']} GB',
-                  percent: (info['ram']['percent'] as num).toDouble / 100,
+                  percent: (info['ram']['percent'] as num).toDouble() / 100,
                   detail: '${info['ram']['used_gb']} GB ${ref.t('resources_used')}',
                   colors: colors,
                 ),

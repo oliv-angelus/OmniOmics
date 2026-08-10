@@ -15,19 +15,19 @@ class MonitorScreen extends ConsumerStatefulWidget {
   const MonitorScreen({super.key});
 
   @override
-  ConsumerState<MonitorScreen> createState => _MonitorScreenState;
+  ConsumerState<MonitorScreen> createState() => _MonitorScreenState();
 }
 
 class _MonitorScreenState extends ConsumerState<MonitorScreen> {
-  final _logScroll = ScrollController;
+  final _logScroll = ScrollController();
 
   @override
-  void dispose {
-    _logScroll.dispose;
-    super.dispose;
+  void dispose() {
+    _logScroll.dispose();
+    super.dispose();
   }
 
-  Future<void> _stop async {
+  Future<void> _stop() async {
     await ref.read(pipelineRunProvider.notifier).stop;
   }
 
@@ -76,7 +76,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     // forever after a stop/error, looking like the pipeline is still going.
     final pct = run.stepsTotal > 0
         ? run.stepsDone / run.stepsTotal: (run.finished ? (run.exitCode == 0 && !run.stopped ? 1.0: 0.0): null);
-    final jobs = run.jobs.values.toList..sort((a, b) => b.jobid.compareTo(a.jobid));
+    final jobs = run.jobs.values.toList()..sort((a, b) => b.jobid.compareTo(a.jobid));
 
     return Column(
       children: [
@@ -109,7 +109,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
                             color: _statusColor(run, colors),
                           ),
                         ),
-                        const Spacer,
+                        const Spacer(),
                         if (run.stepsTotal > 0)
                           Text('${run.stepsDone} / ${run.stepsTotal} ${ref.t('monitor_steps_suffix')}',
                               style: TextStyle(color: colors.textSecondary)),
@@ -160,7 +160,7 @@ class _MonitorHeader extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: ref.t('back_to_hub'),
-            onPressed:  => ref.read(embeddedMonitorProvider.notifier).state = false,
+            onPressed: () => ref.read(embeddedMonitorProvider.notifier).state = false,
           ),
           Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),...actions,
         ],

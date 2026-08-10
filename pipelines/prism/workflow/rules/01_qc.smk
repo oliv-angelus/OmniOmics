@@ -28,7 +28,7 @@ def _filtlong_extra(wildcards):
     mn, mx = preset.get("min_length", 0), preset.get("max_length", 0)
     if not mn or not mx:
         return extra  # e.g. the deliberately empty "custom" preset
-    return f"--min_length {mn} --max_length {mx} {extra}".strip
+    return f"--min_length {mn} --max_length {mx} {extra}".strip()
 
 
 rule filtlong:

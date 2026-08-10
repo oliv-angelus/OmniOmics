@@ -119,7 +119,7 @@ def _active_assembler_transcripts(wildcards):
         "megahit":   f"results/03_ASSEMBLY/{wildcards.sample}/{wildcards.domain}/megahit/final.contigs.fa",
         "trinity":   f"results/03_ASSEMBLY/{wildcards.sample}/{wildcards.domain}/trinity/Trinity.fasta",
     }
-    return [path for tool, path in outputs.items if tool in active]
+    return [path for tool, path in outputs.items() if tool in active]
 
 
 rule transcript_set:

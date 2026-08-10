@@ -49,7 +49,7 @@ def lineage_from_row(row):
     return ";".join(f"{prefix}{row.get(rank, '') or ''}" for rank, prefix in RANK_PREFIXES)
 
 
-def main:
+def main() :
     ap = argparse.ArgumentParser
     ap.add_argument("--inputs", nargs="+", required=True, help="sample_name:path.tsv pairs")
     ap.add_argument("--out", required=True)
@@ -70,7 +70,7 @@ def main:
                 fh.seek(0)
                 reader = csv.DictReader(fh, delimiter="\t")
                 for row in reader:
-                    tax_id = (row.get("tax_id") or "").strip
+                    tax_id = (row.get("tax_id") or "").strip()
                     if tax_id in SUMMARY_ROWS:
                         continue
                     lineage = lineage_from_row(row)
@@ -83,7 +83,7 @@ def main:
     with open(args.out, "w", newline="") as fout:
         writer = csv.writer(fout, delimiter="\t")
         writer.writerow(["tax"] + sample_names)
-        for lineage, values in sorted(table.items):
+        for lineage, values in sorted(table.items()):
             writer.writerow([lineage] + [round(values.get(s, 0.0)) for s in sample_names])
 
     print(f"join_emu_tables: wrote {len(table)} lineage rows x {len(sample_names)} samples to {args.out}")
@@ -92,7 +92,7 @@ def main:
         with open(args.out_species, "w", newline="") as fout:
             writer = csv.writer(fout, delimiter="\t")
             writer.writerow(["tax_id"] + sample_names)
-            for tax_id, values in sorted(species_table.items, key=lambda kv: int(kv[0]) if kv[0].isdigit else kv[0]):
+            for tax_id, values in sorted(species_table.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit else kv[0]):
                 writer.writerow([tax_id] + [round(values.get(s, 0.0)) for s in sample_names])
         print(f"join_emu_tables: wrote {len(species_table)} tax_id rows x {len(sample_names)} samples to {args.out_species}")
 

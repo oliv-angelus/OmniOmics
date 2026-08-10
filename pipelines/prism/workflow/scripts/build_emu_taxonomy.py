@@ -30,7 +30,7 @@ def open_maybe_gz(path):
     return gzip.open(path, "rt") if path.endswith(".gz") else open(path)
 
 
-def main:
+def main() :
     ap = argparse.ArgumentParser
     ap.add_argument("--ref", required=True)
     ap.add_argument("--out_fasta", required=True)
@@ -52,7 +52,7 @@ def main:
                 tax_id += 1
                 # Header shape (real, confirmed): pure semicolon-joined
                 # lineage, no accession/ID token before it -- # "Domain;Phylum;Class;Order;Family;Genus;Species".
-                lineage = line[1:].strip
+                lineage = line[1:].strip()
                 ranks = lineage.split(";")
                 ranks = (ranks + [""] * len(RANK_NAMES))[:len(RANK_NAMES)]
                 tax_out.write(f"{tax_id}\t" + "\t".join(ranks) + "\n")

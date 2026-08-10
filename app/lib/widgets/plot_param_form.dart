@@ -58,7 +58,7 @@ class _PlotParamRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final missing = _required && (state.values[param.flag] ?? '').trim.isEmpty;
+    final missing = _required && (state.values[param.flag] ?? '').trim().isEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -106,17 +106,17 @@ class _PlotParamValueInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = state.values[param.flag] ?? param.defaultValue?.toString ?? '';
+    final current = state.values[param.flag] ?? param.defaultValue?.toString() ?? '';
 
     if (param.type == 'bool') {
-      final on = current.toLowerCase == 'true';
+      final on = current.toLowerCase() == 'true';
       return Align(
         alignment: Alignment.centerRight,
         child: Switch(
           value: on,
           onChanged: (v) {
-            state.values[param.flag] = v.toString;
-            onChanged;
+            state.values[param.flag] = v.toString();
+            onChanged();
           },
         ),
       );
@@ -152,7 +152,7 @@ class _PlotParamValueInput extends StatelessWidget {
       if (current.isNotEmpty && !levels.contains(current)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           state.values[param.flag] = '';
-          onChanged;
+          onChanged();
         });
       }
       return _dropdown(current, levels, hintOnEmpty: true);
@@ -188,7 +188,7 @@ class _PlotParamValueInput extends StatelessWidget {
       ),
       onChanged: (v) {
         state.values[param.flag] = v;
-        onChanged;
+        onChanged();
       },
     );
   }
@@ -203,12 +203,12 @@ class _PlotParamValueInput extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         errorText: missing ? '': null,
       ),
-      items: options.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12)))).toList,
+      items: options.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12)))).toList(),
       onChanged: options.isEmpty
           ? null: (v) {
               if (v != null) {
                 state.values[param.flag] = v;
-                onChanged;
+                onChanged();
               }
             },
     );

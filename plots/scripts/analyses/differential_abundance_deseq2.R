@@ -1,7 +1,7 @@
 # Real differential abundance analysis (DESeq2 Wald test, genus-level
 # biomarkers), direct translation of microbiome.R's section 12. See
 # plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -47,7 +47,7 @@ if (!(group_var %in% meta_cols)) {
   stop(sprintf("group_var '%s' is not a column in the metadata table. Available columns: %s",
                group_var, paste(meta_cols, collapse = ", ")))
 }
-levels_available <- unique(as.character(data.frame(sample_data(ps))group_var))
+levels_available <- unique(as.character(data.frame(sample_data(ps))[[group_var]]))
 if (!(reference_group %in% levels_available)) {
   stop(sprintf("reference_group '%s' is not a level of '%s'. Available levels: %s",
                reference_group, group_var, paste(levels_available, collapse = ", ")))
@@ -60,8 +60,8 @@ if (any(is.na(dgroup_var))) {
   ps_deseq <- subset_samples(ps_deseq, !is.na(get(group_var)))
 }
 
-sample_data(ps_deseq)group_var <- factor(sample_data(ps_deseq)group_var)
-sample_data(ps_deseq)group_var <- relevel(sample_data(ps_deseq)group_var, ref = reference_group)
+sample_data(ps_deseq)[[group_var]] <- factor(sample_data(ps_deseq)[[group_var]])
+sample_data(ps_deseq)[[group_var]] <- relevel(sample_data(ps_deseq)[[group_var]], ref = reference_group)
 
 # DESeq2 needs real replicates to estimate dispersion at all -- confirmed for
 # real against a 1-sample-per-group pilot-study-shaped fixture, where this
@@ -69,7 +69,7 @@ sample_data(ps_deseq)group_var <- relevel(sample_data(ps_deseq)group_var, ref = 
 # ("design matrix has the same number of samples and coefficients... no
 # longer supported since v1.22") instead of telling the user what's
 # actually wrong up front.
-level_counts <- table(sample_data(ps_deseq)group_var)
+level_counts <- table(sample_data(ps_deseq)[[group_var]])
 if (any(level_counts < 2)) {
   under_replicated <- names(level_counts)[level_counts < 2]
   stop(sprintf(

@@ -18,13 +18,13 @@ def read_bakta_tsv(path):
     '#Sequence Id\\tType\\t...' header row that IS the real header (not a
     comment to skip)."""
     with open(path) as f:
-        lines = f.readlines
+        lines = f.readlines()
     header_idx = next(
         i for i, l in enumerate(lines)
         if l.startswith("#Locus Tag") or l.startswith("#Sequence Id")
     )
-    header = [h.strip for h in lines[header_idx].lstrip("#").strip.split("\t")]
-    data = [l.rstrip("\n").split("\t") for l in lines[header_idx + 1:] if l.strip]
+    header = [h.strip() for h in lines[header_idx].lstrip("#").strip().split("\t")]
+    data = [l.rstrip("\n").split("\t") for l in lines[header_idx + 1:] if l.strip()]
     return pd.DataFrame(data, columns=header)
 
 
@@ -33,18 +33,18 @@ def read_eggnog_annotations(path):
     '#query\\t...' header row, data rows, then trailing '##' footer comment
     lines (run stats) to also skip."""
     with open(path) as f:
-        lines = f.readlines
+        lines = f.readlines()
     header_idx = next(i for i, l in enumerate(lines) if l.startswith("#query"))
-    header = [h.strip for h in lines[header_idx].lstrip("#").strip.split("\t")]
+    header = [h.strip() for h in lines[header_idx].lstrip("#").strip().split("\t")]
     data = [
         l.rstrip("\n").split("\t")
         for l in lines[header_idx + 1:]
-        if l.strip and not l.startswith("#")
+        if l.strip() and not l.startswith("#")
     ]
     return pd.DataFrame(data, columns=header)
 
 
-def main:
+def main() :
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--counts", required=True)
     parser.add_argument("--bakta-tsv", required=True)
@@ -71,7 +71,7 @@ def main:
         "locus_tag", "eggNOG_OGs", "COG_category", "Description",
         "GOs", "EC", "KEGG_ko", "KEGG_Pathway", "PFAMs",
     ]
-    eggnog = eggnogc for c in eggnog_keep if c in eggnog.columns
+    eggnog = eggnog[[c for c in eggnog_keep if c in eggnog.columns]]
 
     merged = counts.merge(bakta, on="locus_tag", how="left").merge(eggnog, on="locus_tag", how="left")
     merged.to_csv(args.out, sep="\t", index=False)

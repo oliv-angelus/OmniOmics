@@ -3,7 +3,7 @@
 # picked as Phase 2's first interactive-widget target (drag legend, per-group
 # color, toggle sample labels), so its data.json shape is what that widget
 # will read from. See plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -219,8 +219,8 @@ saveRDS(list(ps_rar = ps_rar, ordination = ord, permanova = permanova),
 # Phase 1 static preview -- the interactive widget (Phase 2) replaces this
 # for beta_diversity specifically once built; every other analysis keeps
 # using this kind of static image through Phase 1 regardless.
-p <- ggplot(df, aes(x =.dataaxis_cols[1], y =.dataaxis_cols[2],
-                     color =.datagroup_var, fill =.datagroup_var)) +
+p <- ggplot(df, aes(x =.data[[axis_cols]][1], y =.data[[axis_cols]][2],
+                     color =.data[[group_var]], fill =.data[[group_var]])) +
   stat_ellipse(geom = "polygon", alpha = 0.2, type = "t", level = 0.95, show.legend = FALSE) +
   geom_point(size = 5, alpha = 0.9, shape = 21, color = "black", stroke = 0.5) +
   scale_color_manual(values = palette, name = "Group") +

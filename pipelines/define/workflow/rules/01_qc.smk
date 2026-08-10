@@ -6,7 +6,7 @@ rule fastp:
         r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
         r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz",
         html="results/01_QC/{sample}/{sample}_fastp.html",
-        json="results/01_QC/{sample}/{sample}_fastp.json"
+        json="results/01_QC/{sample}/{sample}_fastp.json()"
     params:
         extra=config["params"]["fastp"]
     conda: "../envs/qc.yaml"
@@ -16,7 +16,7 @@ rule fastp:
         """
         fastp {params.extra} --thread {threads} \
             -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
-            -h {output.html} -j {output.json} > {log} 2>&1
+            -h {output.html} -j {output.json()} > {log} 2>&1
         """
 
 rule fastqc_raw:
@@ -64,7 +64,7 @@ rule multiqc_trim:
     """Same as multiqc_raw but post-trim, plus fastp's own JSON reports -- lets a user compare before/after in one place (PIPELINE_SPEC.md [3])."""
     input:
         fastqc=expand("results/01_QC/{sample}/fastqc_trim", sample=SAMPLES),
-        fastp=expand("results/01_QC/{sample}/{sample}_fastp.json", sample=SAMPLES)
+        fastp=expand("results/01_QC/{sample}/{sample}_fastp.json()", sample=SAMPLES)
     output:
         outdir=directory("results/01_QC/multiqc_trim")
     conda: "../envs/multiqc.yaml"

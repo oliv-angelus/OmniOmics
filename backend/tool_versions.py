@@ -34,7 +34,7 @@ def _rule_env_map(pipeline_id: str) -> dict:
                 continue
             path = os.path.join(rules_dir, fname)
             with open(path) as f:
-                text = f.read
+                text = f.read()
             # Walk rule blocks in order, pairing each with the first `conda:`
             # directive that appears before the next `rule` keyword.
             starts = [(m.start, m.group(1)) for m in _RULE_CONDA_RE.finditer(text)]
@@ -63,9 +63,9 @@ def _pinned_packages(env_yaml_path: str) -> list:
         if isinstance(dep, str):
             if "=" in dep:
                 name, version = dep.split("=", 1)
-                packages.append((name.strip, version.strip.split("=")[0]))
+                packages.append((name.strip(), version.strip().split("=")[0]))
             else:
-                packages.append((dep.strip, None))
+                packages.append((dep.strip(), None))
     return packages
 
 
@@ -93,9 +93,9 @@ def primary_version(tool_id: str, env_paths: list) -> str | None:
     if not all_pkgs:
         return None
 
-    needle = tool_id.lower.replace("_", "").replace("-", "")
+    needle = tool_id.lower().replace("_", "").replace("-", "")
     for name, version in all_pkgs:
-        norm = name.lower.replace("_", "").replace("-", "")
+        norm = name.lower().replace("_", "").replace("-", "")
         if norm == needle or needle in norm or norm in needle:
             return version or "(unpinned)"
 

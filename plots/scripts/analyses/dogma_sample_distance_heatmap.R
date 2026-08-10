@@ -3,7 +3,7 @@
 # sample_distance_heatmap.R (same DESeq2-vignette QC recipe). See
 # dogma_sample_pca.R / lib/build_dogma_table.R for why the aggregation step
 # exists here and not in DEFINE's version.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

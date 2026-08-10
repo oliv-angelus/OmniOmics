@@ -24,7 +24,7 @@ def _databases(pipeline_id: str) -> dict:
     return get_pipeline(pipeline_id).get("databases", {})
 
 
-def get_all_databases_status -> list:
+def get_all_databases_status() -> list:
     """Hub-level view across every pipeline: databases are stored keyed by
     setting_key in the global settings file regardless of which pipeline
     declared them (see module docstring), so a database two pipelines both
@@ -33,11 +33,11 @@ def get_all_databases_status -> list:
     set/download requests through the existing per-pipeline endpoints
     without duplicating that logic for a pipeline-agnostic route.
     """
-    settings = load_settings
+    settings = load_settings()
     by_setting_key: dict = {}
     for summary in list_pipelines:
         pid = summary["id"]
-        for key, db in _databases(pid).items:
+        for key, db in _databases(pid).items():
             setting_key = db["setting_key"]
             entry = by_setting_key.get(setting_key)
             if entry is None:
@@ -52,13 +52,13 @@ def get_all_databases_status -> list:
                 }
                 by_setting_key[setting_key] = entry
             entry["used_by"].append(pid)
-    return sorted(by_setting_key.values, key=lambda e: e["name"].lower)
+    return sorted(by_setting_key.values(), key=lambda e: e["name"].lower())
 
 
 def get_databases_status(pipeline_id: str) -> dict:
-    settings = load_settings
+    settings = load_settings()
     result = {}
-    for key, db in _databases(pipeline_id).items:
+    for key, db in _databases(pipeline_id).items():
         saved_path = settings.get(db["setting_key"])
         result[key] = {
             **db,
@@ -73,7 +73,7 @@ def detect_databases(pipeline_id: str, base_dir: str) -> dict:
     results = {}
     if not os.path.isdir(base_dir):
         return results
-    for key, db in _databases(pipeline_id).items:
+    for key, db in _databases(pipeline_id).items():
         detect_files = db.get("detect_files", [])
         detect_dirs = db.get("detect_dirs", [])
         if _match_in(base_dir, detect_files, detect_dirs):
@@ -101,7 +101,7 @@ def detect_all_databases(base_dir: str) -> dict:
     for summary in list_pipelines:
         pid = summary["id"]
         found = detect_databases(pid, base_dir)
-        for key, path in found.items:
+        for key, path in found.items():
             setting_key = _databases(pid)[key]["setting_key"]
             if setting_key in seen_setting_keys:
                 continue
@@ -165,14 +165,14 @@ def get_download_option(pipeline_id: str, db_key: str, option_id: str) -> dict |
 # global/shared across pipelines -- see module docstring), same as the paths
 # themselves.
 def record_download_choice(setting_key: str, option_id: str):
-    settings = load_settings
+    settings = load_settings()
     choices = settings.get("db_download_choices", {})
     choices[setting_key] = option_id
     save_settings({"db_download_choices": choices})
 
 
 def get_download_choice(setting_key: str) -> str | None:
-    return load_settings.get("db_download_choices", {}).get(setting_key)
+    return load_settings().get("db_download_choices", {}).get(setting_key)
 
 
 def clear_download_choice(setting_key: str):
@@ -180,7 +180,7 @@ def clear_download_choice(setting_key: str):
     download (manually picked, or auto-detected) -- any previously recorded
     option_id no longer describes what's actually at that path, so a stale
     one would misattribute the report's citation."""
-    settings = load_settings
+    settings = load_settings()
     choices = settings.get("db_download_choices", {})
     if setting_key in choices:
         del choices[setting_key]
@@ -207,7 +207,7 @@ def _hash_dir_manifest(path: str) -> str:
     practical "is this the same database as before" question."""
     entries = []
     for root, dirs, files in os.walk(path):
-        dirs.sort
+        dirs.sort()
         for fname in sorted(files):
             fpath = os.path.join(root, fname)
             try:
@@ -215,7 +215,7 @@ def _hash_dir_manifest(path: str) -> str:
             except OSError:
                 continue
             entries.append(f"{os.path.relpath(fpath, path)}\t{size}")
-    entries.sort
+    entries.sort()
     h = hashlib.sha256
     h.update("\n".join(entries).encode("utf-8", errors="replace"))
     return h.hexdigest
@@ -237,13 +237,13 @@ def get_or_compute_checksum(path: str) -> dict | None:
     if not path or not os.path.exists(path):
         return None
     abs_path = os.path.abspath(path)
-    settings = load_settings
+    settings = load_settings()
     cache = settings.get("db_checksums", {})
     cached = cache.get(abs_path)
     if cached:
         return cached
     result = compute_checksum(abs_path)
-    result["computed_at"] = time.time
+    result["computed_at"] = time.time()
     cache[abs_path] = result
     save_settings({"db_checksums": cache})
     return result

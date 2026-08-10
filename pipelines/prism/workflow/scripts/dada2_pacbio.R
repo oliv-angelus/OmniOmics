@@ -36,7 +36,7 @@
 # Plots tab's phyloseq construction (to actually unlock UniFrac distances)
 # is a separate, not-yet-done task -- this script only produces the files.
 
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -61,8 +61,8 @@ opt_list <- list(
 )
 opt <- parse_args(OptionParser(option_list = opt_list))
 
-input_files <- strsplit(opt$input, ",")1
-sample_names <- strsplit(opt$samples, ",")1
+input_files <- strsplit(opt$input, ",")[[1]]
+sample_names <- strsplit(opt$samples, ",")[[1]]
 stopifnot(length(input_files) == length(sample_names))
 
 # Real validation, not a silent wrong answer: gtdb only ever covers 16S --

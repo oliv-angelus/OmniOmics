@@ -58,7 +58,7 @@ rule cutadapt_trim:
         long="results/01_QC/{sample}/{sample}_filtered.fastq.gz"
     output:
         long="results/02_PRIMER_TRIM/{sample}/{sample}_trimmed.fastq.gz",
-        report="results/02_PRIMER_TRIM/{sample}/{sample}_cutadapt.json"
+        report="results/02_PRIMER_TRIM/{sample}/{sample}_cutadapt.json()"
     params:
         linked=_cutadapt_primers
     conda: "../envs/cutadapt.yaml"

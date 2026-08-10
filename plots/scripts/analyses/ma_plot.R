@@ -5,7 +5,7 @@
 # prior distributions for sequence count data: removing the noise and
 # preserving large differences", DOI 10.1093/bioinformatics/bty895 -- apeglm).
 # DEFINE-only; see plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

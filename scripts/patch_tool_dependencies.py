@@ -108,7 +108,7 @@ if missing:
 if extra:
     raise SystemExit(f"PATCH has tool_ids not present in manifest: {sorted(extra)}")
 
-for tool_id, (requires, rule_names) in PATCH.items:
+for tool_id, (requires, rule_names) in PATCH.items():
     manifest["tools"][tool_id]["requires"] = requires
     manifest["tools"][tool_id]["rule_names"] = rule_names
     manifest["tools"][tool_id].pop("dependencies", None)  # superseded by `requires`

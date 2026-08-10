@@ -26,7 +26,7 @@ class FilePickerField extends ConsumerWidget {
     this.typeGroupLabel = 'FASTA',
   });
 
-  Future<void> _pick async {
+  Future<void> _pick() async {
     final result = await openFile(
       acceptedTypeGroups: [XTypeGroup(label: typeGroupLabel, extensions: extensions)],
     );

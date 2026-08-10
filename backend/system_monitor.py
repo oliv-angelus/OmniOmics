@@ -1,7 +1,7 @@
 import psutil
 import shutil
 
-def get_system_info -> dict:
+def get_system_info() -> dict:
     cpu_count = psutil.cpu_count(logical=True)
     cpu_percent = psutil.cpu_percent(interval=None)
 

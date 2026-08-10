@@ -32,7 +32,7 @@ parse_cli_args <- function(defaults = list) {
 #' scripts/analyses/ or scripts/export/ source scripts/lib/*.R by relative
 #' path regardless of the caller's cwd (plots_engine spawns Rscript with
 #' cwd = the run's out_dir, not the script's own directory).
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   if (length(file_arg) == 0) return(getwd)

@@ -30,13 +30,15 @@ suppressMessages({
 
 # ORF ID -> parent transcript ID: TransDecoder always names ORFs
 # "{transcript_id}.p{N}" (confirmed via a real TransDecoder 5.7.1 run,
-# DOGMA's own pinned version) -- strip the last ".pN" segment..orf_to_transcript <- function(orf_ids) sub("\\.p[0-9]+$", "", orf_ids)
+# DOGMA's own pinned version) -- strip the last ".pN" segment.
+.orf_to_transcript <- function(orf_ids) sub("\\.p[0-9]+$", "", orf_ids)
 
 #' Reads one sample x domain's worth of DOGMA output into one long,
 #' ORF-keyed data.frame. Every join below is tolerant of a missing file
 #' (that tool/extra simply wasn't active for this run -- its columns are
 #' just absent, not NA-filled) and of an empty-but-present file (the tool
-#' ran and found zero hits -- same effective result, an empty join)..read_dogma_sample_domain <- function(results_dir, sample, domain) {
+#' ran and found zero hits -- same effective result, an empty join).
+.read_dogma_sample_domain <- function(results_dir, sample, domain) {
   pep_path <- file.path(results_dir, "04_ORF_CALLING", sample, domain, paste0(sample, "_transdecoder.pep"))
   if (!file.exists(pep_path)) return(NULL)
 
@@ -82,7 +84,8 @@ suppressMessages({
   }
 
   # --- NCycDB / SCycDB / MCycDB (DIAMOND blastp + awk gene-family join,
-  # ORF-keyed, sparse, NO header row in the real file) --------------------- for (db in c("ncycdb", "scycdb", "mcycdb")) {
+  # ORF-keyed, sparse, NO header row in the real file) ---------------------
+  for (db in c("ncycdb", "scycdb", "mcycdb")) {
     db_path <- file.path(ann_dir, db, paste0(sample, "_", db, "_annotations.tsv"))
     if (file.exists(db_path) && file.size(db_path) > 0) {
       hits <- read.delim(db_path, header = FALSE, check.names = FALSE,
@@ -94,7 +97,8 @@ suppressMessages({
   }
 
   # --- CANT-HYD (HMMER hmmsearch --tblout, ORF-keyed, sparse, whitespace-
-  # delimited fixed layout, '#'-prefixed header/footer lines) ------------- canthyd_path <- file.path(ann_dir, "canthyd", paste0(sample, "_canthyd_hmmsearch.tblout"))
+  # delimited fixed layout, '#'-prefixed header/footer lines) -------------
+  canthyd_path <- file.path(ann_dir, "canthyd", paste0(sample, "_canthyd_hmmsearch.tblout"))
   if (file.exists(canthyd_path) && file.size(canthyd_path) > 0) {
     ch_lines <- readLines(canthyd_path)
     ch_lines <- ch_lines[!grepl("^#", ch_lines)]
@@ -144,7 +148,8 @@ suppressMessages({
   # --- CAT/BAT (transcript-keyed, dense; taxid-based lineage, no human-
   # readable names -- DOGMA's rule never runs `CAT_pack add_names`, so
   # `catbat_lineage` here is a real ';'-separated taxid string, not a
-  # d__/p__/... string like GTDB-Tk's) ------------------------------------- cat_path <- file.path(ann_dir, "cat", paste0(sample, ".contig2classification.txt"))
+  # d__/p__/... string like GTDB-Tk's) -------------------------------------
+  cat_path <- file.path(ann_dir, "cat", paste0(sample, ".contig2classification.txt"))
   if (file.exists(cat_path) && file.size(cat_path) > 0) {
     catbat <- read.delim(cat_path, header = TRUE, check.names = FALSE)
     colnames(catbat) <- c("transcript_id", "catbat_classification", "catbat_reason", "catbat_lineage", "catbat_lineage_scores")
@@ -265,9 +270,9 @@ aggregate_dogma_counts <- function(long_table, annotation_col, coldata, value_co
   # unit for DESeq2 differential testing the way it is for a descriptive
   # composition bar chart.
   agg <- long_table %>%
-    filter(!is.na(.dataannotation_col),.dataannotation_col != "", !is.na(.datavalue_col)) %>%
-    group_by(sample_domain,.dataannotation_col) %>%
-    summarise(value = sum(.datavalue_col),.groups = "drop")
+    filter(!is.na(.data[[annotation_col]]),.data[[annotation_col]] != "", !is.na(.data[[value_col]])) %>%
+    group_by(sample_domain,.data[[annotation_col]]) %>%
+    summarise(value = sum(.data[[value_col]]),.groups = "drop")
 
   wide <- agg %>%
     pivot_wider(names_from = sample_domain, values_from = value, values_fill = 0) %>%

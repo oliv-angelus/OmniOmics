@@ -107,7 +107,8 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
 
 #' Shared sample_data builder -- identical logic for both the lineage-
 #' collapsed and ASV-level code paths above/below, extracted so the tree
-#' addition didn't need a second copy..build_sample_data <- function(otu_matrix, metadata_path) {
+#' addition didn't need a second copy.
+.build_sample_data <- function(otu_matrix, metadata_path) {
   if (!is.null(metadata_path)) {
     metadata <- read.delim(metadata_path, header = TRUE, row.names = 1, check.names = FALSE)
     colnames(metadata) <- gsub(" ", "_", colnames(metadata))
@@ -133,7 +134,8 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
 #' is a separate code path rather than just tacking a tree onto the
 #' lineage-collapsed shape.
 #' @param tree list(tree_path=, counts_path=, taxonomy_path=, id_col=,
-#'   rank_cols=) -- see find_prism_tree_files for how this gets built..build_phyloseq_asv_level <- function(tree, metadata_path) {
+#'   rank_cols=) -- see find_prism_tree_files for how this gets built.
+.build_phyloseq_asv_level <- function(tree, metadata_path) {
   counts <- read.delim(tree$counts_path, header = TRUE, check.names = FALSE, colClasses = "character")
   tax <- read.delim(tree$taxonomy_path, header = TRUE, check.names = FALSE, colClasses = "character")
 

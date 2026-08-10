@@ -8,7 +8,7 @@
 # consistency with this app's own theme system, same reasoning
 # core_microbiome.R already uses for MAGMA's heatmap. DEFINE-only; see
 # plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

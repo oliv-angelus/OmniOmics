@@ -5,7 +5,7 @@
 # there's no single pre-merged table to just read (see build_dogma_table.R's
 # header for why, and notes/DOGMA.md's "deliberately NOT one merged table"
 # section for the full design reasoning this loader implements).
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -87,6 +87,6 @@ write_json(
   auto_unbox = FALSE, pretty = TRUE
 )
 
-log_line("[load_dogma_table] detected %d metadata columns: %s", length(columns), paste(columns, collapse = ", "))
-log_line("[load_dogma_table] detected %d usable annotation columns: %s", length(annotation_columns), paste(annotation_columns, collapse = ", "))
+log_line("[load_dogma_table] detected %d metadata columns: %s[[", length(columns), paste(columns, collapse = "]], "))
+log_line("[load_dogma_table] detected %d usable annotation columns: %s[[", length(annotation_columns), paste(annotation_columns, collapse = "]], "))
 log_line("[load_dogma_table] wrote dogma_table.rds, metadata_columns.json")

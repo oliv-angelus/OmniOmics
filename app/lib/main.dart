@@ -20,41 +20,41 @@ import 'screens/shell/dependency_gate_screen.dart';
 /// before the one-and-only `runApp` call for the real app, avoids that entirely.
 final _launcher = BackendLauncher;
 
-void main {
+void main() {
   WidgetsFlutterBinding.ensureInitialized;
-  runApp(const _LoadingApp);
-  _boot;
+  runApp(const _LoadingApp());
+  _boot();
 }
 
-Future<void> _boot async {
+Future<void> _boot() async {
   try {
-    await _launcher.start;
-    final apiClient = ApiClient(baseUrl: _launcher.baseUrl);
+    await _launcher.start();
+    final apiClient = ApiClient(baseUrl: _launcher.baseUrl());
     runApp(
       ProviderScope(
         overrides: [apiClientProvider.overrideWithValue(apiClient)],
-        child: const _OmniOmicsApp,
+        child: const _OmniOmicsApp(),
       ),
     );
   } catch (e) {
-    runApp(_BootErrorApp(error: e.toString));
+    runApp(_BootErrorApp(error: e.toString()));
   }
 }
 
 class _LoadingApp extends StatelessWidget {
-  const _LoadingApp;
+  const _LoadingApp();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: buildLightTheme,
+      theme: buildLightTheme(),
       debugShowCheckedModeBanner: false,
       home: const Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator,
+              CircularProgressIndicator(),
               SizedBox(height: 16),
               Text('Iniciando OmniOmics…'),
             ],
@@ -72,7 +72,7 @@ class _BootErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: buildLightTheme,
+      theme: buildLightTheme(),
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
@@ -94,29 +94,29 @@ class _BootErrorApp extends StatelessWidget {
 }
 
 class _OmniOmicsApp extends ConsumerStatefulWidget {
-  const _OmniOmicsApp;
+  const _OmniOmicsApp();
 
   @override
-  ConsumerState<_OmniOmicsApp> createState => _OmniOmicsAppState;
+  ConsumerState<_OmniOmicsApp> createState() => _OmniOmicsAppState();
 }
 
 class _OmniOmicsAppState extends ConsumerState<_OmniOmicsApp> with WidgetsBindingObserver {
   @override
-  void initState {
-    super.initState;
+  void initState() {
+    super.initState();
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
-  void dispose {
+  void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    super.dispose;
+    super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached) {
-      _launcher.stop;
+      _launcher.stop();
     }
   }
 
@@ -127,11 +127,11 @@ class _OmniOmicsAppState extends ConsumerState<_OmniOmicsApp> with WidgetsBindin
     return MaterialApp(
       title: 'OmniOmics',
       debugShowCheckedModeBanner: false,
-      theme: buildLightTheme,
-      darkTheme: buildDarkTheme,
+      theme: buildLightTheme(),
+      darkTheme: buildDarkTheme(),
       themeMode: themeMode,
       locale: locale,
-      home: const DependencyGateScreen(next: AppShell),
+      home: const DependencyGateScreen(next(): AppShell),
     );
   }
 }

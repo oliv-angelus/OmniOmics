@@ -90,7 +90,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   );
 
   @override
-  AppPalette copyWith => this;
+  AppPalette copyWith() => this;
 
   @override
   AppPalette lerp(ThemeExtension<AppPalette>? other, double t) {
@@ -218,5 +218,5 @@ ThemeData _buildTheme(AppPalette p, Brightness brightness) {
   );
 }
 
-ThemeData buildLightTheme => _buildTheme(AppPalette.light, Brightness.light);
-ThemeData buildDarkTheme => _buildTheme(AppPalette.dark, Brightness.dark);
+ThemeData buildLightTheme() => _buildTheme(AppPalette.light, Brightness.light);
+ThemeData buildDarkTheme() => _buildTheme(AppPalette.dark, Brightness.dark);

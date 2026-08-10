@@ -17,7 +17,7 @@ PIPELINES_DIR = os.path.normpath(os.path.join(_here, "..", "pipelines"))
 _cache: dict | None = None
 
 
-def _load_all -> dict:
+def _load_all() -> dict:
     global _cache
     if _cache is not None:
         return _cache
@@ -37,13 +37,13 @@ def _load_all -> dict:
     return registry
 
 
-def reload_registry:
+def reload_registry() :
     """Drop the in-memory cache so the next call re-scans pipelines/ from disk."""
     global _cache
     _cache = None
 
 
-def list_pipelines -> list:
+def list_pipelines() -> list:
     """Summary list for the Hub screen."""
     return [
         {
@@ -54,12 +54,12 @@ def list_pipelines -> list:
             "icon": m.get("icon", ""),
             "tags": m.get("tags", []),
         }
-        for pid, m in _load_all.items
+        for pid, m in _load_all().items()
     ]
 
 
 def get_pipeline(pipeline_id: str) -> dict:
-    registry = _load_all
+    registry = _load_all()
     if pipeline_id not in registry:
         raise KeyError(f"Unknown pipeline: {pipeline_id}")
     return registry[pipeline_id]

@@ -9,7 +9,7 @@
 # its own AMR/virulence gene hits -- the per-genome "report card" a
 # cross-genome comparison (sigma_genome_quality_overview/sigma_amr_heatmap)
 # can't give on its own.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))

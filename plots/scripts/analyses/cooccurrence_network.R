@@ -2,7 +2,7 @@
 # networks among the top N taxa), direct translation of microbiome.R's
 # section 13. One network per level of --group_var, combined into a single
 # preview grid. See plots/manifest.yaml for parameter descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -45,7 +45,7 @@ if (!(group_var %in% colnames(sample_data(ps)))) {
                group_var, paste(colnames(sample_data(ps)), collapse = ", ")))
 }
 
-groups <- unique(as.character(data.frame(sample_data(ps))group_var))
+groups <- unique(as.character(data.frame(sample_data(ps))[[group_var]]))
 groups <- groups[!is.na(groups)]
 
 build_group_network <- function(group) {
@@ -57,7 +57,7 @@ build_group_network <- function(group) {
   # "object 'group' not found". Sidestepped subset_samples's NSE entirely:
   # compute the keep-list in plain base R first, then prune_samples by
   # name, which takes a plain character vector, no NSE trap.
-  keep <- sample_names(ps)[data.frame(sample_data(ps))group_var == group]
+  keep <- sample_names(ps)[data.frame(sample_data(ps))[[group_var]] == group]
   ps_sub <- prune_samples(keep, ps)
   ps_sub <- prune_taxa(taxa_sums(ps_sub) > 0, ps_sub)
 

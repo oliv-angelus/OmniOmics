@@ -22,11 +22,11 @@ def add_plot_run(name: str, parent_run_id: str, analysis_id: str) -> dict:
         "name": name,
         "parent_run_id": parent_run_id,
         "analysis_id": analysis_id,
-        "started_at": time.time,
+        "started_at": time.time(),
         "finished_at": None,
         "status": "running",  # running | done | error | stopped
     }
-    settings = load_settings
+    settings = load_settings()
     runs = settings.get("plot_runs", [])
     runs.insert(0, run)
     save_settings({"plot_runs": runs[:_MAX_PLOT_RUNS]})
@@ -34,7 +34,7 @@ def add_plot_run(name: str, parent_run_id: str, analysis_id: str) -> dict:
 
 
 def update_plot_run(run_id: str, **fields):
-    settings = load_settings
+    settings = load_settings()
     runs = settings.get("plot_runs", [])
     for r in runs:
         if r["id"] == run_id:
@@ -44,14 +44,14 @@ def update_plot_run(run_id: str, **fields):
 
 
 def list_plot_runs(parent_run_id: str | None = None) -> list:
-    runs = load_settings.get("plot_runs", [])
+    runs = load_settings().get("plot_runs", [])
     if parent_run_id is None:
         return runs
     return [r for r in runs if r["parent_run_id"] == parent_run_id]
 
 
 def get_plot_run(run_id: str) -> dict | None:
-    for r in load_settings.get("plot_runs", []):
+    for r in load_settings().get("plot_runs", []):
         if r["id"] == run_id:
             return r
     return None
@@ -59,6 +59,6 @@ def get_plot_run(run_id: str) -> dict | None:
 
 def remove_plot_runs(run_ids) -> None:
     run_ids = set(run_ids)
-    settings = load_settings
+    settings = load_settings()
     runs = [r for r in settings.get("plot_runs", []) if r["id"] not in run_ids]
     save_settings({"plot_runs": runs})

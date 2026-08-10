@@ -3,7 +3,7 @@ import pandas as pd
 configfile: "config/config.yaml"
 
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
-SAMPLES = samples.index.tolist
+SAMPLES = samples.index.tolist()
 
 # PRISM is long-read-only by deliberate scope decision -- every sample is read_type "long", unlike MAGMA/SIGMA/
 # DOGMA which branch short/long/hybrid per sample. Kept as a real check

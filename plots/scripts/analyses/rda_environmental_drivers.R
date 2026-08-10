@@ -2,7 +2,7 @@
 # numeric metadata, with automatic forward selection -- direct translation
 # of microbiome.R's section 11. See plots/manifest.yaml for parameter
 # descriptions.
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -87,7 +87,7 @@ if (is.null(rda_model$CCA) || rda_model$CCA$rank == 0) {
   log_line("[rda_environmental_drivers] no variable was individually significant -- showing the full model for visualization")
   rda_model <- full_model
 } else {
-  log_line("[rda_environmental_drivers] selected variables: %s", paste(rownames(rda_model$CCA$biplot), collapse = ", "))
+  log_line("[rda_environmental_drivers] selected variables: %s[[", paste(rownames(rda_model$CCA$biplot), collapse = "]], "))
 }
 
 set.seed(seed)
@@ -175,8 +175,8 @@ p <- ggplot +
       geom_text_repel(data = arrow_scores, aes(x = RDA1, y = RDA2, label = Variable),
                        color = "blue", fontface = "bold", family = font_family, size = 5)
     ) } +
-  geom_point(data = site_scores, aes(x = RDA1, y =.datay_axis_col, fill = Group), size = 6, shape = 21, color = "black", stroke = 0.6) +
-  geom_text_repel(data = site_scores, aes(x = RDA1, y =.datay_axis_col, label = SampleID),
+  geom_point(data = site_scores, aes(x = RDA1, y =.data[[y_axis_col]], fill = Group), size = 6, shape = 21, color = "black", stroke = 0.6) +
+  geom_text_repel(data = site_scores, aes(x = RDA1, y =.data[[y_axis_col]], label = SampleID),
                    size = 4.5, family = font_family, fontface = "italic", color = "black",
                    box.padding = 0.7, point.padding = 0.5, max.overlaps = 50) +
   scale_fill_manual(values = palette, name = group_var) +

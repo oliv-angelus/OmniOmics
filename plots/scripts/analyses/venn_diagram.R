@@ -2,7 +2,7 @@
 # --group_var. Not part of the original microbiome.R script -- added at the
 # user's request (see plots/manifest.yaml). Up to 4 sets (ggVennDiagram's
 # practical/readable limit for this kind of label-heavy diagram).
-this_script_dir <- function {
+this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)
   dirname(normalizePath(sub("^--file=", "", file_arg)))
@@ -39,7 +39,7 @@ if (!(group_var %in% colnames(sample_data(ps)))) {
                group_var, paste(colnames(sample_data(ps)), collapse = ", ")))
 }
 
-groups <- unique(as.character(data.frame(sample_data(ps))group_var))
+groups <- unique(as.character(data.frame(sample_data(ps))[[group_var]]))
 groups <- groups[!is.na(groups)]
 if (length(groups) < 2) stop(sprintf("group_var '%s' needs at least 2 levels to compare -- found %d.", group_var, length(groups)))
 if (length(groups) > 4) {
@@ -58,14 +58,14 @@ taxon_label <- function(taxon_id) {
 }
 
 present_sets <- lapply(groups, function(g) {
-  ps_g <- prune_samples(sample_names(ps_glom)[data.frame(sample_data(ps_glom))group_var == g], ps_glom)
+  ps_g <- prune_samples(sample_names(ps_glom)[data.frame(sample_data(ps_glom))[[group_var]] == g], ps_glom)
   mean_abund <- taxa_sums(ps_g) / nsamples(ps_g)
   taxon_ids <- names(mean_abund)[mean_abund > min_abundance]
   unique(vapply(taxon_ids, taxon_label, character(1)))
 })
 names(present_sets) <- groups
 
-log_line("[venn_diagram] set sizes: %s", paste(sprintf("%s=%d", groups, lengths(present_sets)), collapse = ", "))
+log_line("[venn_diagram] set sizes: %s", paste(sprintf("%s=%d[[", groups, lengths(present_sets)), collapse = "]], "))
 
 # Every non-empty intersection (2^n - 1 combinations), computed directly
 # rather than relying on ggVennDiagram's internal data structures --
