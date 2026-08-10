@@ -15,6 +15,19 @@
 # already knows the parent run's pipeline_id from runs_store) picks the right
 # pattern instead of hardcoding one, so a future phyloseq-shaped pipeline
 # just needs an entry added here.
+# MAGMA's own pattern is keyed a second level deeper, by --classifier, since
+# it has TWO independently-consolidated community tables: Kraken2/Bracken
+# (read-level, k-mer) and Kaiju (translated-protein) -- see
+# 01_qc_tax.smk's consolidate_taxonomy / consolidate_taxonomy_kaiju. Both are
+# built by the exact same build_phyloseq() call below; the only difference
+# is which raw table feeds it. Defaults to kraken (the original/only
+# classifier before this existed), so every caller that never passes
+# --classifier keeps today's exact behavior.
+MAGMA_CLASSIFIER_PATTERNS <- list(
+  kraken = list(pattern = "abundance_table_final_RAW\\.tsv$"),
+  kaiju = list(pattern = "abundance_table_final_kaiju_RAW\\.tsv$")
+)
+
 ABUNDANCE_FILE_PATTERNS <- list(
   magma = list(pattern = "abundance_table_final_RAW\\.tsv$"),
   # Real bug caught by a real test: PRISM's own filename
@@ -48,15 +61,22 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args()
+args <- parse_cli_args(defaults = list(classifier = "kraken"))
 file_spec <- ABUNDANCE_FILE_PATTERNS[[args$pipeline_id]]
 if (is.null(file_spec)) {
   stop(sprintf("No abundance-file pattern registered for pipeline_id '%s' -- add one to ABUNDANCE_FILE_PATTERNS in load_phyloseq.R.",
                args$pipeline_id %||% "(missing --pipeline_id)"))
 }
+if (args$pipeline_id == "magma") {
+  file_spec <- MAGMA_CLASSIFIER_PATTERNS[[args$classifier]]
+  if (is.null(file_spec)) {
+    stop(sprintf("Unknown --classifier '%s' for MAGMA. Use one of: %s",
+                 args$classifier, paste(names(MAGMA_CLASSIFIER_PATTERNS), collapse = ", ")))
+  }
+}
 log_line("[load_phyloseq] resolving input under %s (pipeline_id=%s)", args$input, args$pipeline_id)
 abundance_path <- find_input_file(args$input, file_spec$pattern, prefer = file_spec$prefer)
-log_line("[load_phyloseq] abundance file: %s", abundance_path)
+log_line("[load_phyloseq] abundance file (classifier=%s): %s", args$classifier, abundance_path)
 
 if (is.null(args$metadata) || args$metadata == "") {
   stop("--metadata is required")
@@ -98,7 +118,12 @@ names(column_levels) <- columns
 tax_ranks <- colnames(tax_table(ps))
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
-saveRDS(ps, file.path(args$out_dir, "phyloseq.rds"))
+# Filename must match INPUT_SHAPE_INFO's own rds_filename for whichever shape
+# this run is (main.py): "phyloseq.rds" for kraken/every non-MAGMA pipeline,
+# "phyloseq_kaiju.rds" for MAGMA's Kaiju variant -- both shapes point back at
+# this same loader script, distinguished only by --classifier.
+rds_filename <- if (args$classifier == "kaiju") "phyloseq_kaiju.rds" else "phyloseq.rds"
+saveRDS(ps, file.path(args$out_dir, rds_filename))
 
 write_json(
   # has_tree: not read by anything yet (no analysis/frontend gating on it

@@ -212,6 +212,56 @@ analyses:
         min: 1
         max: 50
 
+  - id: magma_kaiju_taxonomic_composition
+    name:
+      en: "Taxonomic Composition (Kaiju)"
+      pt: "Composição Taxonômica (Kaiju)"
+    description:
+      en: "Same stacked relative-abundance bar chart as Taxonomic Composition, built from Kaiju's translated-protein classification instead of Kraken2/Bracken's k-mer classification -- Kaiju tends to assign more reads in samples with a lot of taxonomic novelty. Compare against Taxonomic Composition to see where the two classifiers agree."
+      pt: "O mesmo gráfico de barras empilhadas da Composição Taxonômica, construído a partir da classificação por proteína traduzida do Kaiju em vez da classificação por k-mer do Kraken2/Bracken -- o Kaiju tende a atribuir mais reads em amostras com muita novidade taxonômica. Compare com Composição Taxonômica para ver onde os dois classificadores concordam."
+    applies_to: [magma]
+    input_shape: phyloseq_kaiju
+    script: analyses/taxonomic_composition.R
+    parameters:
+      - flag: "--rank"
+        type: tax_rank
+        default: "all"
+        include_all: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to plot ('all' generates one figure per rank); options reflect the ranks available in this run's own reference database"
+          pt: "Nível taxonômico a plotar ('all' gera uma figura por nível); as opções refletem os níveis disponíveis na referência usada nesta execução"
+      - flag: "--top_n"
+        type: int
+        default: 20
+        enabled: true
+        description:
+          en: "Number of top taxa to show individually before collapsing the rest into 'Others'"
+          pt: "Número de táxons mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
+        min: 1
+        max: 50
+
+  - id: magma_classifier_concordance
+    name:
+      en: "Classifier Concordance (Kraken2 vs. Kaiju)"
+      pt: "Concordância entre Classificadores (Kraken2 vs. Kaiju)"
+    description:
+      en: "Compares Kraken2/Bracken's k-mer classification against Kaiju's translated-protein classification for the same reads: total abundance assigned by each classifier per taxon, and which taxa each one calls that the other doesn't. Agreement between two independent classification methods is itself real evidence, not just a choice between them."
+      pt: "Compara a classificação por k-mer do Kraken2/Bracken com a classificação por proteína traduzida do Kaiju para as mesmas reads: abundância total atribuída por cada classificador por táxon, e quais táxons cada um encontra que o outro não encontra. A concordância entre dois métodos de classificação independentes é evidência real por si só, não apenas uma escolha entre eles."
+    applies_to: [magma]
+    input_shape: phyloseq
+    script: analyses/magma_classifier_concordance.R
+    parameters:
+      - flag: "--top_n"
+        type: int
+        default: 15
+        enabled: true
+        description:
+          en: "Number of taxa (by combined abundance) to show individually before collapsing the rest into 'Others'"
+          pt: "Número de táxons (por abundância combinada) a mostrar individualmente antes de agrupar o resto em 'Outros'"
+        min: 1
+        max: 40
+
   - id: core_microbiome
     name:
       en: "Core Microbiome Heatmap"

@@ -1653,6 +1653,14 @@ INPUT_SHAPE_INFO = {
     "dogma_annotated": {"loader_script": "load_dogma_table.R", "rds_filename": "dogma_table.rds", "rds_flag": "--dogma_table_rds"},
     "sigma_genomes": {"loader_script": "load_sigma_table.R", "rds_filename": "sigma_table.rds", "rds_flag": "--sigma_table_rds"},
     "magma_mags": {"loader_script": "load_magma_mag_table.R", "rds_filename": "magma_mag_table.rds", "rds_flag": "--magma_mag_table_rds"},
+    # Same loader as "phyloseq", pointed at MAGMA's Kaiju-consolidated table
+    # instead of Kraken2/Bracken's -- see load_phyloseq.R's own
+    # MAGMA_CLASSIFIER_PATTERNS. rds_flag matches "phyloseq" on purpose: any
+    # analysis script written for a phyloseq object works unchanged against
+    # either shape, it's registered a second time in the manifest under a
+    # different id/input_shape rather than needing its own R code.
+    "phyloseq_kaiju": {"loader_script": "load_phyloseq.R", "rds_filename": "phyloseq_kaiju.rds",
+                       "rds_flag": "--phyloseq_rds", "extra_args": ["--classifier", "kaiju"]},
 }
 
 
@@ -1722,7 +1730,8 @@ async def load_plot_data(data: dict):
                "--input", os.path.join(parent_run["output_dir"], "results"),
                "--metadata", metadata_path,
                "--out_dir", out_dir,
-               "--pipeline_id", parent_run["pipeline_id"]]
+               "--pipeline_id", parent_run["pipeline_id"],
+               *shape_info.get("extra_args", [])]
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,

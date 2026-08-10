@@ -572,18 +572,24 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     final shapes = _analyses.map((a) => a.inputShape).toSet();
     if (shapes.length <= 1) return _buildAnalysisRows(_analyses, availableWidth);
 
-    final order = ['phyloseq', 'count_matrix', 'dogma_annotated', 'sigma_genomes', 'magma_mags'];
-    final ordered = [...shapes]..sort((a, b) => order.indexOf(a).compareTo(order.indexOf(b)));
+    // Grouped by LABEL, not by raw shape -- "phyloseq" and "phyloseq_kaiju"
+    // both read "Comunidade" (same row shape: samples, just two different
+    // classifiers feeding it), so they share one section instead of each
+    // shape value getting its own duplicate-titled header.
+    final order = [ref.t('plots_section_community'), ref.t('plots_section_mags')];
+    final byLabel = <String, List<PlotAnalysis>>{};
+    for (final a in _analyses) {
+      byLabel.putIfAbsent(_shapeSectionLabel(a.inputShape), () => []).add(a);
+    }
+    final labels = byLabel.keys.toList()
+      ..sort((a, b) => order.indexOf(a).compareTo(order.indexOf(b)));
     final sections = <Widget>[];
-    for (final shape in ordered) {
-      final group = _analyses.where((a) => a.inputShape == shape).toList();
-      if (group.isEmpty) continue;
+    for (final label in labels) {
       sections.add(Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Text(_shapeSectionLabel(shape),
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: colors.textSecondary)),
+        child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: colors.textSecondary)),
       ));
-      sections.add(_buildAnalysisRows(group, availableWidth));
+      sections.add(_buildAnalysisRows(byLabel[label]!, availableWidth));
       sections.add(const SizedBox(height: 24));
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: sections);
