@@ -52,7 +52,7 @@ class PlotStylePanel extends ConsumerWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop, child: Text(cancelLabel)),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(cancelLabel)),
           ElevatedButton(
             onPressed: () {
               // NOT picked.toHexString(...) -- flutter_colorpicker 1.1.0's
@@ -72,7 +72,7 @@ class PlotStylePanel extends ConsumerWidget {
               // module, but not broken) gets the real "#RRGGBB" this app's
               // R side (plot_theme.R's apply_palette_overrides) expects.
               onPicked(colorToHex(picked, includeHashSign: true, enableAlpha: false));
-              Navigator.of(dialogContext).pop;
+              Navigator.of(dialogContext).pop();
             },
             child: Text(okLabel),
           ),

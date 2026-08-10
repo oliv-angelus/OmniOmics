@@ -21,7 +21,7 @@ import 'screens/shell/dependency_gate_screen.dart';
 final _launcher = BackendLauncher();
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized;
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const _LoadingApp());
   _boot();
 }

@@ -327,7 +327,7 @@ class _DatabaseDownloadsIndicator extends ConsumerWidget {
           ref.read(selectedTabProvider.notifier).state = 1; // Databases tab
           ref.read(embeddedPipelineProvider.notifier).state = null;
           ref.read(embeddedMonitorProvider.notifier).state = false;
-          ref.read(databaseDownloadsProvider.notifier).dismissFinished;
+          ref.read(databaseDownloadsProvider.notifier).dismissFinished();
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
