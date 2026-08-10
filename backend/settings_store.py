@@ -9,7 +9,7 @@ import os
 import json
 import tempfile
 
-SETTINGS_FILE = os.path.expanduser("~/.omniomics.json()")
+SETTINGS_FILE = os.path.expanduser("~/.omniomics.json")
 
 
 def load_settings() -> dict:
@@ -26,7 +26,7 @@ def load_settings() -> dict:
         # run history -- basically every screen calls load_settings on open,
         # so a corrupt file (crash/full-disk mid-write, manual edit gone wrong)
         # would otherwise 500 the entire app until someone hunts down and
-        # deletes ~/.omniomics.json() by hand. Instead, quarantine the bad file
+        # deletes ~/.omniomics.json by hand. Instead, quarantine the bad file
         # (kept for forensics rather than silently overwritten) and start
         # clean, so the app always comes up.
         try:

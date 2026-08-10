@@ -10,7 +10,7 @@ rule fastp:
         r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
         r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz",
         html="results/01_QC/{sample}/{sample}_fastp.html",
-        json="results/01_QC/{sample}/{sample}_fastp.json()"
+        json="results/01_QC/{sample}/{sample}_fastp.json"
     params:
         extra=config["params"]["fastp"],
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
