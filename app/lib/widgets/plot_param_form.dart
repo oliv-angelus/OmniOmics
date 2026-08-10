@@ -15,9 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// "column" and "level" parameters (group_var, reference_group,...) are
 /// dropdowns fed by [loadedData] -- the real metadata column names and their
-/// real detected values, from POST /api/plots/load -- rather than free text,
-/// per the user's explicit request: pick from what's actually in the table,
-/// don't type it.
+/// real detected values, from POST /api/plots/load -- rather than free
+/// text: the value has to be one that actually occurs in the table.
 class PlotParamForm extends ConsumerWidget {
   final PlotAnalysis analysis;
   final PlotParamsState state;
@@ -143,9 +142,9 @@ class _PlotParamValueInput extends StatelessWidget {
       // blank (options.contains(current) is false), but the STORED value
       // was never actually cleared, so a "Replotar" would silently resend
       // the old, now-invalid level instead of the form correctly demanding
-      // a fresh pick. This was a real reported bug: replotting after
-      // changing group_var sent a stale reference_group and the R script's
-      // own validation rejected it a few lines into the run. Clearing it
+      // a fresh pick. Without this, replotting after changing group_var
+      // sends a stale reference_group and the R script's own validation
+      // rejects it a few lines into the run. Clearing it
       // (scheduled post-frame -- this runs during build, and
       // onChanged triggers a setState) makes the "required" marker and
       // toApiParameters both see the truth.

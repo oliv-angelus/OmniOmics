@@ -13,7 +13,7 @@ import '../models/tool.dart';
 /// off Prodigal's "sample" track must cascade to every dependent's "sample"
 /// track specifically, leaving their "mags" track alone. When the *required*
 /// tool has no tracks of its own (e.g. Tiara), the check isn't track-specific
-/// -- it just needs to be active at all, same as before track toggles existed.
+/// -- it just needs to be active at all.
 class DependencyGraph {
   final Map<String, ToolDef> toolsById;
   const DependencyGraph(this.toolsById);
@@ -38,7 +38,8 @@ class DependencyGraph {
   }
 
   /// Whether [toolId]'s requirements are met for [track] (null for tools
-  /// without tracks). Excludes [toolId] itself from the active set first -- /// a tool never counts as its own prerequisite.
+  /// without tracks). Excludes [toolId] itself from the active set first --
+  /// a tool never counts as its own prerequisite.
   bool _satisfiedForTrack(
     String toolId,
     String? track,

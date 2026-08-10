@@ -162,7 +162,8 @@ class DownloadAllNotifier extends Notifier<Map<String, DownloadAllState>> {
     api.post('/api/pipelines/$pipelineId/databases/download-all/cancel').catchError((_) => null);
   }
 
-  /// Drops a finished/errored batch from the map once the user has seen it -- /// does not touch the backend (the batch is already over either way).
+  /// Drops a finished/errored batch from the map once the user has seen it --
+  /// does not touch the backend (the batch is already over either way).
   void dismiss(String pipelineId) {
     _sockets[pipelineId]?.close();
     _sockets.remove(pipelineId);

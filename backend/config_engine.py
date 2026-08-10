@@ -85,7 +85,7 @@ def build_samples(pipeline_id: str, data: dict) -> list:
     # Three-way: "none" (no RagTag scaffolding at all), "single" (one
     # reference fasta applied to every sample -- mass-assembly of one
     # organism across many samples), "per_sample" (reference_dir/<sample>/
-    # matching by folder name, the original behavior -- a sample with no
+    # matching by folder name -- a sample with no
     # matching folder just runs without a reference, unless the Launch
     # screen's validation step recorded a manual pick in reference_overrides).
     reference_mode = data.get("reference_mode", "none")
@@ -277,7 +277,8 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
                       "rev_primers": [], "min_length": 0, "max_length": 0}
 
     # Primers typed into the Inputs tab's own fields override whatever the
-    # preset carries. Those fields exist because several presets ("18S -- # supply your primers", "Custom") deliberately carry NO sequence, so
+    # preset carries. Those fields exist because several presets ("18S --
+    # supply your primers", "Custom") deliberately carry NO sequence, so
     # without them the UI told the user to supply primers with nowhere to do
     # it; they also let a user swap the primers of a preset that does carry
     # them (different primer sets amplify the same region). Comma-separated
@@ -290,7 +291,8 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
                        ("amplicon_rev_primers", "rev_primers")):
         if field in data:
             typed = _split_primers(data.get(field))
-            # An empty box means "fall back to the preset", not "no primers" -- # otherwise merely opening the tab and saving would silently strip
+            # An empty box means "fall back to the preset", not "no primers" --
+            # otherwise merely opening the tab and saving would silently strip
             # a preset's own sequences.
             if typed:
                 amplicon_preset[key] = typed

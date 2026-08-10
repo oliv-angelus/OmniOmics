@@ -36,7 +36,8 @@ class RunRecord {
 
   factory RunRecord.fromJson(Map<String, dynamic> json) => RunRecord(
         id: json['id'] as String,
-        // Records created before this field existed simply won't have it -- // fall back to a short id-based label instead of an empty string.
+        // Records created before this field existed simply won't have it --
+        // fall back to a short id-based label instead of an empty string.
         name: (json['name'] as String?)?.trim().isNotEmpty == true
             ? json['name'] as String: 'run-${(json['id'] as String).substring(0, 6)}',
         pipelineId: json['pipeline_id'] as String,

@@ -43,7 +43,8 @@ rule kaiju_classify:
         # Guard the [0]: Snakemake evaluates this params lambda at DAG-build
         # time even when kaiju is inactive (--omit-from doesn't prevent it), so
         # an empty/unconfigured kaiju DB (glob finds no.fmi) must not raise
-        # IndexError and abort the whole run before it starts. Returns "" then -- # harmless, since the rule only actually runs when kaiju is active with a
+        # IndexError and abort the whole run before it starts. Returns "" then --
+        # harmless, since the rule only actually runs when kaiju is active with a
         # real DB (glob then finds the.fmi).
         fmi=lambda wc: (glob.glob(os.path.join(config["databases"]["kaiju"], "*.fmi")) or [""])[0],
         extra=config["params"]["kaiju"],

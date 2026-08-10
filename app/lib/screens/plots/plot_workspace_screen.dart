@@ -57,7 +57,8 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
 
   /// Seeded from the first successful run's default_style.json (see
   /// _initStyleFromRun), then edited in place by PlotStylePanel and carried
-  /// forward across every "Replotar" within this workspace session -- /// never reset except when picking a different analysis (a different
+  /// forward across every "Replotar" within this workspace session --
+  /// never reset except when picking a different analysis (a different
   /// analysis has a differently-shaped palette).
   PlotStyleState? _styleState;
   bool _customizeExpanded = false;
@@ -84,10 +85,9 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     super.dispose();
   }
 
-  /// Auto-follows the tail of the log, like a terminal -- previously the
-  /// view stayed wherever it was and a new line arriving off-screen required
-  /// scrolling down manually to notice it (a real reported bug: "não abaixa
-  /// sozinho"). Scheduled after the frame that adds the new line actually
+  /// Auto-follows the tail of the log, like a terminal -- without it a new
+  /// line arriving off-screen requires scrolling down manually to notice.
+  /// Scheduled after the frame that adds the new line actually
   /// lays out, since maxScrollExtent isn't valid until then.
   void _scrollLogToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -137,10 +137,9 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
 
   /// Reads the just-picked metadata file's raw text so it can be shown in
   /// the editable preview (MetadataTableEditor) BEFORE anything is sent to
-  /// the backend -- per the user's explicit ask, a chance to see and fix
-  /// the table (a typo'd group label, a stray value) without leaving the
-  /// app. Does not build the phyloseq object yet; see _confirmMetadata for
-  /// that (unchanged from before -- same POST /api/plots/load contract).
+  /// the backend -- a chance to see and fix the table (a typo'd group
+  /// label, a stray value) without leaving the app. Does not build the
+  /// phyloseq object yet; see _confirmMetadata (POST /api/plots/load).
   Future<void> _pickMetadata(String path) async {
     setState(() {
       _metadataPath = path;
@@ -430,8 +429,8 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
 
   Widget _buildMetadataStep(AppPalette colors) {
     // Once a file has been picked and its raw text read, show the editable
-    // preview instead of the plain picker card -- per the user's explicit
-    // ask, a chance to see (and fix) the table before it's actually loaded
+    // preview instead of the plain picker card -- a chance to see (and
+    // fix) the table before it's actually loaded
     // into a phyloseq object. "Trocar metadados" inside the editor routes
     // back to _changeMetadata, which clears this and falls through to the
     // picker card below. Not width-constrained like the picker step -- a
@@ -911,7 +910,8 @@ class _AnalysisCard extends ConsumerWidget {
               const SizedBox(height: 4),
               // No maxLines/ellipsis and no Expanded (that requires a
               // bounded-height parent, which this card no longer has now
-              // that it sizes to its own content, see _buildAnalysesList) -- // the full description always shows, however long.
+              // that it sizes to its own content, see _buildAnalysesList) --
+              // the full description always shows, however long.
               Text(
                 analysis.description,
                 style: TextStyle(fontSize: 11.5, color: colors.textSecondary, height: 1.25),
@@ -922,9 +922,8 @@ class _AnalysisCard extends ConsumerWidget {
       ),
     );
     // Same de-emphasis the Hub uses for pipelines that aren't built yet
-    // (hub_screen.dart's _PlaceholderCard) -- still clickable (running a
-    // stub is harmless and useful for checking the wiring), just visually
-    // upfront about not having real statistics/preview yet.
+    // (hub_screen.dart's _PlaceholderCard). Still clickable, just visually
+    // upfront about not having real statistics or a preview.
     return analysis.implemented ? card: Opacity(opacity: 0.65, child: card);
   }
 }

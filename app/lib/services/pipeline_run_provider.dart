@@ -193,7 +193,8 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
     state = null;
   }
 
-  /// Clears the banner if it's currently showing one of these history ids -- /// called by the Results page right after deleting run(s), so a deleted
+  /// Clears the banner if it's currently showing one of these history ids --
+  /// called by the Results page right after deleting run(s), so a deleted
   /// run's pill doesn't linger at the top of the app with nothing to show
   /// for it anymore.
   void dismissIfIdIn(Set<String> deletedRunIds) {

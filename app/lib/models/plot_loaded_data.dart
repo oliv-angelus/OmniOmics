@@ -18,7 +18,8 @@ class PlotLoadedData {
   final Map<String, List<String>> columnLevels;
   /// The real taxonomic ranks THIS data actually has, in real hierarchical
   /// order (e.g. Domain/Phylum/.../Species for GTDB, or with Kingdom too
-  /// for Kraken2/NCBI -- see load_phyloseq.R's build_phyloseq call) -- /// lets --rank parameters (PlotParam's "tax_rank" type) render every
+  /// for Kraken2/NCBI -- see load_phyloseq.R's build_phyloseq call) --
+  /// lets --rank parameters (PlotParam's "tax_rank" type) render every
   /// level the user's own data supports instead of a fixed, potentially
   /// incomplete hardcoded list. Always empty for count_matrix-shaped runs
   /// (DEFINE) -- genes aren't taxonomically ranked.

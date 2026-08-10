@@ -135,7 +135,8 @@ rule dada2_pacbio:
 rule emu_build_db:
     # Real, tested pipeline: the prep files (fasta/seq2tax/taxonomy
     # this script builds *for* `emu build-database`) live under a `_prep/`
-    # subdirectory, deliberately never named `species_taxid.fasta` -- # `emu build-database` itself writes its OWN real `species_taxid.fasta`/
+    # subdirectory, deliberately never named `species_taxid.fasta` --
+    # `emu build-database` itself writes its OWN real `species_taxid.fasta`/
     # `taxonomy.tsv` directly into `db_{gene}/`, and a first version of this
     # rule had the prep fasta collide with that exact filename in that same
     # directory, a real bug caught by actually running it. `output:` below

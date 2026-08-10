@@ -6,11 +6,10 @@
 # side, then passed in explicitly via --style_json, see
 # read_style_from_path) and re-runs the analysis with those overrides
 # applied (see plot_theme.R's resolve_palette/base_theme). Re-running the
-# real computation on every style tweak (rather than a cheap restyle-only
-# fast path) is a deliberate simplification for now -- most of these
-# analyses finish in a few seconds against real data; a genuine native
-# interactive canvas (drag legend, live recolor with no recompute) is still
-# future work.
+# real computation on every style tweak, rather than keeping a restyle-only
+# fast path, is a deliberate simplification: these analyses finish in a few
+# seconds against real data, so the extra cost is small compared to the
+# machinery a recompute-free path would need.
 suppressMessages(library(jsonlite))
 
 # Expects plot_theme.R (dark2_palette) to already be sourced by the caller --

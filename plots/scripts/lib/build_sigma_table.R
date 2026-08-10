@@ -177,7 +177,8 @@ build_sigma_table <- function(results_dir) {
   summary_df
 }
 
-# --- Sparse gene-hit long table (AMR/virulence) ----------------------------- #' AMRFinderPlus's real 22-column schema, confirmed against the actual
+# --- Sparse gene-hit long table (AMR/virulence) -----------------------------
+#' AMRFinderPlus's real 22-column schema, confirmed against the actual
 #' installed 4.2.7 binary's own strings (real column names differ from
 #' older AMRFinderPlus releases -- e.g. "Element symbol"/"Element name",
 #' not "Gene symbol"/"Sequence name" -- a real version-drift correction,

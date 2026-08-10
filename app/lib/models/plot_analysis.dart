@@ -8,7 +8,8 @@ import 'manifest_i18n.dart';
 /// named value passed to Rscript, see plots_engine.build_params_args).
 class PlotParam {
   final String flag;
-  // int | float | bool | str | choice | column | level | tax_rank | sample -- // the last four are Plots-tab-specific (see plots/manifest.yaml's header
+  // int | float | bool | str | choice | column | level | tax_rank | sample --
+  // the last four are Plots-tab-specific (see plots/manifest.yaml's header
   // comment): "column" is populated from the loaded metadata table's real
   // column names, "level" from the real values found in whichever column is
   // currently selected for [dependsOn], "tax_rank" from the real taxonomic

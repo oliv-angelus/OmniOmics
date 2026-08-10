@@ -32,7 +32,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// without a network round-trip or disturbing active tools/flag params.
   List<dynamic> _toolsRaw = [];
   List<ToolCategory> _categories = [];
-  /// Raw `/databases` response, kept for the same reason as [_toolsRaw] -- /// database/download-option descriptions are locale-dependent too.
+  /// Raw `/databases` response, kept for the same reason as [_toolsRaw] --
+  /// database/download-option descriptions are locale-dependent too.
   Map<String, dynamic> _databasesRaw = {};
   Map<String, DatabaseDef> _databases = {};
   Map<String, ToolDef> _toolsById = {};
@@ -51,7 +52,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   // 'none': no scaffolding at all -- every sample stays de-novo-only.
   // 'single': one fasta (_referenceFile) applied to every sample -- for
   // mass-assembly of one organism across many samples.
-  // 'per_sample': the original behavior -- reference_dir/<sample>/ matched by
+  // 'per_sample': reference_dir/<sample>/ matched by
   // folder name. A sample with no matching folder is flagged by
   // _checkReferenceMatches so the user can pick a file manually or confirm
   // running that sample without a reference (_referenceOverrides /
@@ -108,7 +109,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   final _ramController = TextEditingController(text: '32');
   final _coresController = TextEditingController(text: '8');
   // Per-tool thread overrides (Resources tab): tool_id -> controller. Empty
-  // text means "use the manifest's default_threads value for this tool" -- // one controller per tool known from the manifest, created once in _load.
+  // text means "use the manifest's default_threads value for this tool" --
+  // one controller per tool known from the manifest, created once in _load.
   final Map<String, TextEditingController> _threadControllers = {};
 
   bool _loading = true;
@@ -567,7 +569,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     }
   }
 
-  /// Embedded directly in AppShell's body (see embeddedPipelineProvider) -- /// no own Scaffold/AppBar, so the sidebar nav rail stays visible/usable
+  /// Embedded directly in AppShell's body (see embeddedPipelineProvider) --
+  /// no own Scaffold/AppBar, so the sidebar nav rail stays visible/usable
   /// while a pipeline is being configured, instead of covering it the way a
   /// full-screen pushed route would.
   @override
@@ -713,7 +716,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// reference for all samples / one reference per sample) since RagTag's
   /// reference-guided scaffolding can run in any of those modes; a
   /// "toggle"-type entry (currently just DOGMA's paired MAGMA run), which is
-  /// an explicit on/off switch plus a folder picker shown only while on -- /// this is a per-run value (unlike the persistent Databases screen), so
+  /// an explicit on/off switch plus a folder picker shown only while on --
+  /// this is a per-run value (unlike the persistent Databases screen), so
   /// each run can pair a different MAGMA run, or none at all; and a
   /// "kind": "file" entry (currently just DEFINE's reference genome), a
   /// single required file rather than a folder to scan for samples.
@@ -909,7 +913,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
               },
             ),
             const SizedBox(height: 4),
-            // The chosen preset's own caveat (e.g. "primers not confirmed -- // supply your own", or which ONT kit the sequences came from) is
+            // The chosen preset's own caveat (e.g. "primers not confirmed --
+            // supply your own", or which ONT kit the sequences came from) is
             // more useful here than a single static hint, since the presets
             // genuinely differ in how ready-to-run they are.
             Builder(builder: (_) {
@@ -924,7 +929,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
               );
             }),
             const SizedBox(height: 12),
-            // Campos reais de primer. Existem porque presets como "18S -- // informe os primers" e "Personalizado" deliberadamente não trazem
+            // Campos reais de primer. Existem porque presets como "18S --
+            // informe os primers" e "Personalizado" deliberadamente não trazem
             // sequência: sem isto o usuário lê "informe os primers" e não tem
             // onde informar (só digitando -g/-G cru no cutadapt, nada
             // descobrível). Também permite trocar os primers de um preset que
@@ -1138,7 +1144,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   }
 
   /// After the user turns something on, bring back anything that's only off
-  /// because *that* cascaded away earlier and is now satisfiable again -- /// e.g. re-enabling Prodigal/sample should also revive eggNOG/sample, but
+  /// because *that* cascaded away earlier and is now satisfiable again --
+  /// e.g. re-enabling Prodigal/sample should also revive eggNOG/sample, but
   /// not a track the user turned off on purpose. Iterates to a fixed point:
   /// reviving one unit can satisfy another's requirement in turn.
   void _reviveCascaded() {
@@ -1190,7 +1197,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     }
   }
 
-  /// Toggles one track (sample/mags) of a dual-track tool independently -- /// e.g. run Prodigal on MAGs only, skip the per-sample track. Turning a
+  /// Toggles one track (sample/mags) of a dual-track tool independently --
+  /// e.g. run Prodigal on MAGs only, skip the per-sample track. Turning a
   /// track off cascades same-track dependents off too (and remembers that it
   /// was cascade, not deliberate); turning one back on revives whatever was
   /// only off because of that -- see _settleAndTrackCascade/_reviveCascaded.
