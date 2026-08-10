@@ -97,7 +97,7 @@ def detect_all_databases(base_dir: str) -> dict:
     setting_key (first pipeline to match wins) so the frontend can route the
     follow-up 'set' call through that (pipeline_id, key) pair."""
     results = {}
-    seen_setting_keys = set
+    seen_setting_keys = set()
     for summary in list_pipelines():
         pid = summary["id"]
         found = detect_databases(pid, base_dir)

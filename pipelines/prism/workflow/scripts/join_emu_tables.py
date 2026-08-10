@@ -50,12 +50,11 @@ def lineage_from_row(row):
 
 
 def main():
-    ap = argparse.ArgumentParser
+    ap = argparse.ArgumentParser()
     ap.add_argument("--inputs", nargs="+", required=True, help="sample_name:path.tsv pairs")
     ap.add_argument("--out", required=True)
     ap.add_argument("--out_species", default="")
-    args = ap.parse_args
-
+    args = ap.parse_args()
     table = defaultdict(dict)          # lineage -> {sample: count}
     species_table = defaultdict(dict)  # tax_id -> {sample: count}
     sample_names = []

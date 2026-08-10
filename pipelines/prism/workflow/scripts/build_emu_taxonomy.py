@@ -31,13 +31,12 @@ def open_maybe_gz(path):
 
 
 def main():
-    ap = argparse.ArgumentParser
+    ap = argparse.ArgumentParser()
     ap.add_argument("--ref", required=True)
     ap.add_argument("--out_fasta", required=True)
     ap.add_argument("--out_seq2tax", required=True)
     ap.add_argument("--out_taxonomy", required=True)
-    args = ap.parse_args
-
+    args = ap.parse_args()
     with open_maybe_gz(args.ref) as fin, \
          open(args.out_fasta, "w") as fasta_out, \
          open(args.out_seq2tax, "w") as seq2tax_out, \

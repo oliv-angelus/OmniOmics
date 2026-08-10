@@ -118,7 +118,7 @@ def setup_status():
 @app.websocket("/ws/install/python-deps")
 async def install_python_deps_ws(websocket: WebSocket):
     """Install missing Python backend packages via pip."""
-    await websocket.accept
+    await websocket.accept()
     proc = None
     try:
         deps = check_python_deps()
@@ -174,10 +174,10 @@ def conda_distributions(lang: str = "pt"):
 async def install_conda_ws(websocket: WebSocket):
     """Download and install the chosen conda distribution, streaming progress."""
     from conda_manager import CONDA_DISTRIBUTIONS
-    await websocket.accept
+    await websocket.accept()
     proc = None
     try:
-        msg = await websocket.receive_json
+        msg = await websocket.receive_json()
         install_path = os.path.expanduser(msg.get("install_path", "~/miniforge3"))
         distro_id = msg.get("distribution", "miniforge")
         distro = CONDA_DISTRIBUTIONS.get(distro_id, CONDA_DISTRIBUTIONS["miniforge"])
@@ -252,7 +252,7 @@ async def install_conda_ws(websocket: WebSocket):
 @app.websocket("/ws/install/snakemake")
 async def install_snakemake_ws(websocket: WebSocket):
     """Create the 'snakemake' conda environment, streaming progress."""
-    await websocket.accept
+    await websocket.accept()
     proc = None
     try:
         from settings_store import load_settings
@@ -292,7 +292,7 @@ async def install_snakemake_ws(websocket: WebSocket):
 @app.websocket("/ws/install/vibrant-tools")
 async def install_vibrant_tools_ws(websocket: WebSocket):
     """Install HMMER3 + wget via conda, streaming output."""
-    await websocket.accept
+    await websocket.accept()
     proc = None
     try:
         conda = check_conda()
@@ -342,7 +342,7 @@ def system_info():
 
 @app.websocket("/ws/system")
 async def system_monitor_ws(websocket: WebSocket):
-    await websocket.accept
+    await websocket.accept()
     try:
         while True:
             data = get_system_info()
@@ -485,7 +485,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
     async def stream_url(url: str, fallback_name: str = "") -> str:
         async with httpx.AsyncClient(follow_redirects=True, timeout=None) as client:
             async with client.stream("GET", url) as resp:
-                resp.raise_for_status
+                resp.raise_for_status()
                 # Determine filename: explicit fallback → URL path → Content-Disposition
                 if fallback_name:
                     filename = fallback_name
@@ -623,7 +623,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
             url_pn = f"https://raw.githubusercontent.com/AnantharamanLab/VIBRANT/master/databases/profile_names/{pn_file}"
             async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
                 r = await client.get(url_pn)
-                r.raise_for_status
+                r.raise_for_status()
                 with open(os.path.join(pn_dir, pn_file), "w") as f:
                     f.write(r.text)
             await send({"type": "log", "text": f"  ✓ {pn_file}\n"})
@@ -634,7 +634,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
         async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
             r = await client.get(
                 "https://raw.githubusercontent.com/AnantharamanLab/VIBRANT/master/databases/VIBRANT_setup.py")
-            r.raise_for_status
+            r.raise_for_status()
             with open(setup_py, "w") as f:
                 f.write(r.text)
         await send({"type": "log", "text": "✓ VIBRANT_setup.py ready\n"})
@@ -774,9 +774,9 @@ async def cancel_database_download(pid: str, db_key: str):
 
 @app.websocket("/ws/pipelines/{pid}/databases/download")
 async def database_download_ws(websocket: WebSocket, pid: str):
-    await websocket.accept
+    await websocket.accept()
     try:
-        msg = await websocket.receive_json
+        msg = await websocket.receive_json()
     except WebSocketDisconnect:
         return
 
@@ -813,7 +813,7 @@ async def database_download_ws(websocket: WebSocket, pid: str):
     backlog = list(download_log.get(key, []))
     progress = download_progress.get(key)
     status = download_status.get(key)
-    q: asyncio.Queue = asyncio.Queue
+    q: asyncio.Queue = asyncio.Queue()
     download_subscribers.setdefault(key, []).append(q)
 
     try:
@@ -834,7 +834,7 @@ async def database_download_ws(websocket: WebSocket, pid: str):
     # viewer, the task above keeps running regardless (see _download_task).
     try:
         while True:
-            event = await q.get
+            event = await q.get()
             await websocket.send_json(event)
             if event.get("type") in ("done", "error", "cancelled"):
                 break
@@ -961,9 +961,9 @@ async def cancel_database_download_all(pid: str):
 
 @app.websocket("/ws/pipelines/{pid}/databases/download-all")
 async def database_download_all_ws(websocket: WebSocket, pid: str):
-    await websocket.accept
+    await websocket.accept()
     try:
-        msg = await websocket.receive_json
+        msg = await websocket.receive_json()
     except WebSocketDisconnect:
         return
 
@@ -986,7 +986,7 @@ async def database_download_all_ws(websocket: WebSocket, pid: str):
     backlog = list(download_all_log.get(pid, []))
     progress_snapshot = list(download_all_progress.get(pid, {}).values())
     status = download_all_status.get(pid)
-    q: asyncio.Queue = asyncio.Queue
+    q: asyncio.Queue = asyncio.Queue()
     download_all_subscribers.setdefault(pid, []).append(q)
 
     try:
@@ -1005,7 +1005,7 @@ async def database_download_all_ws(websocket: WebSocket, pid: str):
 
     try:
         while True:
-            event = await q.get
+            event = await q.get()
             await websocket.send_json(event)
             if event.get("type") in ("done", "error", "cancelled"):
                 break
@@ -1313,9 +1313,9 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
 
 @app.websocket("/ws/pipelines/{pid}/run")
 async def pipeline_ws(websocket: WebSocket, pid: str):
-    await websocket.accept
+    await websocket.accept()
     try:
-        msg = await websocket.receive_json
+        msg = await websocket.receive_json()
     except WebSocketDisconnect:
         return
 
@@ -1451,11 +1451,11 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
     if pipeline_finished.get(pid):
         return
 
-    q: asyncio.Queue = asyncio.Queue
+    q: asyncio.Queue = asyncio.Queue()
     pipeline_subscribers.setdefault(pid, []).append(q)
     try:
         while True:
-            event = await q.get
+            event = await q.get()
             await websocket.send_json(event)
             if event.get("type") == "done":
                 break
@@ -1546,8 +1546,8 @@ def delete_runs(data: dict):
         if d:
             refs_by_dir.setdefault(d, set).add(r["id"])
 
-    ids_removed = set
-    dirs_to_delete = set
+    ids_removed = set()
+    dirs_to_delete = set()
     for rid in requested_ids:
         d = by_id[rid].get("output_dir")
         if not d:
@@ -1855,7 +1855,7 @@ async def plots_ws(websocket: WebSocket, run_id: str):
     """Replay-then-subscribe over a plot run's own event log, same pattern as
     pipeline_ws/database_download_ws -- reconnecting (e.g. navigating back to
     the Plots tab) always catches up from disk first, then streams live."""
-    await websocket.accept
+    await websocket.accept()
     log_path = plot_log_paths.get(run_id)
     if log_path and os.path.isfile(log_path):
         async with aiofiles.open(log_path, "r") as f:
@@ -1874,11 +1874,11 @@ async def plots_ws(websocket: WebSocket, run_id: str):
     if plot_finished.get(run_id):
         return
 
-    q: asyncio.Queue = asyncio.Queue
+    q: asyncio.Queue = asyncio.Queue()
     plot_subscribers.setdefault(run_id, []).append(q)
     try:
         while True:
-            event = await q.get
+            event = await q.get()
             await websocket.send_json(event)
             if event.get("type") == "done":
                 break
@@ -1954,7 +1954,7 @@ async def _stop_all_pipelines_on_exit():
         if proc.returncode is None:
             _kill_process_group(proc)
     if _dev_reload_observer is not None:
-        _dev_reload_observer.stop
+        _dev_reload_observer.stop()
 
 # Dev-only: while actively editing pipeline.yaml manifests, re-scanning pipelines/
 # on every change (instead of requiring a full app close/reopen) saves a lot of

@@ -22,8 +22,7 @@ def main():
     parser.add_argument("--strand-report", required=True)
     parser.add_argument("--samples", nargs="+", required=True)
     parser.add_argument("--out", required=True)
-    args = parser.parse_args
-
+    args = parser.parse_args()
     samples = args.samples
 
     retention = {}

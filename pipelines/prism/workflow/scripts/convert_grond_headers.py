@@ -60,12 +60,11 @@ def load_taxonomy(path):
 
 
 def main():
-    ap = argparse.ArgumentParser
+    ap = argparse.ArgumentParser()
     ap.add_argument("--fasta", required=True, help="GROND *_nrRep.fna.gz (or *_full.fna.gz)")
     ap.add_argument("--taxonomy", required=True, help="matching GROND *_taxRep.tsv (or *_taxFull.tsv)")
     ap.add_argument("--out", required=True)
-    args = ap.parse_args
-
+    args = ap.parse_args()
     tax = load_taxonomy(args.taxonomy)
     print(f"convert_grond_headers: loaded {len(tax)} taxonomy entries from {args.taxonomy}")
 

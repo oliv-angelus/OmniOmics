@@ -39,8 +39,7 @@ def main():
     parser.add_argument("--samples", nargs="+", required=True)
     parser.add_argument("--out-value", required=True)
     parser.add_argument("--out-report", required=True)
-    args = parser.parse_args
-
+    args = parser.parse_args()
     rows = []
     for sample, report_path in zip(args.samples, args.reports):
         frac = parse_report(report_path)

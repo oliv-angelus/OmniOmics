@@ -357,7 +357,7 @@ def _write_tsv(rows: list, path: str, columns: list = None):
     # asked for and doesn't need.
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter="\t", extrasaction="ignore")
-        writer.writeheader
+        writer.writeheader()
         writer.writerows(rows)
 
 
