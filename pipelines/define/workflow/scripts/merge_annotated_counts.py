@@ -51,8 +51,7 @@ def main():
     parser.add_argument("--eggnog", required=True)
     parser.add_argument("--samples", nargs="+", required=True)
     parser.add_argument("--out", required=True)
-    args = parser.parse_args
-
+    args = parser.parse_args()
     # featureCounts' header is preceded by one comment line (its own version +
     # command line), and its sample columns are the literal BAM paths passed as
     # input, in the same order as `samples` (expand preserves list order).

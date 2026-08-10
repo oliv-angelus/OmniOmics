@@ -34,11 +34,10 @@ def open_maybe_gz(path, mode="rt"):
 
 
 def main():
-    ap = argparse.ArgumentParser
+    ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="in_path", required=True)
     ap.add_argument("--out", dest="out_path", required=True)
-    args = ap.parse_args
-
+    args = ap.parse_args()
     n = 0
     with open_maybe_gz(args.in_path) as fin, open(args.out_path, "w") as fout:
         for line in fin:
