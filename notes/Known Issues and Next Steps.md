@@ -457,3 +457,49 @@ A validação anterior tinha rodado os scripts R e os loaders da aba Plots — p
 R saiu limpo — mas nunca tinha subido o backend nem aberto o app. Agora foi feito: as 13
 rotas GET respondem 200, `/api/system/info` devolve CPU/RAM/disco reais, e as descrições
 chegam ao Flutter como `{pt, en}`.
+
+### Sequela 2: 43 chamadas perdidas achadas rodando o app (2026-08-10)
+
+Depois do backend voltar a subir, cada aba testada revelou uma variação nova da mesma
+classe. Vale registrar o padrão: **cada família precisou de um detector diferente**, porque
+o dano sempre deixa código sintaticamente válido.
+
+**Rodada 1 — WebSockets e downloads (31 correções).** `await websocket.accept` sem
+parênteses derrubava *toda* conexão WS (abas Recursos e Bancos, além de install, run e
+plots). Junto vieram: `writer.writeheader` (o `samples.tsv` sairia **sem cabeçalho**),
+`raise_for_status` em 3 sítios (erro HTTP num download de banco passava batido e a página
+de erro seria salva como se fosse o banco, com `hashlib.sha256` igualmente sem chamar),
+`asyncio.Queue` ×4, `argparse.ArgumentParser` ×5, `set` ×4, `ap.parse_args` ×8 e
+`fin.readline` ×4 no `recover_nonchimeric_reads.py`.
+
+**Rodada 2 — tear-offs no Dart (12 correções).** Relatado pelo usuário: cancelar o
+download-all abria o painel final e o botão "Concluído" não reagia. Era
+`Navigator.of(context).pop;` sem `()`. A varredura achou mais 11, entre eles
+`await ...notifier.stop` (o botão **Parar** do Monitor não parava nada),
+`WidgetsFlutterBinding.ensureInitialized`, `.dismiss`/`.dismissFinished` e mais cinco
+`Navigator...pop` em diálogos que por isso não fechavam.
+
+**Detectores acumulados (9 no total, todos zerados).** Aos cinco já listados somam-se:
+
+6. `await` cujo operando não é uma chamada (AST).
+7. Statement que é só uma expressão — `x.y;` não faz nada.
+8. Builtin / classe / função-de-módulo atribuída sem chamar. Este só funciona
+   **importando o módulo de verdade** e testando `callable(getattr(mod, attr))`; nenhuma
+   análise sintática sabe que `psutil.virtual_memory` é função.
+9. **Dart**: statement ou corpo de seta que termina em acesso a membro sem chamada, com
+   allowlist de getters legítimos (`Icons.*`, `colors.*`, `.length`...). Nem o analyzer nem
+   o lint `unnecessary_statements` cobrem isso — em `Navigator.of(ctx).pop;` o `.of(ctx)`
+   *é* uma chamada, então o statement "faz algo" e o lint se cala.
+
+**Estado final verificado rodando**: 14 rotas REST em 200, 9 WebSockets conectam, zero
+exceções no log do backend, os 8 scripts CLI dos pipelines respondem `--help` (três deles
+executados de ponta a ponta com dados reais e saída conferida), `flutter analyze` com 0
+erros e `flutter build linux --debug` OK.
+
+### Lacuna encontrada durante a verificação (não é dano)
+
+`plots/scripts/export/render_final.R` **não existe** — o diretório `plots/scripts/export/`
+está vazio, o arquivo nunca esteve no git e não está em lugar nenhum do disco. A rota
+`POST /api/plots/{run_id}/export` (backend/main.py) chama esse script, então o botão de
+exportar figura da aba Plots falha. É uma funcionalidade nunca escrita, não algo perdido no
+incidente. **Pendente de decisão** do usuário: escrever o script ou remover a rota/botão.
