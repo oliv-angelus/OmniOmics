@@ -560,6 +560,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   String _shapeSectionLabel(String shape) => switch (shape) {
         'magma_mags' => ref.t('plots_section_mags'),
         'magma_qc' => ref.t('plots_section_quality'),
+        'magma_functional' => ref.t('plots_section_functional'),
         _ => ref.t('plots_section_community'),
       };
 
@@ -577,7 +578,12 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     // both read "Comunidade" (same row shape: samples, just two different
     // classifiers feeding it), so they share one section instead of each
     // shape value getting its own duplicate-titled header.
-    final order = [ref.t('plots_section_community'), ref.t('plots_section_mags')];
+    final order = [
+      ref.t('plots_section_community'),
+      ref.t('plots_section_functional'),
+      ref.t('plots_section_mags'),
+      ref.t('plots_section_quality'),
+    ];
     final byLabel = <String, List<PlotAnalysis>>{};
     for (final a in _analyses) {
       byLabel.putIfAbsent(_shapeSectionLabel(a.inputShape), () => []).add(a);
