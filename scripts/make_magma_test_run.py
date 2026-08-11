@@ -255,6 +255,50 @@ def main():
         w(os.path.join(res, "01_QC", s, f"{s}_fastp.json"), json.dumps(fastp_json, indent=2))
         w(os.path.join(res, "01_QC", s, f"{s}_fastp.html"), "<html><!-- demonstration stub --></html>\n")
 
+    # --- Per-sample eggNOG (09_ANNOTATION/{sample}/eggnog) --------------
+    # Real 25-column emapper.annotations schema (confirmed against
+    # eggNOG-mapper v2's own USAGE.md): COG_category is column 7,
+    # KEGG_Pathway column 13. A handful of common real COG letters, weighted
+    # so the fixture has a genuine dominant category rather than a flat
+    # distribution, plus a realistic share of "-" (eggNOG's own
+    # no-assignment marker) and a few multi-letter calls (e.g. "EJ").
+    EGGNOG_COLUMNS = ["query", "seed_ortholog", "evalue", "score", "eggNOG_OGs", "max_annot_lvl",
+                     "COG_category", "Description", "Preferred_name", "GOs", "EC", "KEGG_ko",
+                     "KEGG_Pathway", "KEGG_Module", "KEGG_Reaction", "KEGG_rclass", "BRITE",
+                     "KEGG_TC", "CAZy", "BiGG_Reaction", "PFAMs", "annotation_confidence",
+                     "tax_ceiling", "farthest_donor_taxid", "farthest_donor_lineage"]
+    COG_WEIGHTS = [("J", 14), ("K", 9), ("L", 7), ("E", 11), ("C", 8), ("M", 7), ("T", 6),
+                   ("P", 6), ("G", 6), ("H", 5), ("O", 5), ("Q", 4), ("R", 8), ("S", 6),
+                   ("EJ", 2), ("-", 10)]
+    cog_pool = [c for c, w in COG_WEIGHTS for _ in range(w)]
+    # eggNOG-mapper's real default output (--no_file_comments is NOT passed
+    # by this pipeline's rule, confirmed reading it): '##'-prefixed banner
+    # lines, then the header row itself prefixed with a SINGLE '#'
+    # ("#query\t..."), then data rows, then '##'-prefixed footer lines.
+    # Written in this real shape -- not a plain header -- so the fixture
+    # actually exercises build_magma_functional_table.R's real parsing path
+    # (drop '##' lines, keep '#'-prefixed header, strip its leading '#').
+    for s in SAMPLES:
+        n_orfs = random.randint(320, 620)
+        lines = ["## demonstration stub -- eggNOG-mapper call info",
+                 "#" + "\t".join(EGGNOG_COLUMNS)]
+        for i in range(1, n_orfs + 1):
+            cog = random.choice(cog_pool)
+            has_ko = cog != "-"
+            lines.append("\t".join(str(v) for v in [
+                f"{s}_orf{i}", f"{random.randint(100000, 999999)}.{random.randint(1000, 9999)}",
+                f"{10 ** -random.randint(5, 60):.1e}", round(random.uniform(80, 900), 1),
+                "-", "Bacteria", cog, "-" if cog == "-" else "hypothetical protein",
+                "-", "-", "-", f"ko:K{random.randint(10000,19999)}" if has_ko else "-",
+                f"map{random.randint(10000,19999)}" if has_ko else "-",
+                "-", "-", "-", "-", "-", "-", "-", "-", random.choice(["low", "medium", "high"]),
+                "2", "2", "Bacteria",
+            ]))
+        lines.append(f"## {n_orfs} queries scanned")
+        lines.append("## demonstration stub -- eggNOG-mapper footer")
+        w(os.path.join(res, "09_ANNOTATION", s, "eggnog", f"{s}_annotations.emapper.annotations"),
+          "\n".join(lines) + "\n")
+
     # --- 03_TAXONOMY ----------------------------------------------------
     w(os.path.join(res, "03_TAXONOMY", "abundance_table_final_RAW.tsv"), build_abundance())
     # Kaiju classifies by translated protein and typically assigns more reads,

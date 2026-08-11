@@ -1676,6 +1676,7 @@ INPUT_SHAPE_INFO = {
     "phyloseq_kaiju": {"loader_script": "load_phyloseq.R", "rds_filename": "phyloseq_kaiju.rds",
                        "rds_flag": "--phyloseq_rds", "extra_args": ["--classifier", "kaiju"]},
     "magma_qc": {"loader_script": "load_magma_qc_table.R", "rds_filename": "magma_qc_table.rds", "rds_flag": "--magma_qc_table_rds"},
+    "magma_functional": {"loader_script": "load_magma_functional_table.R", "rds_filename": "magma_functional_table.rds", "rds_flag": "--magma_functional_table_rds"},
 }
 
 

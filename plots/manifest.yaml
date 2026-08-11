@@ -236,6 +236,27 @@ analyses:
     script: analyses/magma_assembly_quality.R
     parameters: []
 
+  - id: magma_functional_composition
+    name:
+      en: "Functional Composition (eggNOG)"
+      pt: "Composição Funcional (eggNOG)"
+    description:
+      en: "Share of predicted genes assigned to each COG functional category per sample, from eggNOG-mapper's annotation of the assembled metagenome. A gene-count metric, not read-abundance-weighted -- MAGMA's per-sample eggNOG has no quantification tied to it the way DOGMA's transcript-level version does."
+      pt: "Fração de genes preditos atribuída a cada categoria funcional COG por amostra, a partir da anotação do eggNOG-mapper sobre o metagenoma montado. Métrica de contagem de genes, não ponderada por abundância de leituras -- o eggNOG por amostra do MAGMA não tem quantificação associada como a versão do DOGMA em nível de transcrito."
+    applies_to: [magma]
+    input_shape: magma_functional
+    script: analyses/magma_functional_composition.R
+    parameters:
+      - flag: "--top_n"
+        type: int
+        default: 15
+        enabled: true
+        description:
+          en: "Number of top COG categories to show individually before collapsing the rest into 'Others'"
+          pt: "Número de categorias COG mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
+        min: 1
+        max: 30
+
   - id: magma_kaiju_taxonomic_composition
     name:
       en: "Taxonomic Composition (Kaiju)"
