@@ -141,7 +141,7 @@ class _PlotParamValueInput extends StatelessWidget {
       // parameter column is only as wide as a dropdown.
       final picked = current.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       return _MultiSampleField(
-        options: loadedData.samples,
+        options: loadedData.samplesFor(shape),
         selected: picked,
         missing: missing,
         onDone: (values) {
@@ -156,7 +156,7 @@ class _PlotParamValueInput extends StatelessWidget {
       // PlotLoadedData.samples's own docstring for why this is a distinct
       // mechanism from "column"/"level" -- no metadata column involved,
       // just "which of the run's own outputs to work with").
-      return _dropdown(current, loadedData.samples, hintOnEmpty: true);
+      return _dropdown(current, loadedData.samplesFor(shape), hintOnEmpty: true);
     }
 
     if (param.type == 'level') {
