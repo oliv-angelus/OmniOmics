@@ -155,3 +155,46 @@ Pesquisa feita antes de planejar (disciplina do projeto: fundamentar antes de co
 
 Ordem acordada com o usuário: **Fase A primeiro, Fase B depois**, "aos poucos" — não tentar
 tudo de uma vez.
+
+## Fase A concluída (2026-08-10)
+
+Os 5 itens do plano acima foram implementados, testados e commitados nesta sessão. MAGMA saiu
+de 13 para **18 análises**, em 4 formas de entrada (`phyloseq`, `phyloseq_kaiju`, `magma_mags`,
+`magma_qc`, `magma_functional` — 5 no total contando a de comunidade original) e 4 seções na
+aba Plots: **Comunidade, Funcional, MAGs, Qualidade**.
+
+1. **Kaiju** — `phyloseq_kaiju` reaproveita `load_phyloseq.R` (novo `--classifier`) e
+   `taxonomic_composition.R` **sem alteração nenhuma** (só um segundo registro no manifesto).
+   `magma_classifier_concordance.R` novo, lê os dois `.rds` lado a lado pelo nome fixo no
+   mesmo diretório.
+2. **QC + Montagem** — `magma_read_qc.R` (fastp/NanoPlot, antes/depois) e
+   `magma_assembly_quality.R` (MetaQuast, completo vs. filtrado pelo Tiara). Forma combinada
+   `magma_qc`.
+3. **GUNC + MIMAG** — `gunc_pass`/`gunc_css` entraram na mesma tabela/ficha de MAG, ao lado do
+   `mimag_quality`, não misturados nele (GUNC não é parte do padrão MIMAG oficial). Fixture
+   com dois casos reais de MAG "High" pelo MIMAG isolado mas reprovado pelo GUNC.
+4. **Perfil funcional (eggNOG por amostra)** — `magma_functional_composition.R`, métrica de
+   contagem de genes por categoria COG (não abundância de leitura, que o MAGMA não tem
+   atrelada ao eggNOG por amostra).
+
+**Bugs reais achados no caminho** (nenhum deles em código escrito nesta sessão — todos
+pré-existentes, achados lendo as regras/documentação das ferramentas antes de escrever os
+parsers, mesma causa raiz do incidente da limpeza por regex): `{output.json()}` em 4 pipelines
+(quebraria todo run do DEFINE), `--file_suffix.fa` do GUNC e `--p_ext.pep` do EUKulele (espaço
+engolido pela mesma regra de limpeza). Todos corrigidos e commitados separadamente.
+
+**Bug de arquitetura achado pela suíte de teste**: `samples` era uma chave global só; com duas
+formas (`magma_mags`, `magma_qc`) escrevendo significados diferentes nela, a última carregada
+vencia silenciosamente. Corrigido com `samples_by_shape`, mesmo tratamento já dado a `columns`.
+
+**Pendências que ficaram para trás, registradas para não esquecer**:
+- NanoStats.txt do NanoPlot: formato ainda não conferido contra saída real (só documentação).
+- MetaQuast na fixture: as duas variantes (completa/procariótica) saem com os mesmos números —
+  não simula a diferença real que o Tiara produziria.
+- `render_final.R`/exportação não testado com as novas 5 análises desta fase (deveria
+  funcionar sem mudança, já que todas gravam `plot_final.rds`, mas não foi conferido).
+
+## Fase B — ainda não iniciada
+
+Anel genômico estilo Proksee (circlize) + resto da anotação (CRISPR, vírus, elementos móveis,
+BiG-SCAPE). Ver plano completo na seção anterior. BiG-SCAPE segue sem verificar.
