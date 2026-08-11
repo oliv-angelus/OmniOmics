@@ -212,6 +212,30 @@ analyses:
         min: 1
         max: 50
 
+  - id: magma_read_qc
+    name:
+      en: "Read Cleaning (Before vs. After)"
+      pt: "Limpeza de Reads (Antes vs. Depois)"
+    description:
+      en: "Total reads and Q30 quality rate per sample, before and after cleaning -- fastp for short/hybrid samples, NanoPlot for long-read samples, whichever actually ran for that sample's read type."
+      pt: "Total de reads e taxa de qualidade Q30 por amostra, antes e depois da limpeza -- fastp para amostras curtas/híbridas, NanoPlot para amostras de leitura longa, o que de fato rodou para o tipo de leitura da amostra."
+    applies_to: [magma]
+    input_shape: magma_qc
+    script: analyses/magma_read_qc.R
+    parameters: []
+
+  - id: magma_assembly_quality
+    name:
+      en: "Assembly Quality"
+      pt: "Qualidade da Montagem"
+    description:
+      en: "N50 and total assembly length per sample from MetaQuast, for the full assembly and the Tiara-filtered prokaryotic subset side by side."
+      pt: "N50 e comprimento total da montagem por amostra (MetaQuast), para a montagem completa e o subconjunto procariótico filtrado pelo Tiara, lado a lado."
+    applies_to: [magma]
+    input_shape: magma_qc
+    script: analyses/magma_assembly_quality.R
+    parameters: []
+
   - id: magma_kaiju_taxonomic_composition
     name:
       en: "Taxonomic Composition (Kaiju)"

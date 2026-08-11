@@ -559,6 +559,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// grouping entirely and this is never called for them.
   String _shapeSectionLabel(String shape) => switch (shape) {
         'magma_mags' => ref.t('plots_section_mags'),
+        'magma_qc' => ref.t('plots_section_quality'),
         _ => ref.t('plots_section_community'),
       };
 

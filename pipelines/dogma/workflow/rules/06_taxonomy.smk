@@ -17,7 +17,7 @@ samples = pd.read_table(config["samples"]).set_index("sample", drop=False).filln
 # on this machine for reasons not investigated -- the argparse definitions in
 # EUKulele_main.py and the database-management logic in manage_steps.py /
 # download_database.py are authoritative and were read directly):
-# - `-m mets` (metatranscriptome mode, required), `-x proteins --p_ext.pep`
+# - `-m mets` (metatranscriptome mode, required), `-x proteins --p_ext .pep`
 # (protein-only input, matching TransDecoder's .pep extension directly --
 # no rename needed, just point --p_ext at it).
 # - `-s <dir>` wants a *directory* of protein files, not a single file --
@@ -91,7 +91,7 @@ rule eukulele_annotate:
         mkdir -p {params.sampledir}
         ln -sf "$(readlink -f {input.faa})" "{params.sampledir}/{wildcards.sample}.pep"
         EUKulele -m mets -s {params.sampledir} --reference_dir {params.refdir} \
-            -d {params.database} -o {params.outdir} --p_ext.pep -x proteins \
+            -d {params.database} -o {params.outdir} --p_ext .pep -x proteins \
             --CPUs {threads} {params.extra} > {log} 2>&1
         rm -rf {params.sampledir}
         """
