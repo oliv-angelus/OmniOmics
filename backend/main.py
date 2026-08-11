@@ -1632,17 +1632,31 @@ def _merge_columns_data(acc: dict, incoming: dict, shape: str, primary: bool) ->
     property like `mimag_quality` as the group_var of a sample-level community
     analysis would be meaningless. `columns`/`column_levels` still carry the
     primary shape's own lists so a single-shape pipeline sees exactly what it
-    saw before. `tax_ranks`/`samples`/`annotation_columns` come from whichever
-    shape reports them, since only one does.
+    saw before.
+
+    `samples` gets the same per-shape treatment as `columns`, not just
+    "whichever shape reports it": MAGMA alone now has two shapes that both
+    populate it with genuinely different, non-interchangeable identifiers --
+    magma_mags' real MAG ids ("soil_C1_bin.1") vs. magma_qc's plain sample
+    ids ("soil_C1"). Pooling them into one flat list (or letting whichever
+    loader ran last silently win, which is what happened before this) would
+    make a "sample"/"samples"-type parameter offer the wrong identifier
+    space depending on load order -- a real bug caught by actually running
+    the full analysis suite, not assumed away. `tax_ranks`/`annotation_columns`
+    stay single-shape-reporter fields for now (only "phyloseq" reports
+    either), so they keep the simpler "whichever shape reports it" rule.
     """
     by_shape = acc.setdefault("columns_by_shape", {})
     by_shape[shape] = incoming.get("columns", []) or []
     levels_by_shape = acc.setdefault("column_levels_by_shape", {})
     levels_by_shape[shape] = incoming.get("column_levels", {}) or {}
+    samples_by_shape = acc.setdefault("samples_by_shape", {})
+    samples_by_shape[shape] = incoming.get("samples", []) or []
     if primary:
         acc["columns"] = incoming.get("columns", []) or []
         acc["column_levels"] = incoming.get("column_levels", {}) or {}
-    for key in ("tax_ranks", "samples", "annotation_columns"):
+        acc["samples"] = incoming.get("samples", []) or []
+    for key in ("tax_ranks", "annotation_columns"):
         if incoming.get(key):
             acc[key] = incoming[key]
 
@@ -1767,6 +1781,7 @@ async def load_plot_data(data: dict):
         # one-entry map that matches "columns" exactly.
         "columns_by_shape": columns_data.get("columns_by_shape", {}),
         "column_levels_by_shape": columns_data.get("column_levels_by_shape", {}),
+        "samples_by_shape": columns_data.get("samples_by_shape", {}),
         "tax_ranks": columns_data.get("tax_ranks", []),
         # DOGMA-only, not read by anything yet -- same "report it now, wire
         # a dynamic dropdown later if wanted" forward-compat pattern as

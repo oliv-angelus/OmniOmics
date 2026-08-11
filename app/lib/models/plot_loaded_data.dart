@@ -44,9 +44,15 @@ class PlotLoadedData {
   /// before this existed.
   final Map<String, List<String>> columnsByShape;
   final Map<String, Map<String, List<String>>> columnLevelsByShape;
+  final Map<String, List<String>> samplesByShape;
 
   List<String> columnsFor(String shape) => columnsByShape[shape] ?? columns;
   Map<String, List<String>> levelsFor(String shape) => columnLevelsByShape[shape] ?? columnLevels;
+  /// Same reasoning as columnsFor/levelsFor: MAGMA alone has two shapes that
+  /// each report a genuinely different identifier space under "samples"
+  /// (real MAG ids vs. plain sample ids) -- see main.py's
+  /// _merge_columns_data docstring for the bug this fixes.
+  List<String> samplesFor(String shape) => samplesByShape[shape] ?? samples;
 
   PlotLoadedData({
     required this.dataRds,
@@ -56,6 +62,7 @@ class PlotLoadedData {
     this.samples = const [],
     this.columnsByShape = const {},
     this.columnLevelsByShape = const {},
+    this.samplesByShape = const {},
   });
 
   factory PlotLoadedData.fromJson(Map<String, dynamic> json) => PlotLoadedData(
@@ -76,6 +83,9 @@ class PlotLoadedData {
               (ck, cv) => MapEntry(ck, (cv as List).map((e) => e.toString()).toList()),
             ),
           ),
+        ),
+        samplesByShape: (json['samples_by_shape'] as Map<String, dynamic>? ?? const {}).map(
+          (k, v) => MapEntry(k, (v as List).map((e) => e.toString()).toList()),
         ),
       );
 }
