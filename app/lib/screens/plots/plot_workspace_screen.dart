@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers.dart';
 import '../../l10n/app_strings.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/category_colors.dart';
 import '../../models/run_record.dart';
 import '../../models/plot_analysis.dart';
 import '../../models/plot_loaded_data.dart';
@@ -540,7 +541,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
                     // organized without truncating anything.
                         : SingleChildScrollView(
                         child: LayoutBuilder(
-                          builder: (context, constraints) => _buildAnalysisSections(colors, constraints.maxWidth),
+                          builder: (context, constraints) => _buildAnalysisRows(_analyses, constraints.maxWidth),
                         ),
                       ),
           ),
@@ -551,63 +552,6 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
 
   static const _analysisCardWidth = 280.0;
   static const _analysisCardSpacing = 16.0;
-
-  /// Section label for an input_shape, when a pipeline's analyses span more
-  /// than one (currently just MAGMA: read-level community taxa vs. assembled
-  /// MAGs -- see plots_engine.get_input_shapes_for_pipeline). Every other
-  /// pipeline has exactly one shape, so [_buildAnalysisSections] skips
-  /// grouping entirely and this is never called for them.
-  String _shapeSectionLabel(String shape) => switch (shape) {
-        'magma_mags' => ref.t('plots_section_mags'),
-        'magma_qc' => ref.t('plots_section_quality'),
-        'magma_functional' => ref.t('plots_section_functional'),
-        // Kaiju gets its own block rather than sharing "Comunidade" with
-        // Kraken2/Bracken: same row shape, but a genuinely independent
-        // classification of the same reads (translated protein vs. k-mer),
-        // so mixing them under one heading hid which classifier a given
-        // analysis actually ran on.
-        'phyloseq_kaiju' => ref.t('plots_section_community_kaiju'),
-        _ => ref.t('plots_section_community'),
-      };
-
-  /// Groups [_analyses] by input_shape and gives each group its own labeled
-  /// section, only when the pipeline actually has more than one shape --
-  /// community-level and MAG-level analyses work on different ROWS (samples
-  /// vs. genomes) and mixing them in one unlabeled grid would make that
-  /// distinction invisible. A single-shape pipeline (everything but MAGMA
-  /// today) renders exactly as before: one flat grid, no headers.
-  Widget _buildAnalysisSections(AppPalette colors, double availableWidth) {
-    final shapes = _analyses.map((a) => a.inputShape).toSet();
-    if (shapes.length <= 1) return _buildAnalysisRows(_analyses, availableWidth);
-
-    // Grouped by LABEL, not by raw shape -- "phyloseq" and "phyloseq_kaiju"
-    // both read "Comunidade" (same row shape: samples, just two different
-    // classifiers feeding it), so they share one section instead of each
-    // shape value getting its own duplicate-titled header.
-    final order = [
-      ref.t('plots_section_community'),
-      ref.t('plots_section_community_kaiju'),
-      ref.t('plots_section_functional'),
-      ref.t('plots_section_mags'),
-      ref.t('plots_section_quality'),
-    ];
-    final byLabel = <String, List<PlotAnalysis>>{};
-    for (final a in _analyses) {
-      byLabel.putIfAbsent(_shapeSectionLabel(a.inputShape), () => []).add(a);
-    }
-    final labels = byLabel.keys.toList()
-      ..sort((a, b) => order.indexOf(a).compareTo(order.indexOf(b)));
-    final sections = <Widget>[];
-    for (final label in labels) {
-      sections.add(Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: colors.textSecondary)),
-      ));
-      sections.add(_buildAnalysisRows(byLabel[label]!, availableWidth));
-      sections.add(const SizedBox(height: 24));
-    }
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: sections);
-  }
 
   Widget _buildAnalysisRows(List<PlotAnalysis> analyses, double availableWidth) {
     // Lower-bounded at 1 only -- NOT upper-bounded by analyses.length. A
@@ -957,6 +901,31 @@ IconData _analysisIcon(String analysisId) => switch (analysisId) {
       _ => Icons.insights_outlined,
     };
 
+/// Pill marking which kind of data an analysis reads, styled exactly like
+/// the Hub's own category tags (see category_colors.dart's AnalysisShapeTagX).
+class _ShapeTag extends ConsumerWidget {
+  final String shape;
+  const _ShapeTag({required this.shape});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final english = ref.watch(localeProvider).languageCode == 'en';
+    final brightness = Theme.of(context).brightness;
+    final style = shape.shapeTagStyle;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: style.bg(brightness), borderRadius: BorderRadius.circular(6)),
+        child: Text(
+          shape.shapeTagLabel(english),
+          style: TextStyle(color: style.fg(brightness), fontSize: 10.5, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}
+
 class _AnalysisCard extends ConsumerWidget {
   final PlotAnalysis analysis;
   final VoidCallback onTap;
@@ -994,6 +963,13 @@ class _AnalysisCard extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               Text(analysis.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700)),
+              // What KIND of data this analysis works on -- community reads,
+              // assembled MAGs, per-sample function, run QC. Carried as a tag
+              // on the card (same idiom as the Hub's category/extra tags)
+              // rather than by splitting the grid into headed sections, so
+              // every analysis stays visible side by side in one grid.
+              const SizedBox(height: 6),
+              _ShapeTag(shape: analysis.inputShape),
               const SizedBox(height: 4),
               // No maxLines/ellipsis and no Expanded (that requires a
               // bounded-height parent, which this card no longer has now

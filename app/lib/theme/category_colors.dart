@@ -162,3 +162,40 @@ extension PipelineExtraTagX on String {
     return english ? pair.$2: pair.$1;
   }
 }
+
+/// Colour + label for a Plots-tab analysis's input_shape, shown as a tag on
+/// its card. A pipeline whose analyses span several shapes (MAGMA: read-level
+/// community, per-sample function, assembled MAGs, run QC) keeps one flat
+/// grid of cards, with the tag carrying the distinction -- the same way the
+/// Hub tags a pipeline's category instead of splitting the grid into
+/// headed sections.
+const _shapeStyles = <String, CategoryStyle>{
+  'phyloseq': CategoryStyle(Color(0xFF0D9488)),
+  'phyloseq_kaiju': CategoryStyle(Color(0xFF0284C7)),
+  'magma_functional': CategoryStyle(Color(0xFF9333EA)),
+  'magma_mags': CategoryStyle(Color(0xFFEA580C)),
+  'magma_qc': CategoryStyle(Color(0xFF64748B)),
+  'count_matrix': CategoryStyle(Color(0xFF4F46E5)),
+  'dogma_annotated': CategoryStyle(Color(0xFFC026D3)),
+  'sigma_genomes': CategoryStyle(Color(0xFFCA8A04)),
+};
+
+const _shapeLabels = <String, (String pt, String en)>{
+  'phyloseq': ('Comunidade', 'Community'),
+  'phyloseq_kaiju': ('Comunidade (Kaiju)', 'Community (Kaiju)'),
+  'magma_functional': ('Funcional', 'Functional'),
+  'magma_mags': ('MAGs', 'MAGs'),
+  'magma_qc': ('Qualidade', 'Quality'),
+  'count_matrix': ('Expressão', 'Expression'),
+  'dogma_annotated': ('Funcional', 'Functional'),
+  'sigma_genomes': ('Genomas', 'Genomes'),
+};
+
+extension AnalysisShapeTagX on String {
+  CategoryStyle get shapeTagStyle => _shapeStyles[this] ?? _extraTagStyle;
+  String shapeTagLabel(bool english) {
+    final pair = _shapeLabels[this];
+    if (pair == null) return this;
+    return english ? pair.$2 : pair.$1;
+  }
+}
