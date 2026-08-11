@@ -157,7 +157,7 @@ class _ToolRow extends StatelessWidget {
                       ),
                     ),
                     if (tool.tracks.isEmpty)
-                      Switch(value: active, onChanged: blocked ? null: (_) => onToggle)
+                      Switch(value: active, onChanged: blocked ? null : (_) => onToggle())
                     else
                       Column(
                         mainAxisSize: MainAxisSize.min,

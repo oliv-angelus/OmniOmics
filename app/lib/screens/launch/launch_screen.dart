@@ -846,7 +846,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
           controller: c,
           style: const TextStyle(fontSize: 12.5, fontFamily: 'monospace'),
           decoration: const InputDecoration(isDense: true, hintText: 'AGRGTTYGATYMTGGCTCAG'),
-          onChanged: (_) => _markDirty,
+          onChanged: (_) => _markDirty(),
         ),
       ],
     );
@@ -1000,7 +1000,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
                     TextField(
                       controller: _coresController,
                       keyboardType: TextInputType.number,
-                      onChanged: (_) => _markDirty,
+                      onChanged: (_) => _markDirty(),
                       decoration: InputDecoration(
                         labelText: ref.t('global_cpus_label'),
                         floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -1481,7 +1481,7 @@ class _ResourceCard extends ConsumerWidget {
                   child: TextField(
                     controller: threadController,
                     keyboardType: TextInputType.number,
-                    onChanged: (_) => onChanged,
+                    onChanged: (_) => onChanged(),
                     decoration: InputDecoration(
                       labelText: ref.t('resources_threads_field'),
                       floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -1496,7 +1496,7 @@ class _ResourceCard extends ConsumerWidget {
                     child: TextField(
                       controller: ramController,
                       keyboardType: TextInputType.number,
-                      onChanged: (_) => onChanged,
+                      onChanged: (_) => onChanged(),
                       decoration: InputDecoration(
                         labelText: ref.t('ram_label'),
                         floatingLabelBehavior: FloatingLabelBehavior.always,

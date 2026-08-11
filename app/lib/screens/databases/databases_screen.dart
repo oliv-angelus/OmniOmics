@@ -1,4 +1,5 @@
 import 'package:file_selector/file_selector.dart';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers.dart';
@@ -203,25 +204,55 @@ class _DatabasesScreenState extends ConsumerState<DatabasesScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              for (final db in _databases.values)
-                SizedBox(
-                  key: ValueKey(db.settingKey),
-                  width: 400,
-                  child: DatabaseCard(
-                    api: ref.read(apiClientProvider),
-                    pipelineId: db.usedBy?.first ?? '',
-                    database: db,
-                    onChanged: _load,
-                  ),
-                ),
-            ],
+          // A plain Wrap let every card keep its own intrinsic height, so
+          // cards sitting in the same visual row ended at different heights
+          // -- the jagged bottom edges the user reported. Same fix already
+          // applied to the Plots tab's analysis grid: chunk the cards into
+          // rows by however many columns actually fit, then stretch each
+          // row's cards (via IntrinsicHeight) to that row's tallest one. A
+          // row of short cards still stays short, so nothing is padded out
+          // or truncated -- only cards that share a row are aligned.
+          LayoutBuilder(
+            builder: (context, constraints) => _buildDatabaseRows(constraints.maxWidth),
           ),
         ],
       ),
     );
+  }
+
+  static const _cardWidth = 400.0;
+  static const _cardSpacing = 16.0;
+
+  /// Cards laid out in equal-height rows. Column count comes from the real
+  /// available width, lower-bounded at 1 only -- NOT capped by the number of
+  /// databases, so a short list keeps normal-width cards left-aligned with
+  /// empty stretched slots rather than a couple of over-wide ones.
+  Widget _buildDatabaseRows(double availableWidth) {
+    final dbs = _databases.values.toList();
+    final columns = math.max(1, ((availableWidth + _cardSpacing) / (_cardWidth + _cardSpacing)).floor());
+    final rows = <Widget>[];
+    for (var i = 0; i < dbs.length; i += columns) {
+      if (rows.isNotEmpty) rows.add(const SizedBox(height: _cardSpacing));
+      final rowChildren = <Widget>[];
+      for (var col = 0; col < columns; col++) {
+        if (col > 0) rowChildren.add(const SizedBox(width: _cardSpacing));
+        final index = i + col;
+        rowChildren.add(Expanded(
+          child: index < dbs.length
+              ? DatabaseCard(
+                  key: ValueKey(dbs[index].settingKey),
+                  api: ref.read(apiClientProvider),
+                  pipelineId: dbs[index].usedBy?.first ?? '',
+                  database: dbs[index],
+                  onChanged: _load,
+                )
+              : const SizedBox(),
+        ));
+      }
+      rows.add(IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: rowChildren),
+      ));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
   }
 }

@@ -151,7 +151,7 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
     ref.listen(databaseDownloadsProvider, (previous, next) {
       final wasDone = previous?[_downloadKey]?.phase == DownloadPhase.done;
       final isDone = next[_downloadKey]?.phase == DownloadPhase.done;
-      if (isDone && !wasDone) widget.onChanged;
+      if (isDone && !wasDone) widget.onChanged();
     });
 
     return Card(
