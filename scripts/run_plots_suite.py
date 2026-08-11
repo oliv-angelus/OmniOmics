@@ -118,6 +118,15 @@ def main():
         if not build_shapes(args.pipeline, args.results_dir, args.metadata, cache, rscript):
             sys.exit("\nA loader failed -- no analysis can run without its shape.")
         print()
+    else:
+        # --skip_load against an out_dir that was never loaded gives every
+        # analysis the same unreadable "cannot open the connection" from
+        # readRDS, one per parameter combination. Say it once, up front.
+        missing = [s for s in plots_engine.get_input_shapes_for_pipeline(args.pipeline)
+                   if not os.path.exists(os.path.join(cache, INPUT_SHAPE_INFO[s]["rds_filename"]))]
+        if missing:
+            sys.exit(f"--skip_load, but {cache} has no cache for: {', '.join(missing)}. "
+                     f"Drop --skip_load, or point --out_dir at a directory a previous run loaded.")
 
     overrides = dict(kv.split("=", 1) for kv in args.set)
 
@@ -127,6 +136,7 @@ def main():
     print(f"Running {len(analyses)} analyses for {args.pipeline}")
 
     failures = []
+    empty = 0
     for a in analyses:
         info = INPUT_SHAPE_INFO[a["input_shape"]]
         rds = os.path.join(cache, info["rds_filename"])
@@ -139,12 +149,22 @@ def main():
             rc, out, secs = run(cmd)
             preview = os.path.join(odir, "preview.png")
             has_png = os.path.exists(preview) and os.path.getsize(preview) > 0
-            status = "ok  " if rc == 0 and has_png else "FAIL"
+            # An analysis that exits 0 with no figure is not a failure: some
+            # legitimately have nothing to draw (no gene family passed the
+            # significance cut, say) and say so in data.json rather than
+            # inventing a plot. Only a non-zero exit is a real break.
+            if rc != 0:
+                status = "FAIL"
+            elif has_png:
+                status = "ok  "
+            else:
+                status = "----"
+                empty += 1
             print(f"  [{status}] {label:<70} {secs:5.1f}s")
             if status == "FAIL":
                 failures.append((label, out))
 
-    print(f"\n{len(failures)} failure(s)")
+    print(f"\n{len(failures)} failure(s), {empty} empty result(s) (ran fine, nothing to plot)")
     for label, out in failures:
         print(f"\n--- {label} ---")
         print("\n".join(out.strip().splitlines()[-12:]))

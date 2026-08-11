@@ -19,6 +19,39 @@ suppressMessages(library(DESeq2))
 #' the fitted model, e.g. sample_pca/sample_distance_heatmap/dispersion --
 #' not for ones that report a specific comparison's direction, e.g.
 #' ma_plot/volcano_plot/de_heatmap, which require it).
+#' Size factors, with the sparse-data estimator as fallback.
+#'
+#' DESeq2's default median-of-ratios (Anders & Huber 2010) divides each
+#' sample's counts by a reference built from the geometric mean ACROSS ALL
+#' SAMPLES, so it needs at least one feature that is non-zero in every single
+#' sample. Functional-annotation matrices routinely have none: aggregate
+#' 2,000+ KEGG orthologs over a dozen samples and every family is missing from
+#' somewhere. DESeq2 then stops outright with "every gene contains at least
+#' one zero, cannot compute log geometric means" -- which is what this hit.
+#'
+#' type="poscounts" is DESeq2's own documented answer: the geometric mean is
+#' taken over each feature's POSITIVE counts only (the n-th root of the
+#' product of its non-zero values), originally the workaround phyloseq
+#' recommended for 16S data and since folded into DESeq2 itself. It is the
+#' standard normalisation for sparse microbiome/metagenomic count data.
+#'
+#' Applied only as a fallback rather than unconditionally: where the default
+#' works it is the better-characterised estimator, and switching normalisation
+#' silently would change results for every existing analysis.
+.size_factors <- function(dds) {
+  tryCatch(
+    estimateSizeFactors(dds),
+    error = function(e) {
+      log_line(paste0("[deseq_helpers] default median-of-ratios size factors failed (%s) -- no feature is ",
+                      "present in every sample, which is normal for functional-annotation matrices. Falling ",
+                      "back to type='poscounts' (geometric mean over positive counts only), DESeq2's own ",
+                      "documented estimator for sparse count data."),
+               conditionMessage(e))
+      estimateSizeFactors(dds, type = "poscounts")
+    }
+  )
+}
+
 run_deseq <- function(count_data, group_var, reference_group = NULL) {
   coldata <- count_data$coldata
   if (!(group_var %in% colnames(coldata))) {
@@ -64,6 +97,8 @@ run_deseq <- function(count_data, group_var, reference_group = NULL) {
   dds <- DESeqDataSetFromMatrix(countData = counts, colData = coldata, design = formula_deseq)
   dds <- dds[rowSums(counts(dds)) > 0, ]  # drop genes with zero reads in every remaining sample
 
+  dds <- .size_factors(dds)
+
   # Real, edge case: with
   # too little dispersion spread across features, DESeq2's default
   # fitType="parametric" curve fit can fail outright ("all gene-wise
@@ -79,7 +114,7 @@ run_deseq <- function(count_data, group_var, reference_group = NULL) {
     error = function(e) {
       log_line("[deseq_helpers] parametric dispersion fit failed (%s) -- falling back to gene-wise dispersion estimates (DESeq2's own documented workaround: skip the curve fit entirely rather than try a different curve shape).",
                conditionMessage(e))
-      dds <- estimateSizeFactors(dds)
+      dds <- .size_factors(dds)
       dds <- estimateDispersionsGeneEst(dds)
       dispersions(dds) <- mcols(dds)$dispGeneEst
       nbinomWaldTest(dds, quiet = TRUE)
