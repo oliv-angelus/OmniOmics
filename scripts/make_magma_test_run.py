@@ -213,6 +213,41 @@ def main():
     os.makedirs(METADATA_DIR, exist_ok=True)
     w(METADATA_FILE, tsv(meta_rows))
 
+    # --- 01_QC ------------------------------------------------------------
+    # fastp's real JSON shape (confirmed: summary.before_filtering /
+    # summary.after_filtering, each with total_reads, total_bases, q30_rate,
+    # gc_content). This fixture is short-read throughout, so every sample
+    # gets a real fastp report; a hybrid/long-read-only MAGMA run would also
+    # have nanoplot_raw/nanoplot_clean's NanoStats.txt, which
+    # build_magma_qc_table.R reads when present and skips when not.
+    for s in SAMPLES:
+        raw_reads = random.randint(1_400_000, 2_600_000)
+        raw_bases = raw_reads * random.randint(140, 155)
+        # Real fastp behavior: filtering drops 2-8% of reads, and the
+        # surviving ones average slightly higher quality/GC than the input.
+        kept_frac = random.uniform(0.92, 0.98)
+        clean_reads = int(raw_reads * kept_frac)
+        clean_bases = int(raw_bases * kept_frac * random.uniform(0.97, 0.995))
+        gc_before = round(random.uniform(0.50, 0.58), 4)
+        gc_after = round(gc_before + random.uniform(-0.005, 0.005), 4)
+        q30_before = round(random.uniform(0.88, 0.93), 4)
+        q30_after = round(min(0.999, q30_before + random.uniform(0.02, 0.05)), 4)
+        fastp_json = {
+            "summary": {
+                "before_filtering": {"total_reads": raw_reads, "total_bases": raw_bases,
+                                     "q30_rate": q30_before, "gc_content": gc_before},
+                "after_filtering": {"total_reads": clean_reads, "total_bases": clean_bases,
+                                    "q30_rate": q30_after, "gc_content": gc_after},
+            },
+            "filtering_result": {
+                "passed_filter_reads": clean_reads,
+                "low_quality_reads": int(raw_reads * (1 - kept_frac) * 0.6),
+                "too_short_reads": int(raw_reads * (1 - kept_frac) * 0.4),
+            },
+        }
+        w(os.path.join(res, "01_QC", s, f"{s}_fastp.json"), json.dumps(fastp_json, indent=2))
+        w(os.path.join(res, "01_QC", s, f"{s}_fastp.html"), "<html><!-- demonstration stub --></html>\n")
+
     # --- 03_TAXONOMY ----------------------------------------------------
     w(os.path.join(res, "03_TAXONOMY", "abundance_table_final_RAW.tsv"), build_abundance())
     # Kaiju classifies by translated protein and typically assigns more reads,
@@ -227,16 +262,25 @@ def main():
           f"# demonstration stub -- MetaPhlAn-style report for {s}\n")
 
     # --- 02_ASSEMBLY ----------------------------------------------------
+    # QUAST/MetaQuast always writes both report.tsv (rows=metrics,
+    # cols=assemblies) AND transposed_report.tsv (rows=assemblies,
+    # cols=metrics) -- build_magma_assembly_table.R reads the transposed one,
+    # same convention already verified for SIGMA's own .read_quast, so both
+    # are written here even though only one is actually consumed.
     for s in SAMPLES:
         n_contigs = random.randint(180, 420)
         total_len = random.randint(18_000_000, 46_000_000)
-        rows = [["Assembly", s],
-                ["# contigs", n_contigs],
-                ["Total length", total_len],
-                ["N50", random.randint(9_000, 41_000)],
-                ["GC (%)", round(random.uniform(52.0, 64.0), 2)]]
+        largest = random.randint(int(total_len * 0.02), int(total_len * 0.08))
+        n50 = random.randint(9_000, 41_000)
+        gc = round(random.uniform(52.0, 64.0), 2)
+        l50 = random.randint(150, 900)
+        report_rows = [["Assembly", s], ["# contigs", n_contigs], ["Total length", total_len],
+                       ["Largest contig", largest], ["GC (%)", gc], ["N50", n50], ["L50", l50]]
+        transposed_rows = [["Assembly", "# contigs", "Total length", "Largest contig", "GC (%)", "N50", "L50"],
+                           [s, n_contigs, total_len, largest, gc, n50, l50]]
         for sub in ("metaquast", "metaquast_prokaryotic"):
-            w(os.path.join(res, "02_ASSEMBLY", s, sub, "report.tsv"), tsv(rows))
+            w(os.path.join(res, "02_ASSEMBLY", s, sub, "report.tsv"), tsv(report_rows))
+            w(os.path.join(res, "02_ASSEMBLY", s, sub, "transposed_report.tsv"), tsv(transposed_rows))
 
     # --- 05_BINNING / 06_MAG_REFINEMENT ---------------------------------
     # One real (if short) random contig per MAG, reused everywhere that MAG's

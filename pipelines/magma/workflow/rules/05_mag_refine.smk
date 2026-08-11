@@ -75,5 +75,5 @@ rule gunc:
     shell:
         """
         rm -rf {output.outdir}
-        gunc run --input_dir {input.bins} --file_suffix.fa --out_dir {output.outdir} --threads {threads} {params.extra} > {log} 2>&1
+        gunc run --input_dir {input.bins} --file_suffix .fa --out_dir {output.outdir} --threads {threads} {params.extra} > {log} 2>&1
         """
