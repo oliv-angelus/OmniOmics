@@ -241,6 +241,110 @@ DOGMA_ANNOTATION_COLUMNS <- c(
   "catbat_lineage", "eukulele_classification", "magma_xref_taxonomy"
 )
 
+#' How a cell in each annotation column must be expanded into the individual
+#' terms that are the real unit of analysis. A column absent from this list
+#' is left EXACTLY as-is (one cell = one term), which is correct for the
+#' single-valued ones (DIAMOND best-hit gene names from NCyc/SCyc/MCyc,
+#' CANT-HYD's HMM name, eggNOG's Preferred_name) and mandatory for the
+#' taxonomic ones (`catbat_lineage`, `eukulele_classification`,
+#' `magma_xref_taxonomy` are ';'-separated LINEAGES -- splitting them would
+#' turn "Bacteria" into a "gene family", which is meaningless).
+#'
+#' Why expanding matters: eggNOG writes every term a gene carries into one
+#' cell. Grouping by the raw cell therefore creates features that are
+#' COMBINATIONS ("ko00010,ko00020" as one unit) rather than the pathways
+#' themselves -- and the pathway ko00010 never appears as a row of its own.
+#' Those combinations are not biological units, so both the composition plot
+#' and every DESeq2-style test built on them were describing artifacts.
+#'
+#' Counting a gene into each of its terms is the established convention, not
+#' an invention here: HUMAnN computes a pathway's abundance as the sum over
+#' the genes catalysing its reactions, so a gene in several pathways
+#' contributes to each of them (Beghini et al. 2021, eLife 10:e65088,
+#' doi:10.7554/eLife.65088).
+#'
+#' The consequence, stated plainly because it affects interpretation: terms
+#' that share genes are no longer independent, so they tend to come out
+#' significant together and a "hit" may reflect one shared gene rather than
+#' several. This does NOT invalidate the FDR -- Benjamini & Yekutieli (2001,
+#' Ann. Statist. 29:1165-1188) proved Benjamini-Hochberg still controls it
+#' under positive regression dependency, which positively-correlated
+#' overlapping gene sets satisfy -- but a result should be read alongside
+#' the genes driving it, exactly as in GO/pathway enrichment.
+#'
+#' `split`:
+#'   "comma" -- comma-separated list of independent terms.
+#'   "chars" -- eggNOG concatenates the letters of every COG category a gene
+#'              belongs to ("NT" = N and T), so each CHARACTER is a category.
+#'              Both this additive convention and a first-letter-only one are
+#'              in real use; additive is chosen here so a gene is represented
+#'              in every category it genuinely belongs to.
+#' `drop`: regex of terms discarded after splitting.
+DOGMA_COLUMN_TERM_RULES <- list(
+  eggnog_COG_category = list(split = "chars", drop = NULL),
+  eggnog_KEGG_ko      = list(split = "comma", drop = NULL),
+  # KEGG lists the SAME pathway under two namespaces -- "ko00010" (orthology)
+  # and "map00010" (reference map) -- and eggNOG passes both through. Keeping
+  # both would count every pathway exactly twice; the "ko" form is the one
+  # eggNOG assigns from, so the "map" duplicates go.
+  eggnog_KEGG_Pathway = list(split = "comma", drop = "^map")
+  # cazy_dbCAN_hmm / cazy_Substrate / fegenie_* are deliberately absent: the
+  # dbCAN overview.tsv HMMER field carries coordinate suffixes ("CE4(38-162)")
+  # and its multi-hit separator has not been confirmed against real output,
+  # so no splitting rule is guessed at here. They keep the one-cell-one-term
+  # behaviour until the real format is verified.
+)
+
+#' An annotation cell that carries no assignment. eggNOG-mapper writes a
+#' literal "-" for every field it could not assign (its own documented
+#' convention, and the always-on annotator here), so checking only for NA
+#' and "" misses the overwhelmingly common case -- which is how an ORF with
+#' no annotation used to end up in a gene family literally named "-", the
+#' exact "giant catch-all pseudo-gene" aggregate_dogma_counts documents
+#' itself as avoiding.
+.is_unannotated <- function(values) {
+  v <- trimws(as.character(values))
+  is.na(v) | v == "" | v == "-"
+}
+
+#' Expands `annotation_col` so each row carries a single term, duplicating
+#' the row (and therefore its read count) once per term the ORF was
+#' annotated with. Columns with no rule are returned untouched, so this is a
+#' no-op for every single-valued and taxonomic column.
+.expand_annotation_terms <- function(long_table, annotation_col) {
+  rule <- DOGMA_COLUMN_TERM_RULES[[annotation_col]]
+  if (is.null(rule)) return(long_table)
+  values <- as.character(long_table[[annotation_col]])
+  empty <- .is_unannotated(values)
+  terms <- vector("list", length(values))
+  terms[empty] <- list(NA_character_)
+  idx <- which(!empty)
+  if (length(idx) > 0) {
+    terms[idx] <- if (rule$split == "chars") {
+      strsplit(trimws(values[idx]), "", fixed = TRUE)
+    } else {
+      strsplit(trimws(values[idx]), ",", fixed = TRUE)
+    }
+    if (!is.null(rule$drop)) {
+      terms[idx] <- lapply(terms[idx], function(x) {
+        x <- trimws(x)
+        kept <- x[nzchar(x) & !grepl(rule$drop, x)]
+        if (length(kept) == 0) NA_character_ else kept
+      })
+    } else {
+      terms[idx] <- lapply(terms[idx], function(x) {
+        x <- trimws(x); x <- x[nzchar(x)]
+        if (length(x) == 0) NA_character_ else x
+      })
+    }
+  }
+  n_terms <- lengths(terms)
+  out <- long_table[rep(seq_len(nrow(long_table)), n_terms), , drop = FALSE]
+  out[[annotation_col]] <- unlist(terms, use.names = FALSE)
+  rownames(out) <- NULL
+  out
+}
+
 #' Aggregates the long per-ORF table into a real gene-family x sample count
 #' matrix -- the actual bridge that makes cross-sample comparison possible
 #' at all. Raw ORF/transcript IDs are sample-specific (DOGMA has no
@@ -276,8 +380,14 @@ aggregate_dogma_counts <- function(long_table, annotation_col, coldata, value_co
   # convention) because a giant catch-all pseudo-gene isn't a meaningful
   # unit for DESeq2 differential testing the way it is for a descriptive
   # composition bar chart.
+  # Expand multi-term cells FIRST, so the group-by key is a real pathway/
+  # category/ortholog rather than the combination string an ORF happens to
+  # carry (see .expand_annotation_terms and DOGMA_COLUMN_TERM_RULES). A
+  # no-op for single-valued and taxonomic columns.
+  long_table <- .expand_annotation_terms(long_table, annotation_col)
+
   agg <- long_table %>%
-    filter(!is.na(.data[[annotation_col]]),.data[[annotation_col]] != "", !is.na(.data[[value_col]])) %>%
+    filter(!.is_unannotated(.data[[annotation_col]]), !is.na(.data[[value_col]])) %>%
     group_by(sample_domain,.data[[annotation_col]]) %>%
     summarise(value = sum(.data[[value_col]]),.groups = "drop")
 

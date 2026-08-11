@@ -28,10 +28,11 @@ suppressMessages({
 #'   "chars" -- COG_category only: eggNOG concatenates the letters of every
 #'              category a gene belongs to ("EJ" = both E and J), so each
 #'              CHARACTER is its own category rather than the string being
-#'              one bucket. (build_dogma_table.R keeps "EJ" whole; splitting
-#'              is the right call for a composition plot specifically, where
-#'              the question is what share of assignments fall in each
-#'              category.)
+#'              one bucket. Both this additive convention and a
+#'              first-letter-only one are in real use; additive is chosen so
+#'              a gene is represented in every category it belongs to.
+#'              DOGMA's build_dogma_table.R now applies the same rules, via
+#'              its own DOGMA_COLUMN_TERM_RULES.
 #' `drop`: regex of terms to discard after splitting.
 MAGMA_FUNCTIONAL_COLUMNS <- list(
   COG_category = list(split = "chars", drop = NULL),

@@ -53,8 +53,13 @@ if (!("salmon_NumReads" %in% colnames(long_table))) {
 # already uses for un-ranked taxa, appropriate for a descriptive "where did
 # the reads go" plot (as opposed to DESeq2 testing, where a giant
 # catch-all pseudo-gene isn't a meaningful unit).
-df <- long_table %>%
-  mutate(family = ifelse(is.na(.data[[annotation_col]]) |.data[[annotation_col]] == "", "Unclassified",.data[[annotation_col]])) %>%
+# Expanded first, so a family is a real pathway/category/ortholog instead of
+# the combination string an ORF happens to carry -- see
+# .expand_annotation_terms and DOGMA_COLUMN_TERM_RULES in build_dogma_table.R
+# for the rules and the literature behind counting a gene into each of its
+# terms. A no-op for single-valued and taxonomic columns.
+df <- .expand_annotation_terms(long_table, annotation_col) %>%
+  mutate(family = ifelse(.is_unannotated(.data[[annotation_col]]), "Unclassified",.data[[annotation_col]])) %>%
   filter(!is.na(salmon_NumReads)) %>%
   group_by(sample_domain, family) %>%
   summarise(reads = sum(salmon_NumReads),.groups = "drop") %>%
