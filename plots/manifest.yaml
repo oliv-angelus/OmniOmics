@@ -247,13 +247,21 @@ analyses:
     input_shape: magma_functional
     script: analyses/magma_functional_composition.R
     parameters:
+      - flag: "--annotation_column"
+        type: choice
+        default: "COG_category"
+        enabled: true
+        choices: [COG_category, KEGG_Pathway, KEGG_Module, KEGG_ko, EC, CAZy, PFAMs, GOs]
+        description:
+          en: "Which eggNOG functional vocabulary to plot. COG_category gives the broad-strokes view (~25 categories); KEGG_Pathway/Module and CAZy/PFAMs are more specific. A vocabulary eggNOG found no hits for in this run is reported as such instead of drawing an empty figure."
+          pt: "Qual vocabulário funcional do eggNOG plotar. COG_category dá a visão geral (~25 categorias); KEGG_Pathway/Module e CAZy/PFAMs são mais específicos. Um vocabulário sem nenhum acerto do eggNOG nesta execução é reportado como tal em vez de gerar uma figura vazia."
       - flag: "--top_n"
         type: int
         default: 15
         enabled: true
         description:
-          en: "Number of top COG categories to show individually before collapsing the rest into 'Others'"
-          pt: "Número de categorias COG mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
+          en: "Number of top terms to show individually before collapsing the rest into 'Others'"
+          pt: "Número de termos mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
         min: 1
         max: 30
 
