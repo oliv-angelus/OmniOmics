@@ -301,3 +301,61 @@ But the user's instinct pointed at a real, genuine gap: DOGMA only had DEFINE's 
 User ran `dogma_functional_diversity` for real in the app against the `dogma_demo` run with `--annotation_column eggnog_KEGG_Pathway` and hit a real crash, screenshotted and reported (found in `~/Imagens/Capturas de tela/` -- the app's own error log panel showed the exact real command + traceback, no guessing needed). Real root cause, independently reproduced: this demo's own eggNOG data happens to map all 3 annotated genes to the same real KEGG pathway (`map00910`, nitrogen metabolism -- narG/amoA both genuinely belong to it), so aggregating by `eggnog_KEGG_Pathway` collapses the whole run down to exactly **1** gene family. phyloseq's own `rarefy_even_depth()` crashes outright on a single-taxon object (`"attempt to set 'rownames' on an object with no dimensions"`) -- confirmed as a real, standalone phyloseq limitation by reproducing it against a minimal hand-built 1-row phyloseq object directly, nothing DOGMA-specific about the trigger mechanism itself (R's own matrix-subsetting drops dimensions at 1 row; phyloseq's code doesn't guard against that).
 
 **Fixed with a clear `ntaxa(ps) < 2` guard in all 4 scripts that share this exact `rarefy_even_depth()` call pattern**, not just the one that happened to surface it: `dogma_functional_diversity.R`, `dogma_functional_beta_diversity.R`, and (since MAGMA/PRISM's own `alpha_diversity.R`/`beta_diversity.R` call the identical function the identical way and are equally exposed, just less likely to hit exactly 1 taxon in practice) those two as well. Verified for real: the exact reported failing case (`eggnog_KEGG_Pathway`) now gives a clear, actionable message instead of the raw crash; the already-working case (`eggnog_KEGG_ko`) still works unchanged; PRISM's own `alpha_diversity`/`beta_diversity` (including `wunifrac`) regression-tested against the real `prism_demo` run to confirm the new guard doesn't break anything that already worked.
+
+## Suíte offline: dois bugs reais na análise diferencial (2026-08-11)
+
+`scripts/run_plots_suite.py` (ver [[MAGMA]]) rodado contra a fixture do DOGMA. Das falhas, a
+grande maioria é recusa legítima — a fixture só escreve eggnog/ncycdb/catbat, então
+scycdb/mcycdb/canthyd/fegenie/cazy/eukulele/magma_xref não têm dado nenhum e a análise diz
+isso. Mas sobraram dois problemas de verdade:
+
+**1. CAP quebrava em toda distância.** Mesma causa do `beta_diversity.R`: CAP é ordenação
+restrita, o `ordinate()` do phyloseq exige fórmula e recebia `NULL`, morrendo num erro de
+dispatch ilegível. Corrigido nas duas análises com `~ group_var`.
+
+**2. DESeq2 quebrava em `eggnog_KEGG_ko`** — e quebraria em qualquer vocabulário grande o
+bastante, em qualquer pipeline que use `deseq_helpers.R` (DOGMA, MAGMA, DEFINE).
+
+O `estimateSizeFactors` padrão do DESeq2 é o *median-of-ratios* (Anders & Huber 2010): divide
+cada amostra por uma referência construída da média geométrica **entre todas as amostras**, o
+que exige ao menos uma feature não-zero em **toda** amostra. Matriz de anotação funcional
+raramente tem isso — agregue 2.276 ortólogos KEGG sobre 12 amostras e toda família falta em
+algum lugar. O DESeq2 então para com "every gene contains at least one zero, cannot compute
+log geometric means".
+
+A resposta documentada é `type = "poscounts"`: a média geométrica sai só das contagens
+**positivas** de cada feature (raiz n-ésima do produto dos valores não-zero). Nasceu como
+recomendação do phyloseq para dado 16S e foi incorporada ao próprio DESeq2; é a normalização
+padrão para contagem esparsa de microbioma/metagenoma.
+
+Aplicado como **fallback**, não incondicionalmente: onde o padrão funciona ele é o estimador
+melhor caracterizado, e trocar a normalização em silêncio mudaria o resultado de toda análise
+já existente.
+
+Detalhe que mascarava o diagnóstico: o `tryCatch` do `run_deseq` rotulava esse erro como
+"parametric dispersion fit failed" e o fallback chamava `estimateSizeFactors(dds)` de novo —
+exatamente a chamada que tinha falhado. O log dizia dispersão; o problema era normalização.
+
+**Terceira coisa, no runner e não no app**: análise que roda bem e não tem o que desenhar
+(nenhuma família passou `padj < 0.05`) contava como falha. Virou categoria própria (`----`),
+já que escrever `data.json` vazio em vez de inventar uma figura é o comportamento certo.
+
+### Lacuna que a suíte expôs: 10 dos 15 leitores nunca rodaram contra dado nenhum
+
+Depois das correções, **toda falha restante é a mesma recusa legítima**: a fixture
+(`scripts/make_dogma_test_run.py`) só escreve saída de **eggnog, ncycdb e catbat**. As outras
+10 colunas de anotação — `cazy_dbCAN_hmm`, `cazy_Substrate`, `scycdb_gene`, `mcycdb_gene`,
+`canthyd_query_name`, `fegenie_category`, `fegenie_HMM`, `eukulele_classification`,
+`magma_xref_taxonomy`, e `eggnog_Preferred_name` no caminho de DE — não têm dado, e a análise
+diz isso corretamente.
+
+O ponto: **o leitor de cada uma dessas 10 ferramentas nunca foi executado contra arquivo
+nenhum**, nem sintético. O layout de coluna de cada uma veio de leitura da documentação, não de
+verificação. É exatamente a classe de erro que só aparece rodando (o incidente da limpeza por
+regex e os bugs de `{output.json()}` / `--file_suffix.fa` / `--p_ext.pep` foram todos assim).
+
+Estender a fixture para as 15 ferramentas é a próxima coisa a fazer aqui — não foi feito nesta
+sessão para não misturar com a consolidação dos cards. Ver [[Known Issues and Next Steps]].
+
+Cobertura atual da suíte do DOGMA: 5 colunas de 15, todas as combinações de parâmetro passando
+(6 resultados vazios legítimos, onde nenhuma família passou o corte de significância).

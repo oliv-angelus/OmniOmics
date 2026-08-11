@@ -106,7 +106,17 @@ permanova <- adonis2(dist_matrix ~ meta[[group_var]], permutations = permutation
 p_value <- permanova$`Pr(>F)`[1]
 log_line("[dogma_functional_beta_diversity] PERMANOVA: %s (%d permutations)", format_p_value(p_value), permutations)
 
-ord <- ordinate(ps_rar, method = ord_method, distance = dist_method)
+# CAP is a CONSTRAINED ordination (dbRDA, Anderson & Willis 2003) and
+# phyloseq's ordinate() requires a formula for it -- without one it hands
+# capscale a NULL formula and dies with an opaque dispatch error. Same fix,
+# same reasoning as beta_diversity.R: constrain on --group_var, the factor
+# PERMANOVA above tests.
+ord <- if (ord_method == "CAP") {
+  ordinate(ps_rar, method = "CAP", distance = dist_method,
+           formula = stats::as.formula(paste("~", group_var)))
+} else {
+  ordinate(ps_rar, method = ord_method, distance = dist_method)
+}
 
 # Same real rank-deficiency guard as beta_diversity.R -- a handful of gene
 # families (very plausible after aggregating down from raw ORFs, more so
