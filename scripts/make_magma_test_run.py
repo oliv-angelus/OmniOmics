@@ -135,6 +135,13 @@ VF_GENES = {
     "bin.7": ["hlyA"],
 }
 
+# Bins GUNC flags as chimeric despite CheckM2 alone looking fine for them --
+# bin.2 (94.1% complete / 2.2% contamination, otherwise "High") and bin.6
+# (72.6% / 4.4%, already "Medium") -- so the fixture exercises a MAG whose
+# GUNC failure is the ONLY sign of a real problem, the exact case the tool
+# exists to catch.
+GUNC_FAIL_BINS = {"bin.2", "bin.6"}
+
 AMINO_ACIDS = ("Ala Arg Asn Asp Cys Gln Glu Gly His Ile Leu Lys Met Phe Pro "
                "Ser Thr Trp Tyr Val").split()
 
@@ -304,9 +311,32 @@ def main():
         for suffix, comp, cont, size in by_sample.get(s, []):
             rows.append([f"{s}_{suffix}", comp, cont, size, "Neural Network (Specific Model)", "None"])
         w(os.path.join(res, "06_MAG_REFINEMENT", s, "checkm2", "quality_report.tsv"), tsv(rows))
-        w(os.path.join(res, "06_MAG_REFINEMENT", s, "gunc",
-                       "GUNC.progenomes_2.1.maxCSS_level.tsv"),
-          "# demonstration stub -- GUNC chimerism report\n")
+
+        # Real 13-column GUNC.{db}.maxCSS_level.tsv schema (confirmed against
+        # the tool's own documentation). GUNC_FAIL_BINS deliberately fails a
+        # couple of otherwise-decent bins with cross-clade chimerism -- the
+        # exact case CheckM2 alone cannot catch -- so the MAG summary table
+        # has both pass and fail states to show, not just a column of "yes".
+        gunc_rows = [["genome", "n_genes_called", "n_genes_mapped", "n_contigs", "taxonomic_level",
+                     "proportion_genes_retained_in_major_clades", "genes_retained_index",
+                     "clade_separation_score", "contamination_portion", "n_effective_surplus_clades",
+                     "mean_hit_identity", "reference_representation_score", "pass.GUNC"]]
+        for suffix, comp, cont, size in by_sample.get(s, []):
+            mag = f"{s}_{suffix}"
+            n_called = random.randint(2200, 5200)
+            n_mapped = int(n_called * random.uniform(0.85, 0.98))
+            fails = suffix in GUNC_FAIL_BINS
+            css = round(random.uniform(0.55, 0.82), 3) if fails else round(random.uniform(0.02, 0.35), 3)
+            gunc_rows.append([
+                mag, n_called, n_mapped, random.randint(1, 6), "species",
+                round(random.uniform(0.85, 0.99), 3), round(random.uniform(0.70, 0.95), 3),
+                css, round(random.uniform(0.15, 0.40), 3) if fails else round(random.uniform(0.0, 0.05), 3),
+                random.randint(1, 4) if fails else 0,
+                round(random.uniform(0.97, 0.999), 3), round(random.uniform(0.60, 0.90), 3),
+                "False" if fails else "True",
+            ])
+        w(os.path.join(res, "06_MAG_REFINEMENT", s, "gunc", "GUNC.progenomes_2.1.maxCSS_level.tsv"),
+          tsv(gunc_rows))
         for suffix, _c, _x, _s in by_sample.get(s, []):
             mag = f"{s}_{suffix}"
             w(os.path.join(res, "06_MAG_REFINEMENT", s, "binette", "final_bins", f"{mag}.fa"),
