@@ -119,6 +119,11 @@ class _MagSummaryTableState extends ConsumerState<MagSummaryTable> {
                   _detailRow(colors, ref.t('plots_mag_lineage'), _lineageText(lineage)),
                   _detailRow(colors, ref.t('plots_mag_rrna'), _rrnaText(r)),
                   _detailRow(colors, ref.t('plots_mag_trna'), '${r['trna_types'] ?? '—'}'),
+                  // GUNC's chimerism check, shown right alongside MIMAG per
+                  // the user's own request -- a separate, complementary
+                  // check (Orakov et al. 2021), not folded into the MIMAG
+                  // tier itself (see build_magma_mag_table.R).
+                  _detailRow(colors, ref.t('plots_mag_gunc'), _guncText(r)),
                   if (abundance.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(ref.t('plots_mag_abundance'),
@@ -188,6 +193,15 @@ class _MagSummaryTableState extends ConsumerState<MagSummaryTable> {
     final s5 = r['rrna_5s']; final s16 = r['rrna_16s']; final s23 = r['rrna_23s'];
     if (s5 == null && s16 == null && s23 == null) return ref.t('plots_mag_unavailable');
     return '5S ${s5 ?? '?'} / 16S ${s16 ?? '?'} / 23S ${s23 ?? '?'}';
+  }
+
+  String _guncText(Map<String, dynamic> r) {
+    final pass = r['gunc_pass'];
+    final css = r['gunc_css'] as num?;
+    if (pass == null) return ref.t('plots_mag_unavailable');
+    final verdict = pass == true ? ref.t('plots_mag_gunc_pass') : ref.t('plots_mag_gunc_fail');
+    final cssTxt = css == null ? '' : '  (CSS ${css.toStringAsFixed(2)})';
+    return '$verdict$cssTxt';
   }
 }
 

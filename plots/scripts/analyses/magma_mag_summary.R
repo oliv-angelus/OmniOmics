@@ -122,6 +122,12 @@ records <- lapply(seq_len(nrow(df)), function(i) {
     genome_size = row$checkm2_genome_size, mimag_quality = row$mimag_quality %||% NA,
     rrna_5s = row$rrna_5s, rrna_16s = row$rrna_16s, rrna_23s = row$rrna_23s,
     trna_types = row$trna_types,
+    # GUNC's chimerism check, shown alongside the MIMAG tier per the user's
+    # own request -- not folded into mimag_quality itself, since chimerism
+    # detection is not part of the official MIMAG standard (see
+    # build_magma_mag_table.R's .read_gunc_all docstring).
+    gunc_pass = if (is.na(row$gunc_pass %||% NA)) NA else isTRUE(row$gunc_pass),
+    gunc_css = row$gunc_css, gunc_contamination_portion = row$gunc_contamination_portion,
     lineage = lineage_for(row),
     abundance = abundance_for(row$mag),
     genes = genes_for(row$mag)

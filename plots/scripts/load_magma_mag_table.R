@@ -44,7 +44,7 @@ mags <- mag_table$mag
 # provenance), then whatever the user's metadata.tsv adds for its source
 # sample. A MAG with no resolvable source sample (name doesn't match any
 # sample directory) simply gets NA metadata rather than failing the load.
-MAG_BUILTIN_GROUP_COLS <- c("sample", "dereplicated", "mimag_quality",
+MAG_BUILTIN_GROUP_COLS <- c("sample", "dereplicated", "mimag_quality", "gunc_pass",
                             "gtdbtk_domain", "gtdbtk_phylum", "gtdbtk_class",
                             "gtdbtk_order", "gtdbtk_family", "gtdbtk_genus", "gtdbtk_species")
 builtin_cols <- intersect(MAG_BUILTIN_GROUP_COLS, colnames(mag_table))

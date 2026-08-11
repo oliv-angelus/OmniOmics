@@ -80,6 +80,45 @@ suppressMessages({
   distinct(bind_rows(parts), mag, .keep_all = TRUE)
 }
 
+#' GUNC (Orakov et al. 2021, Genome Biology, doi:10.1186/s13059-021-02393-0)
+#' checks for CROSS-CLADE CHIMERISM -- contigs from unrelated taxa binned
+#' together -- which CheckM2's completeness/contamination alone cannot
+#' detect (two different organisms' single-copy genes can each look
+#' "complete" and "uncontaminated" on their own). Real, 13-column
+#' GUNC.{db}.maxCSS_level.tsv schema confirmed against the tool's own
+#' documentation. GUNC runs per SAMPLE against every bin in that sample's
+#' binette/final_bins directory at once, so -- like CheckM2 -- one file
+#' covers multiple MAGs and every sample's file is read and stacked. The
+#' output db-name segment varies by which GUNC database was configured
+#' (proGenomes2.1/3, GTDB r95/r214 -- see pipeline.yaml's gunc database
+#' entry), matched by glob rather than hardcoded to one variant.
+#'
+#' Deliberately NOT folded into mimag_quality/.mimag_tier: the official
+#' MIMAG standard (Bowers et al. 2017) is completeness/contamination/rRNA/
+#' tRNA only -- chimerism is GUNC's own, complementary check, not part of
+#' that standard. Reported as its own gunc_pass/gunc_css columns shown
+#' alongside the MIMAG tier, not blended into it.
+.read_gunc_all <- function(results_dir) {
+  refine <- file.path(results_dir, "06_MAG_REFINEMENT")
+  if (!dir.exists(refine)) return(NULL)
+  reports <- list.files(refine, pattern = "^GUNC\\..*\\.maxCSS_level\\.tsv$", recursive = TRUE, full.names = TRUE)
+  if (length(reports) == 0) return(NULL)
+  parts <- lapply(reports, function(f) {
+    df <- try(read.delim(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+    if (inherits(df, "try-error") || nrow(df) == 0 || !"genome" %in% colnames(df)) return(NULL)
+    data.frame(
+      mag = as.character(df$genome),
+      gunc_pass = as.logical(df[["pass.GUNC"]] %||% NA),
+      gunc_css = suppressWarnings(as.numeric(df[["clade_separation_score"]] %||% NA)),
+      gunc_contamination_portion = suppressWarnings(as.numeric(df[["contamination_portion"]] %||% NA)),
+      stringsAsFactors = FALSE
+    )
+  })
+  parts <- Filter(Negate(is.null), parts)
+  if (length(parts) == 0) return(NULL)
+  distinct(bind_rows(parts), mag, .keep_all = TRUE)
+}
+
 #' GTDB-Tk writes bac120 and/or ar53 summaries for the dereplicated set; read
 #' whichever exist and stack them, so a run with both bacteria and archaea
 #' keeps both. The full `classification` lineage is split into the same
@@ -228,6 +267,11 @@ build_magma_mag_table <- function(results_dir) {
 
   tk <- .read_gtdbtk_mags(results_dir)
   if (!is.null(tk)) df <- left_join(df, tk, by = "mag")
+
+  gu <- .read_gunc_all(results_dir)
+  df <- if (is.null(gu)) {
+    df$gunc_pass <- NA; df$gunc_css <- NA_real_; df$gunc_contamination_portion <- NA_real_; df
+  } else left_join(df, gu, by = "mag")
 
   rr <- .read_barrnap_rrna(results_dir, df$mag)
   tr <- .read_trnascan_types(results_dir, df$mag)
