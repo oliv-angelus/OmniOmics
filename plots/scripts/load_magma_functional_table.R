@@ -13,6 +13,7 @@ this_script_dir <- function() {
 lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "build_magma_functional_table.R"))
+source(file.path(lib_dir, "build_magma_mag_table.R"))
 
 suppressMessages(library(jsonlite))
 
@@ -31,20 +32,27 @@ if (length(samples) == 0) {
   stop("No samples found under 01_QC -- this run has no output to analyse.")
 }
 
-functional_table <- build_magma_functional_table(args$input, samples)
+# eggNOG runs over BOTH the per-sample metagenome and each recovered MAG;
+# .discover_mags is reused from the MAG table's own loader so both levels
+# come from the same source of truth about which MAGs the run has.
+mags <- .discover_mags(args$input)
+log_line("[load_magma_functional_table] %d sample(s), %d MAG(s)", length(samples), length(mags))
+functional_table <- build_magma_functional_table(args$input, samples, mags)
 log_line("[load_magma_functional_table] functional annotation: %s",
          if (is.null(functional_table)) "no eggNOG output found" else
-           sprintf("%d row(s) across %d sample(s)", nrow(functional_table), length(unique(functional_table$sample))))
+           sprintf("%d row(s) across %d unit(s)", nrow(functional_table), length(unique(functional_table$unit))))
 if (is.null(functional_table)) {
-  stop("No eggNOG-mapper output found for any sample in this run -- was eggNOG active?")
+  stop("No eggNOG-mapper output found for any sample or MAG in this run -- was eggNOG active?")
 }
 
 cols_present <- magma_functional_columns_present(functional_table)
-log_line("[load_magma_functional_table] annotation column(s) with data: %s", paste(cols_present, collapse = ", "))
+levels_present <- magma_functional_levels_present(functional_table)
+log_line("[load_magma_functional_table] level(s): %s | annotation column(s) with data: %s",
+         paste(levels_present, collapse = ", "), paste(cols_present, collapse = ", "))
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
-saveRDS(list(functional_table = functional_table, samples = samples,
-            annotation_columns = cols_present),
+saveRDS(list(functional_table = functional_table, samples = samples, mags = mags,
+            annotation_columns = cols_present, levels = levels_present),
         file.path(args$out_dir, "magma_functional_table.rds"))
 
 write_json(

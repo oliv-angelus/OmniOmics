@@ -115,7 +115,21 @@ permanova <- adonis2(dist_matrix ~ meta[[group_var]], permutations = permutation
 p_value <- permanova$`Pr(>F)`[1]
 log_line("[beta_diversity] PERMANOVA: %s (%d permutations)", format_p_value(p_value), permutations)
 
-ord <- ordinate(ps_rar, method = ord_method, distance = dist_method)
+# CAP is a CONSTRAINED ordination (distance-based redundancy analysis,
+# Anderson & Willis 2003) -- unlike PCoA/NMDS it does not summarise total
+# variation, it summarises the part of it explained by stated explanatory
+# variables. phyloseq's ordinate() therefore requires a formula for this
+# method; called without one it hands capscale a NULL formula and dies with
+# an opaque "unable to find an inherited method" dispatch error. The
+# constraint is --group_var, the same factor PERMANOVA tests above, which is
+# the standard pairing: PERMANOVA asks whether the groups differ, CAP draws
+# the axes along which they do.
+ord <- if (ord_method == "CAP") {
+  ordinate(ps_rar, method = "CAP", distance = dist_method,
+           formula = stats::as.formula(paste("~", group_var)))
+} else {
+  ordinate(ps_rar, method = ord_method, distance = dist_method)
+}
 
 # Deliberately NOT phyloseq::plot_ordination to build the site scores --
 # its internal `is_empty(sdf)` check on the sample_data data.frame uses

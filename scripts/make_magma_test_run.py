@@ -271,6 +271,38 @@ def main():
                    ("P", 6), ("G", 6), ("H", 5), ("O", 5), ("Q", 4), ("R", 8), ("S", 6),
                    ("EJ", 2), ("-", 10)]
     cog_pool = [c for c, w in COG_WEIGHTS for _ in range(w)]
+
+    # Real KEGG pathway IDs, weighted: a prokaryotic genome's annotated genes
+    # concentrate heavily on core metabolism and information processing, with
+    # a long tail of specialised pathways. Drawing uniformly from the whole ID
+    # space instead (as this fixture first did) makes every pathway equally
+    # rare, so a top-N plot is ~100% "Others" -- an artefact of the fixture,
+    # not something a real run would show.
+    KEGG_PATHWAY_WEIGHTS = [
+        (2010, 12),  # ABC transporters
+        (3010, 10),  # Ribosome
+        (10, 9),     # Glycolysis / Gluconeogenesis
+        (20, 7),     # Citrate cycle (TCA)
+        (190, 7),    # Oxidative phosphorylation
+        (230, 6),    # Purine metabolism
+        (240, 6),    # Pyrimidine metabolism
+        (2020, 6),   # Two-component system
+        (3070, 5),   # Bacterial secretion system
+        (620, 5),    # Pyruvate metabolism
+        (630, 4),    # Glyoxylate and dicarboxylate metabolism
+        (500, 4),    # Starch and sucrose metabolism
+        (520, 4),    # Amino sugar and nucleotide sugar metabolism
+        (330, 3),    # Arginine and proline metabolism
+        (260, 3),    # Glycine, serine and threonine metabolism
+        (910, 3),    # Nitrogen metabolism
+        (920, 3),    # Sulfur metabolism
+        (61, 2),     # Fatty acid biosynthesis
+        (550, 2),    # Peptidoglycan biosynthesis
+        (3440, 2),   # Homologous recombination
+    ]
+    KEGG_PATHWAY_POOL = ([p for p, wt in KEGG_PATHWAY_WEIGHTS for _ in range(wt)]
+                         # long tail: rarely-hit specialised pathways
+                         + [random.randint(10, 999) for _ in range(60)])
     # eggNOG-mapper's real default output (--no_file_comments is NOT passed
     # by this pipeline's rule, confirmed reading it): '##'-prefixed banner
     # lines, then the header row itself prefixed with a SINGLE '#'
@@ -278,8 +310,10 @@ def main():
     # Written in this real shape -- not a plain header -- so the fixture
     # actually exercises build_magma_functional_table.R's real parsing path
     # (drop '##' lines, keep '#'-prefixed header, strip its leading '#').
-    for s in SAMPLES:
-        n_orfs = random.randint(320, 620)
+    def eggnog_annotations(query_prefix, n_orfs):
+        """One emapper.annotations file's text, in eggNOG-mapper v2's real
+        default shape. Shared by both levels the pipeline annotates: the
+        per-sample assembled metagenome and each individual MAG."""
         lines = ["## demonstration stub -- eggNOG-mapper call info",
                  "#" + "\t".join(EGGNOG_COLUMNS)]
         for i in range(1, n_orfs + 1):
@@ -290,7 +324,7 @@ def main():
             # tool does (both forms), so build_magma_functional_table.R's
             # de-duplication is genuinely exercised instead of assumed.
             if annotated:
-                pw_ids = [random.randint(10, 999) for _ in range(random.randint(1, 3))]
+                pw_ids = [random.choice(KEGG_PATHWAY_POOL) for _ in range(random.randint(1, 3))]
                 kegg_pathway = ",".join([f"ko{p:05d}" for p in pw_ids] + [f"map{p:05d}" for p in pw_ids])
                 kegg_ko = ",".join(f"ko:K{random.randint(1, 20000):05d}" for _ in range(random.randint(1, 2)))
                 kegg_module = ",".join(f"M{random.randint(1, 900):05d}" for _ in range(random.randint(0, 2))) or "-"
@@ -303,7 +337,7 @@ def main():
             else:
                 kegg_pathway = kegg_ko = kegg_module = ec = cazy = pfams = gos = "-"
             lines.append("\t".join(str(v) for v in [
-                f"{s}_orf{i}", f"{random.randint(100000, 999999)}.{random.randint(1000, 9999)}",
+                f"{query_prefix}_orf{i}", f"{random.randint(100000, 999999)}.{random.randint(1000, 9999)}",
                 f"{10 ** -random.randint(5, 60):.1e}", round(random.uniform(80, 900), 1),
                 "-", "Bacteria", cog, "-" if not annotated else "hypothetical protein",
                 "-", gos, ec, kegg_ko, kegg_pathway, kegg_module,
@@ -312,8 +346,11 @@ def main():
             ]))
         lines.append(f"## {n_orfs} queries scanned")
         lines.append("## demonstration stub -- eggNOG-mapper footer")
+        return "\n".join(lines) + "\n"
+
+    for s in SAMPLES:
         w(os.path.join(res, "09_ANNOTATION", s, "eggnog", f"{s}_annotations.emapper.annotations"),
-          "\n".join(lines) + "\n")
+          eggnog_annotations(s, random.randint(320, 620)))
 
     # --- 03_TAXONOMY ----------------------------------------------------
     w(os.path.join(res, "03_TAXONOMY", "abundance_table_final_RAW.tsv"), build_abundance())
@@ -501,8 +538,12 @@ def main():
                             round(random.uniform(88, 99), 2), "vfdb", f"{gene} virulence factor"])
         w(os.path.join(mags_dir, "vfdb", f"{shell_name}_vfdb_results.tab"), tsv(vf_rows))
 
+        # Per-MAG eggNOG, the second level the pipeline annotates. Gene count
+        # is on the scale of a real bacterial genome (~2-3k), which the
+        # per-sample files here deliberately are not -- those are downsized
+        # stubs, since a real assembled metagenome has hundreds of thousands.
         w(os.path.join(mags_dir, "eggnog", shell_name, f"{shell_name}_annotations.emapper.annotations"),
-          "# demonstration stub -- eggNOG-mapper annotations\n")
+          eggnog_annotations(mag, random.randint(1800, 3400)))
 
     # --- config ---------------------------------------------------------
     w(os.path.join(OUT, "config", "config.yaml"),

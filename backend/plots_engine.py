@@ -84,9 +84,14 @@ def get_input_shapes_for_pipeline(pipeline_id: str) -> list:
     """
     shapes = []
     for a in get_analysis_list(pipeline_id):
-        shape = a.get("input_shape", "phyloseq")
-        if shape not in shapes:
-            shapes.append(shape)
+        # `also_loads` covers a shape an analysis READS but doesn't declare as
+        # its primary input: MAGMA's community-taxonomy analysis is handed the
+        # Kraken object and reaches for the Kaiju one by filename in the same
+        # folder (its --classifier toggle), so that object still has to be
+        # built at load time even though no analysis claims it as input_shape.
+        for shape in [a.get("input_shape", "phyloseq"), *a.get("also_loads", [])]:
+            if shape not in shapes:
+                shapes.append(shape)
     return shapes or ["phyloseq"]
 
 

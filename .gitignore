@@ -5,3 +5,7 @@ app/.dart_tool/
 **/__pycache__/
 .snakemake/
 *.pyc
+
+# Stray default graphics device output, written whenever an R script
+# opens a plot device without a filename while cwd is the repo root.
+Rplots.pdf

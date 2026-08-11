@@ -83,10 +83,28 @@ MAGMA_FUNCTIONAL_COLUMNS <- list(
   terms
 }
 
-#' One sample's eggNOG annotations, already aggregated to counts per term
-#' for every configured column. Aggregating per sample (rather than
+#' Where a unit's eggNOG annotations live. MAGMA runs eggNOG twice, over
+#' genuinely different inputs: once per SAMPLE (the whole assembled
+#' metagenome of that sample) and once per MAG (a single recovered genome).
+#' The per-MAG rule computes its output prefix as
+#' `magname=$(basename "$f".fa)`, which really does yield "{mag}.fa.fa" on
+#' disk -- a pre-existing MAGMA naming bug, reproduced rather than assumed
+#' away (see .mag_shell_name in build_magma_mag_table.R).
+.eggnog_path <- function(results_dir, unit, level) {
+  if (level == "mag") {
+    shell_name <- paste0(unit, ".fa.fa")
+    file.path(results_dir, "09_ANNOTATION", "mags", "eggnog", shell_name,
+              paste0(shell_name, "_annotations.emapper.annotations"))
+  } else {
+    file.path(results_dir, "09_ANNOTATION", unit, "eggnog",
+              paste0(unit, "_annotations.emapper.annotations"))
+  }
+}
+
+#' One unit's eggNOG annotations, already aggregated to counts per term
+#' for every configured column. Aggregating per unit (rather than
 #' returning ORF-level rows and combining later) keeps peak memory flat in
-#' the number of samples, which matters on a real run.
+#' the number of units, which matters on a real run.
 #'
 #' Real emapper.annotations shape, same convention already proven in
 #' build_dogma_table.R: eggNOG-mapper writes '##'-prefixed banner/footer
@@ -96,8 +114,8 @@ MAGMA_FUNCTIONAL_COLUMNS <- list(
 #' header's leading '#' is preserved by comment.char="" and stripped
 #' manually afterward, rather than letting read.delim's own comment handling
 #' eat the header along with the banner.
-.read_eggnog_sample <- function(results_dir, sample) {
-  f <- file.path(results_dir, "09_ANNOTATION", sample, "eggnog", paste0(sample, "_annotations.emapper.annotations"))
+.read_eggnog_unit <- function(results_dir, unit, level) {
+  f <- .eggnog_path(results_dir, unit, level)
   if (!file.exists(f) || file.size(f) == 0) return(NULL)
   lines <- readLines(f, warn = FALSE)
   lines <- lines[!grepl("^##", lines)]
@@ -115,7 +133,7 @@ MAGMA_FUNCTIONAL_COLUMNS <- list(
     tab <- as.data.frame(table(term = terms), stringsAsFactors = FALSE)
     colnames(tab) <- c("term", "n")
     parts[[length(parts) + 1]] <- data.frame(
-      sample = sample, annotation_column = col,
+      unit = unit, level = level, annotation_column = col,
       term = as.character(tab$term), n = as.integer(tab$n),
       stringsAsFactors = FALSE
     )
@@ -133,10 +151,14 @@ MAGMA_FUNCTIONAL_COLUMNS <- list(
 #' three, which is the meaningful denominator for "what functions are
 #' present" (and is exactly the same thing for COG_category, where nearly
 #' every gene has a single letter).
-build_magma_functional_table <- function(results_dir, samples) {
+build_magma_functional_table <- function(results_dir, samples, mags = character(0)) {
   parts <- list()
   for (s in samples) {
-    row <- .read_eggnog_sample(results_dir, s)
+    row <- .read_eggnog_unit(results_dir, s, "sample")
+    if (!is.null(row)) parts[[length(parts) + 1]] <- row
+  }
+  for (m in mags) {
+    row <- .read_eggnog_unit(results_dir, m, "mag")
     if (!is.null(row)) parts[[length(parts) + 1]] <- row
   }
   if (length(parts) == 0) return(NULL)
@@ -145,21 +167,21 @@ build_magma_functional_table <- function(results_dir, samples) {
   # Cap distinct terms per column, keeping the run-wide top N and summing
   # everything else into "Others" (per sample, so percentages stay exact).
   keep <- df %>%
-    group_by(annotation_column, term) %>%
+    group_by(level, annotation_column, term) %>%
     summarise(total = sum(n), .groups = "drop") %>%
-    group_by(annotation_column) %>%
+    group_by(level, annotation_column) %>%
     slice_max(total, n = .MAX_TERMS_PER_COLUMN, with_ties = FALSE) %>%
     ungroup() %>%
-    select(annotation_column, term) %>%
+    select(level, annotation_column, term) %>%
     mutate(keep = TRUE)
 
   df <- df %>%
-    left_join(keep, by = c("annotation_column", "term")) %>%
+    left_join(keep, by = c("level", "annotation_column", "term")) %>%
     mutate(term = ifelse(is.na(keep) & term != "Unclassified", "Others", term)) %>%
     select(-keep) %>%
-    group_by(sample, annotation_column, term) %>%
+    group_by(unit, level, annotation_column, term) %>%
     summarise(n = sum(n), .groups = "drop") %>%
-    group_by(sample, annotation_column) %>%
+    group_by(unit, level, annotation_column) %>%
     mutate(pct = n / sum(n) * 100) %>%
     ungroup()
 
@@ -169,7 +191,14 @@ build_magma_functional_table <- function(results_dir, samples) {
 #' The annotation columns this run actually has data for -- used to tell the
 #' user which choices are real when they pick one that isn't (a run where
 #' eggNOG found no CAZy hits at all, say).
-magma_functional_columns_present <- function(functional_table) {
+magma_functional_columns_present <- function(functional_table, level = NULL) {
   if (is.null(functional_table)) return(character(0))
-  sort(unique(functional_table$annotation_column))
+  df <- if (is.null(level)) functional_table else functional_table[functional_table$level == level, , drop = FALSE]
+  sort(unique(df$annotation_column))
+}
+
+#' Which levels (sample / mag) this run actually produced eggNOG output for.
+magma_functional_levels_present <- function(functional_table) {
+  if (is.null(functional_table)) return(character(0))
+  sort(unique(functional_table$level))
 }

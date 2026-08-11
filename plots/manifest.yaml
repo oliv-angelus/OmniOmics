@@ -154,8 +154,8 @@ analyses:
         default: "PCoA"
         enabled: true
         description:
-          en: "Ordination method"
-          pt: "Método de ordenação"
+          en: "PCoA and NMDS are unconstrained -- they summarise all the variation in the data, so any group separation you see is something the data volunteered. CAP is constrained by the grouping variable: it draws the axes that best separate those groups by construction, so it will always look separated. Read CAP alongside the PERMANOVA p-value, which is what actually tests whether the groups differ."
+          pt: "PCoA e NMDS são irrestritas -- resumem toda a variação dos dados, então qualquer separação entre grupos que você vir foi algo que os dados revelaram por si. A CAP é restrita pela variável de agrupamento: ela desenha por construção os eixos que melhor separam esses grupos, então sempre vai parecer separada. Leia a CAP junto com o p-valor do PERMANOVA, que é o que de fato testa se os grupos diferem."
         choices: ["PCoA", "NMDS", "CAP"]
       - flag: "--distance_method"
         type: choice
@@ -190,7 +190,10 @@ analyses:
     description:
       en: "Stacked relative-abundance bar chart per sample, one figure per taxonomic rank, collapsing everything outside the top N taxa into 'Others'."
       pt: "Gráfico de barras empilhadas de abundância relativa por amostra, uma figura por nível taxonômico, agrupando tudo fora dos N táxons mais abundantes em 'Others'."
-    applies_to: [magma, prism]
+    # MAGMA has its own (magma_community_taxonomy) because it needs the
+    # Kraken2/Kaiju/compare toggle; this shared one stays for PRISM, which
+    # has a single classification and no such choice to make.
+    applies_to: [prism]
     input_shape: phyloseq
     script: analyses/taxonomic_composition.R
     parameters:
@@ -236,17 +239,63 @@ analyses:
     script: analyses/magma_assembly_quality.R
     parameters: []
 
+  - id: magma_community_taxonomy
+    name:
+      en: "Community Taxonomy"
+      pt: "Taxonomia da Comunidade"
+    description:
+      en: "Stacked relative-abundance bars per sample, from whichever of MAGMA's two independent read classifications you pick -- Kraken2/Bracken (nucleotide k-mers) or Kaiju (translated protein). A third option compares the two: how much they agree, and which taxa each one finds that the other misses."
+      pt: "Barras empilhadas de abundância relativa por amostra, a partir da classificação de reads que você escolher entre as duas independentes do MAGMA -- Kraken2/Bracken (k-mers de nucleotídeo) ou Kaiju (proteína traduzida). Uma terceira opção compara as duas: o quanto concordam e quais táxons cada uma encontra que a outra não encontra."
+    applies_to: [magma]
+    input_shape: phyloseq
+    also_loads: [phyloseq_kaiju]
+    script: analyses/magma_community_taxonomy.R
+    parameters:
+      - flag: "--classifier"
+        type: choice
+        default: "kraken2"
+        enabled: true
+        choices: [kraken2, kaiju, compare]
+        description:
+          en: "Which classification to plot -- Kraken2/Bracken, Kaiju, or 'compare' for the agreement between the two"
+          pt: "Qual classificação plotar -- Kraken2/Bracken, Kaiju, ou 'compare' para a concordância entre as duas"
+      - flag: "--rank"
+        type: tax_rank
+        default: "all"
+        include_all: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to plot ('all' generates one figure per rank). Ignored when --classifier is 'compare'."
+          pt: "Nível taxonômico a plotar ('all' gera uma figura por nível). Ignorado quando --classifier é 'compare'."
+      - flag: "--top_n"
+        type: int
+        default: 20
+        enabled: true
+        description:
+          en: "Number of top taxa to show individually before collapsing the rest into 'Others'"
+          pt: "Número de táxons mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
+        min: 1
+        max: 50
+
   - id: magma_functional_composition
     name:
       en: "Functional Composition (eggNOG)"
       pt: "Composição Funcional (eggNOG)"
     description:
-      en: "Share of predicted genes assigned to each COG functional category per sample, from eggNOG-mapper's annotation of the assembled metagenome. A gene-count metric, not read-abundance-weighted -- MAGMA's per-sample eggNOG has no quantification tied to it the way DOGMA's transcript-level version does."
-      pt: "Fração de genes preditos atribuída a cada categoria funcional COG por amostra, a partir da anotação do eggNOG-mapper sobre o metagenoma montado. Métrica de contagem de genes, não ponderada por abundância de leituras -- o eggNOG por amostra do MAGMA não tem quantificação associada como a versão do DOGMA em nível de transcrito."
+      en: "Share of predicted genes assigned to each functional category, from eggNOG-mapper's annotations. Choose the level: per sample (the whole assembled metagenome) or per MAG (one recovered genome each). A gene-count metric, not read-abundance-weighted -- MAGMA's eggNOG has no quantification tied to it the way DOGMA's transcript-level version does."
+      pt: "Fração de genes preditos atribuída a cada categoria funcional, a partir das anotações do eggNOG-mapper. Escolha o nível: por amostra (o metagenoma montado inteiro) ou por MAG (um genoma recuperado por vez). Métrica de contagem de genes, não ponderada por abundância de leituras -- o eggNOG do MAGMA não tem quantificação associada como a versão do DOGMA em nível de transcrito."
     applies_to: [magma]
     input_shape: magma_functional
     script: analyses/magma_functional_composition.R
     parameters:
+      - flag: "--level"
+        type: choice
+        default: "sample"
+        enabled: true
+        choices: [sample, mag]
+        description:
+          en: "Which eggNOG run to plot. 'sample' annotates each sample's whole assembled metagenome -- community-wide gene content. 'mag' annotates each recovered genome separately, so the bars compare organisms rather than communities. Only levels this run actually produced are available; a run that recovered no MAGs has only 'sample'."
+          pt: "Qual execução do eggNOG plotar. 'sample' anota o metagenoma montado inteiro de cada amostra -- conteúdo gênico da comunidade. 'mag' anota cada genoma recuperado separadamente, então as barras comparam organismos, e não comunidades. Só ficam disponíveis os níveis que esta execução realmente produziu; uma execução sem MAGs recuperados tem apenas 'sample'."
       - flag: "--annotation_column"
         type: choice
         default: "COG_category"
@@ -264,56 +313,6 @@ analyses:
           pt: "Número de termos mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
         min: 1
         max: 30
-
-  - id: magma_kaiju_taxonomic_composition
-    name:
-      en: "Taxonomic Composition (Kaiju)"
-      pt: "Composição Taxonômica (Kaiju)"
-    description:
-      en: "Same stacked relative-abundance bar chart as Taxonomic Composition, built from Kaiju's translated-protein classification instead of Kraken2/Bracken's k-mer classification -- Kaiju tends to assign more reads in samples with a lot of taxonomic novelty. Compare against Taxonomic Composition to see where the two classifiers agree."
-      pt: "O mesmo gráfico de barras empilhadas da Composição Taxonômica, construído a partir da classificação por proteína traduzida do Kaiju em vez da classificação por k-mer do Kraken2/Bracken -- o Kaiju tende a atribuir mais reads em amostras com muita novidade taxonômica. Compare com Composição Taxonômica para ver onde os dois classificadores concordam."
-    applies_to: [magma]
-    input_shape: phyloseq_kaiju
-    script: analyses/taxonomic_composition.R
-    parameters:
-      - flag: "--rank"
-        type: tax_rank
-        default: "all"
-        include_all: true
-        enabled: true
-        description:
-          en: "Taxonomic rank to plot ('all' generates one figure per rank); options reflect the ranks available in this run's own reference database"
-          pt: "Nível taxonômico a plotar ('all' gera uma figura por nível); as opções refletem os níveis disponíveis na referência usada nesta execução"
-      - flag: "--top_n"
-        type: int
-        default: 20
-        enabled: true
-        description:
-          en: "Number of top taxa to show individually before collapsing the rest into 'Others'"
-          pt: "Número de táxons mais abundantes a mostrar individualmente antes de agrupar o resto em 'Outros'"
-        min: 1
-        max: 50
-
-  - id: magma_classifier_concordance
-    name:
-      en: "Classifier Concordance (Kraken2 vs. Kaiju)"
-      pt: "Concordância entre Classificadores (Kraken2 vs. Kaiju)"
-    description:
-      en: "Compares Kraken2/Bracken's k-mer classification against Kaiju's translated-protein classification for the same reads: total abundance assigned by each classifier per taxon, and which taxa each one calls that the other doesn't. Agreement between two independent classification methods is itself real evidence, not just a choice between them."
-      pt: "Compara a classificação por k-mer do Kraken2/Bracken com a classificação por proteína traduzida do Kaiju para as mesmas reads: abundância total atribuída por cada classificador por táxon, e quais táxons cada um encontra que o outro não encontra. A concordância entre dois métodos de classificação independentes é evidência real por si só, não apenas uma escolha entre eles."
-    applies_to: [magma]
-    input_shape: phyloseq
-    script: analyses/magma_classifier_concordance.R
-    parameters:
-      - flag: "--top_n"
-        type: int
-        default: 15
-        enabled: true
-        description:
-          en: "Number of taxa (by combined abundance) to show individually before collapsing the rest into 'Others'"
-          pt: "Número de táxons (por abundância combinada) a mostrar individualmente antes de agrupar o resto em 'Outros'"
-        min: 1
-        max: 40
 
   - id: core_microbiome
     name:
@@ -1318,8 +1317,8 @@ analyses:
         default: "PCoA"
         enabled: true
         description:
-          en: "Ordination method"
-          pt: "Método de ordenação"
+          en: "PCoA and NMDS are unconstrained -- they summarise all the variation in the data, so any group separation you see is something the data volunteered. CAP is constrained by the grouping variable: it draws the axes that best separate those groups by construction, so it will always look separated. Read CAP alongside the PERMANOVA p-value, which is what actually tests whether the groups differ."
+          pt: "PCoA e NMDS são irrestritas -- resumem toda a variação dos dados, então qualquer separação entre grupos que você vir foi algo que os dados revelaram por si. A CAP é restrita pela variável de agrupamento: ela desenha por construção os eixos que melhor separam esses grupos, então sempre vai parecer separada. Leia a CAP junto com o p-valor do PERMANOVA, que é o que de fato testa se os grupos diferem."
         choices: ["PCoA", "NMDS", "CAP"]
       - flag: "--distance_method"
         type: choice

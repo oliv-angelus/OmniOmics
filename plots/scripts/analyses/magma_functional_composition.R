@@ -28,7 +28,8 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args(defaults = list(annotation_column = "COG_category", top_n = "15"))
+args <- parse_cli_args(defaults = list(level = "sample", annotation_column = "COG_category", top_n = "15"))
+level <- args$level
 annotation_col <- args$annotation_column
 top_n_categories <- as.integer(args$top_n)
 style <- read_style_from_path(args$style_json)
@@ -42,15 +43,23 @@ log_line("[magma_functional_composition] reading cached functional table from %s
 loaded <- readRDS(args$magma_functional_table_rds)
 all_df <- loaded$functional_table
 
+levels_present <- sort(unique(all_df$level))
+if (!(level %in% levels_present)) {
+  stop(sprintf(paste0("--level '%s' has no eggNOG output in this run. Available: %s. (Per-MAG eggNOG only ",
+                      "exists once binning/dereplication produced MAGs and the annotation step ran on them.)"),
+               level, paste(levels_present, collapse = ", ")))
+}
+all_df <- all_df[all_df$level == level, , drop = FALSE]
+
 available <- sort(unique(all_df$annotation_column))
 if (!(annotation_col %in% available)) {
-  stop(sprintf(paste0("--annotation_column '%s' has no data in this run -- eggNOG found no assignments ",
-                      "for that vocabulary. Available in this run: %s"),
-               annotation_col, paste(available, collapse = ", ")))
+  stop(sprintf(paste0("--annotation_column '%s' has no data at level '%s' -- eggNOG found no assignments ",
+                      "for that vocabulary. Available: %s"),
+               annotation_col, level, paste(available, collapse = ", ")))
 }
 df <- all_df[all_df$annotation_column == annotation_col, , drop = FALSE]
-log_line("[magma_functional_composition] %s: %d term-sample row(s) across %d sample(s)",
-         annotation_col, nrow(df), length(unique(df$sample)))
+log_line("[magma_functional_composition] level=%s, %s: %d term row(s) across %d unit(s)",
+         level, annotation_col, nrow(df), length(unique(df$unit)))
 
 summary_tab <- df %>% group_by(term) %>% summarise(Mean = mean(pct), .groups = "drop") %>% arrange(desc(Mean))
 top_categories <- summary_tab %>% filter(!term %in% c("Unclassified", "Others")) %>%
@@ -58,7 +67,7 @@ top_categories <- summary_tab %>% filter(!term %in% c("Unclassified", "Others"))
 
 df <- df %>% mutate(Category_Plot = ifelse(term %in% top_categories, term,
                                            ifelse(term == "Unclassified", "Unclassified", "Others")))
-df_agg <- df %>% group_by(sample, Category_Plot) %>% summarise(pct = sum(pct), .groups = "drop")
+df_agg <- df %>% group_by(unit, Category_Plot) %>% summarise(pct = sum(pct), .groups = "drop")
 
 order <- c(top_categories, intersect(c("Others", "Unclassified"), unique(df_agg$Category_Plot)))
 df_agg$Category_Plot <- factor(df_agg$Category_Plot, levels = order)
@@ -73,7 +82,7 @@ colors_final <- apply_palette_overrides(colors_final, style)
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
-p <- ggplot(df_agg, aes(x = sample, y = pct, fill = Category_Plot)) +
+p <- ggplot(df_agg, aes(x = unit, y = pct, fill = Category_Plot)) +
   geom_bar(stat = "identity", width = 0.9, color = "black", linewidth = 0.05) +
   scale_fill_manual(values = colors_final) +
   labs(x = NULL, y = "Share of assignments (%)", fill = annotation_col) +
@@ -87,19 +96,22 @@ p <- ggplot(df_agg, aes(x = sample, y = pct, fill = Category_Plot)) +
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
-final_plot <- with_title_bar(p, paste0("Functional Composition: ", annotation_col, " (eggNOG)"),
-                             size = 8, title_height = 0.08, font_family = font_family)
-plot_width <- max(11, length(unique(df_agg$sample)) * 0.4)
+level_label <- if (level == "mag") "per MAG" else "per sample"
+# size 6, not 8: adding the level to the title made it long enough to be
+# clipped at the figure's own width for the longer column names.
+final_plot <- with_title_bar(p, paste0("Functional Composition: ", annotation_col, " (eggNOG, ", level_label, ")"),
+                             size = 6, title_height = 0.08, font_family = font_family)
+plot_width <- max(11, length(unique(df_agg$unit)) * 0.4)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 8, units = "in", dpi = 120, bg = "white", limitsize = FALSE)
 saveRDS(list(plot = final_plot, width = plot_width, height = 8),
         file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
-  list(analysis_id = "magma_functional_composition", annotation_column = annotation_col,
+  list(analysis_id = "magma_functional_composition", level = level, annotation_column = annotation_col,
        available_columns = available, top_categories = top_categories,
        records = lapply(seq_len(nrow(df_agg)), function(i) list(
-         sample = as.character(df_agg$sample[i]), category = as.character(df_agg$Category_Plot[i]),
+         unit = as.character(df_agg$unit[i]), category = as.character(df_agg$Category_Plot[i]),
          assignment_pct = df_agg$pct[i]
        ))),
   file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"

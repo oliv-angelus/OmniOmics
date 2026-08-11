@@ -198,3 +198,73 @@ vencia silenciosamente. Corrigido com `samples_by_shape`, mesmo tratamento já d
 
 Anel genômico estilo Proksee (circlize) + resto da anotação (CRISPR, vírus, elementos móveis,
 BiG-SCAPE). Ver plano completo na seção anterior. BiG-SCAPE segue sem verificar.
+
+## Consolidação dos cards e nível de MAG no funcional (2026-08-11)
+
+Feedback do usuário sobre a aba Plots depois de usá-la: as seções empilhadas
+(Comunidade/Funcional/MAGs/Qualidade) foram trocadas por **um grid único com tags por forma de
+entrada**, igual à página de pipelines; e os cards quase-duplicados viraram **um card com
+toggle**, em vez de vários cards que só diferem na fonte dos dados.
+
+**Comunidade — 3 cards viraram 1.** `magma_community_taxonomy.R` com `--classifier`:
+
+| valor | o que faz |
+|---|---|
+| `kraken2` | barras empilhadas da tabela Kraken2/Bracken |
+| `kaiju` | a mesma figura, da tabela do Kaiju |
+| `compare` | concordância: abundância total por táxon lado a lado + quantos táxons cada classificador acha que o outro não acha |
+
+Isso apagou `magma_kaiju_taxonomic_composition` (registro duplicado do
+`taxonomic_composition`) e `magma_classifier_concordance.R`. O construtor de painel do
+`taxonomic_composition.R` foi extraído para `lib/composition_panels.R` para os dois usarem o
+mesmo código em vez de uma segunda cópia — refactor verificado por `data.json` byte a byte
+idêntico ao pré-refactor. `taxonomic_composition` agora é `applies_to: [prism]` só.
+`also_loads` (novo, em `plots_engine.get_input_shapes_for_pipeline`) é o que garante que
+`phyloseq_kaiju.rds` seja construído no mesmo diretório, já que o script o abre pelo nome.
+
+**Funcional — ganhou o nível de MAG.** O eggNOG por MAG (`09_ANNOTATION/mags/eggnog/`) existia
+em disco e não era lido por nada; a ficha de MAG mostra só AMR/virulência, não categorias
+funcionais. `build_magma_functional_table.R` passou de `sample` para `unit`+`level`, e
+`magma_functional_composition.R` ganhou `--level sample|mag` — mesma simetria do toggle de
+classificador da Comunidade, um card só. O cap de 300 termos e as porcentagens agora são
+calculados **dentro de cada nível**, não misturando amostra com MAG.
+
+Uma amostra é a comunidade inteira montada; um MAG é um genoma. São perguntas diferentes com o
+mesmo vocabulário, por isso o mesmo script serve aos dois — mas o denominador nunca é
+compartilhado entre eles.
+
+**Fixture**: o eggNOG por MAG era um stub de 1 linha, então o nível `mag` nunca teria dado
+nenhum. Agora as amostras e os MAGs usam o mesmo gerador (`eggnog_annotations()`), com contagem
+de genes na escala de um genoma real (~2–3 mil) para os MAGs. As vias KEGG passaram a ser
+sorteadas de um **pool ponderado de IDs reais** (ABC transporters, ribossomo, glicólise, TCA,
+fosforilação oxidativa…) em vez de uniformemente sobre todo o espaço de IDs — com o sorteio
+uniforme nenhuma via se destacava e o gráfico de top-N saía ~100% "Others", artefato da fixture
+e não algo que um run real mostraria.
+
+## Runner de suíte offline (2026-08-11)
+
+`scripts/run_plots_suite.py` roda **todas** as análises de um pipeline contra uma pasta de
+resultados, reproduzindo as mesmas chamadas do backend (`INPUT_SHAPE_INFO` para as formas,
+`plots_engine.build_params_args` para os parâmetros). Existe porque script de R não é checado
+por nada até rodar: uma coluna renomeada ou uma flag velha não aparece em lugar nenhum antes da
+execução. Exercita **todos** os valores de cada parâmetro `choice`, não só o default — é
+exatamente no ramo não-default que a quebra se esconde.
+
+    python3 scripts/run_plots_suite.py magma <results> <metadata> \
+        --conda ~/miniforge3/bin/conda "--set=--group_var=group"
+
+`--set` preenche o que a UI resolveria a partir do run carregado (`--group_var`, `--mags`,
+`--reference_group`), que de outro modo para na checagem "is required" da própria análise.
+
+**Bug real que ele achou de primeira**: `--ordination_method CAP` quebrava em **qualquer**
+distância, com um erro de dispatch ilegível (`unable to find an inherited method for
+capscale.phyloseq`). CAP é ordenação **restrita** (dbRDA, Anderson & Willis 2003) — ao
+contrário de PCoA/NMDS ela não resume a variação total, resume a parte explicada por variáveis
+explicativas declaradas, então o `ordinate()` do phyloseq exige uma fórmula. Sem ela, `NULL`
+chegava no `capscale`. Corrigido passando `~ group_var`, o mesmo fator que o PERMANOVA logo
+acima testa. A descrição do parâmetro no manifesto agora avisa que a CAP **sempre** vai parecer
+separada, por construção, e que quem carrega a evidência é o p do PERMANOVA — armadilha de
+interpretação real, não detalhe de implementação.
+
+MAGMA: 16 análises, todas passando. As 6 falhas de UniFrac/wUniFrac são a recusa intencional
+(MAGMA não tem árvore filogenética — a mensagem explica e sugere bray/jaccard).
