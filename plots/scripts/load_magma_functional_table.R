@@ -39,12 +39,22 @@ if (is.null(functional_table)) {
   stop("No eggNOG-mapper output found for any sample in this run -- was eggNOG active?")
 }
 
+cols_present <- magma_functional_columns_present(functional_table)
+log_line("[load_magma_functional_table] annotation column(s) with data: %s", paste(cols_present, collapse = ", "))
+
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
-saveRDS(list(functional_table = functional_table, samples = samples),
+saveRDS(list(functional_table = functional_table, samples = samples,
+            annotation_columns = cols_present),
         file.path(args$out_dir, "magma_functional_table.rds"))
 
 write_json(
-  list(columns = list(), column_levels = list(), samples = samples),
+  # annotation_columns is reported for the same forward-compat reason DOGMA
+  # already does it: --annotation_column ships as a static choices list in
+  # the manifest, and this is what a dynamic dropdown would read if one is
+  # wired later (see main.py's _merge_columns_data, which already passes it
+  # through).
+  list(columns = list(), column_levels = list(), samples = samples,
+       annotation_columns = cols_present),
   file.path(args$out_dir, "metadata_columns.json"),
   auto_unbox = FALSE, pretty = TRUE
 )

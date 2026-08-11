@@ -284,15 +284,31 @@ def main():
                  "#" + "\t".join(EGGNOG_COLUMNS)]
         for i in range(1, n_orfs + 1):
             cog = random.choice(cog_pool)
-            has_ko = cog != "-"
+            annotated = cog != "-"
+            # Real KEGG convention: eggNOG reports the SAME pathway under both
+            # the "ko" and "map" namespaces in this column. Emitted as the real
+            # tool does (both forms), so build_magma_functional_table.R's
+            # de-duplication is genuinely exercised instead of assumed.
+            if annotated:
+                pw_ids = [random.randint(10, 999) for _ in range(random.randint(1, 3))]
+                kegg_pathway = ",".join([f"ko{p:05d}" for p in pw_ids] + [f"map{p:05d}" for p in pw_ids])
+                kegg_ko = ",".join(f"ko:K{random.randint(1, 20000):05d}" for _ in range(random.randint(1, 2)))
+                kegg_module = ",".join(f"M{random.randint(1, 900):05d}" for _ in range(random.randint(0, 2))) or "-"
+                ec = ",".join(f"{random.randint(1,6)}.{random.randint(1,20)}.{random.randint(1,30)}.{random.randint(1,60)}"
+                              for _ in range(random.randint(0, 2))) or "-"
+                cazy = random.choice(["-", "-", "-", f"GH{random.randint(1, 160)}", f"GT{random.randint(1, 110)}",
+                                      f"CE{random.randint(1, 20)}"])
+                pfams = ",".join(f"PF{random.randint(1, 21000):05d}" for _ in range(random.randint(1, 3)))
+                gos = ",".join(f"GO:{random.randint(1, 200000):07d}" for _ in range(random.randint(0, 4))) or "-"
+            else:
+                kegg_pathway = kegg_ko = kegg_module = ec = cazy = pfams = gos = "-"
             lines.append("\t".join(str(v) for v in [
                 f"{s}_orf{i}", f"{random.randint(100000, 999999)}.{random.randint(1000, 9999)}",
                 f"{10 ** -random.randint(5, 60):.1e}", round(random.uniform(80, 900), 1),
-                "-", "Bacteria", cog, "-" if cog == "-" else "hypothetical protein",
-                "-", "-", "-", f"ko:K{random.randint(10000,19999)}" if has_ko else "-",
-                f"map{random.randint(10000,19999)}" if has_ko else "-",
-                "-", "-", "-", "-", "-", "-", "-", "-", random.choice(["low", "medium", "high"]),
-                "2", "2", "Bacteria",
+                "-", "Bacteria", cog, "-" if not annotated else "hypothetical protein",
+                "-", gos, ec, kegg_ko, kegg_pathway, kegg_module,
+                "-", "-", "-", "-", cazy, "-", pfams,
+                random.choice(["low", "medium", "high"]), "2", "2", "Bacteria",
             ]))
         lines.append(f"## {n_orfs} queries scanned")
         lines.append("## demonstration stub -- eggNOG-mapper footer")

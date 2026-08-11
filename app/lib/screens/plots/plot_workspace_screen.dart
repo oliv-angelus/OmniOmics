@@ -561,6 +561,12 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
         'magma_mags' => ref.t('plots_section_mags'),
         'magma_qc' => ref.t('plots_section_quality'),
         'magma_functional' => ref.t('plots_section_functional'),
+        // Kaiju gets its own block rather than sharing "Comunidade" with
+        // Kraken2/Bracken: same row shape, but a genuinely independent
+        // classification of the same reads (translated protein vs. k-mer),
+        // so mixing them under one heading hid which classifier a given
+        // analysis actually ran on.
+        'phyloseq_kaiju' => ref.t('plots_section_community_kaiju'),
         _ => ref.t('plots_section_community'),
       };
 
@@ -580,6 +586,7 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     // shape value getting its own duplicate-titled header.
     final order = [
       ref.t('plots_section_community'),
+      ref.t('plots_section_community_kaiju'),
       ref.t('plots_section_functional'),
       ref.t('plots_section_mags'),
       ref.t('plots_section_quality'),

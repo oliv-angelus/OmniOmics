@@ -1,11 +1,14 @@
-# Functional composition per sample: share of predicted genes assigned to
-# each COG (Cluster of Orthologous Groups) functional category, from
-# eggNOG-mapper's own annotation of MAGMA's assembled metagenome. Same
-# stacked-bar shape as taxonomic_composition.R and DOGMA's own
-# dogma_functional_composition.R, but the metric is genuinely different --
-# gene COUNT share, not read-abundance share (MAGMA's per-sample eggNOG has
-# no Salmon quantification behind it the way DOGMA's does -- see
-# build_magma_functional_table.R).
+# Functional composition per sample, for any of the functional vocabularies
+# eggNOG-mapper reports: COG categories, KEGG orthologs/pathways/modules, EC
+# numbers, CAZy families, PFAM domains or GO terms -- picked with
+# --annotation_column, all of them pre-aggregated at load time (see
+# build_magma_functional_table.R's MAGMA_FUNCTIONAL_COLUMNS) so switching
+# between them is instant.
+#
+# Same stacked-bar shape as taxonomic_composition.R and DOGMA's own
+# dogma_functional_composition.R, but the metric is genuinely different: a
+# share of functional ASSIGNMENTS, not of reads (MAGMA's per-sample eggNOG
+# has no Salmon quantification behind it the way DOGMA's does).
 
 this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
@@ -25,7 +28,8 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args(defaults = list(top_n = "15"))
+args <- parse_cli_args(defaults = list(annotation_column = "COG_category", top_n = "15"))
+annotation_col <- args$annotation_column
 top_n_categories <- as.integer(args$top_n)
 style <- read_style_from_path(args$style_json)
 bg <- style$background %||% "gray90"
@@ -36,15 +40,24 @@ hide_y_axis <- isTRUE(style$hide_y_axis)
 
 log_line("[magma_functional_composition] reading cached functional table from %s", args$magma_functional_table_rds)
 loaded <- readRDS(args$magma_functional_table_rds)
-df <- loaded$functional_table
-log_line("[magma_functional_composition] %d row(s) across %d sample(s)", nrow(df), length(unique(df$sample)))
+all_df <- loaded$functional_table
 
-summary_tab <- df %>% group_by(cog_category) %>% summarise(Mean = mean(pct), .groups = "drop") %>% arrange(desc(Mean))
-top_categories <- summary_tab %>% filter(cog_category != "Unclassified") %>%
-  slice_head(n = top_n_categories) %>% pull(cog_category)
+available <- sort(unique(all_df$annotation_column))
+if (!(annotation_col %in% available)) {
+  stop(sprintf(paste0("--annotation_column '%s' has no data in this run -- eggNOG found no assignments ",
+                      "for that vocabulary. Available in this run: %s"),
+               annotation_col, paste(available, collapse = ", ")))
+}
+df <- all_df[all_df$annotation_column == annotation_col, , drop = FALSE]
+log_line("[magma_functional_composition] %s: %d term-sample row(s) across %d sample(s)",
+         annotation_col, nrow(df), length(unique(df$sample)))
 
-df <- df %>% mutate(Category_Plot = ifelse(cog_category %in% top_categories, cog_category,
-                                           ifelse(cog_category == "Unclassified", "Unclassified", "Others")))
+summary_tab <- df %>% group_by(term) %>% summarise(Mean = mean(pct), .groups = "drop") %>% arrange(desc(Mean))
+top_categories <- summary_tab %>% filter(!term %in% c("Unclassified", "Others")) %>%
+  slice_head(n = top_n_categories) %>% pull(term)
+
+df <- df %>% mutate(Category_Plot = ifelse(term %in% top_categories, term,
+                                           ifelse(term == "Unclassified", "Unclassified", "Others")))
 df_agg <- df %>% group_by(sample, Category_Plot) %>% summarise(pct = sum(pct), .groups = "drop")
 
 order <- c(top_categories, intersect(c("Others", "Unclassified"), unique(df_agg$Category_Plot)))
@@ -63,7 +76,7 @@ dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 p <- ggplot(df_agg, aes(x = sample, y = pct, fill = Category_Plot)) +
   geom_bar(stat = "identity", width = 0.9, color = "black", linewidth = 0.05) +
   scale_fill_manual(values = colors_final) +
-  labs(x = NULL, y = "Share of predicted genes (%)", fill = "COG category") +
+  labs(x = NULL, y = "Share of assignments (%)", fill = annotation_col) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 100.1)) +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
   theme(
@@ -74,8 +87,8 @@ p <- ggplot(df_agg, aes(x = sample, y = pct, fill = Category_Plot)) +
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
-final_plot <- with_title_bar(p, "Functional Composition (COG categories, eggNOG)", size = 8, title_height = 0.08,
-                             font_family = font_family)
+final_plot <- with_title_bar(p, paste0("Functional Composition: ", annotation_col, " (eggNOG)"),
+                             size = 8, title_height = 0.08, font_family = font_family)
 plot_width <- max(11, length(unique(df_agg$sample)) * 0.4)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 8, units = "in", dpi = 120, bg = "white", limitsize = FALSE)
@@ -83,10 +96,11 @@ saveRDS(list(plot = final_plot, width = plot_width, height = 8),
         file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
-  list(analysis_id = "magma_functional_composition", top_categories = top_categories,
+  list(analysis_id = "magma_functional_composition", annotation_column = annotation_col,
+       available_columns = available, top_categories = top_categories,
        records = lapply(seq_len(nrow(df_agg)), function(i) list(
          sample = as.character(df_agg$sample[i]), category = as.character(df_agg$Category_Plot[i]),
-         gene_pct = df_agg$pct[i]
+         assignment_pct = df_agg$pct[i]
        ))),
   file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
 )
