@@ -63,6 +63,7 @@ import tools_engine
 import runs_store
 import run_report
 import plots_engine
+import plots_detect
 import plot_runs_store
 
 app = FastAPI()
@@ -1680,6 +1681,91 @@ INPUT_SHAPE_INFO = {
 }
 
 
+# A folder detected as "custom" (generic drop-in input, no pipeline output
+# tree) is registered under the pipeline whose analyses that shape serves --
+# NOT under a pseudo-pipeline. Everything downstream (manifest applies_to,
+# INPUT_SHAPE_INFO, the loaders) then works unchanged instead of needing a
+# parallel code path for imported data.
+_CUSTOM_SHAPE_PIPELINE = {"phyloseq": "prism", "count_matrix": "define"}
+
+
+def _scan_with_analyses(folder: str) -> dict:
+    """plots_detect.scan_folder plus what the user actually wants to know:
+    which analyses those detected shapes unlock, by name."""
+    result = plots_detect.scan_folder(folder)
+    if not result.get("ok"):
+        return result
+
+    pipeline_id = result["pipeline_id"]
+    if pipeline_id == "custom":
+        # Prefer the community-table reading when both generic files are
+        # present; it is the richer of the two analysis sets.
+        for shape in ("phyloseq", "count_matrix"):
+            if shape in result["shapes"]:
+                pipeline_id = _CUSTOM_SHAPE_PIPELINE[shape]
+                break
+        result["imported_as"] = pipeline_id
+
+    pipeline = pipelines.get_pipeline(pipeline_id) or {}
+    result["pipeline_name"] = pipeline.get("name") or pipeline_id.upper()
+    result["effective_pipeline_id"] = pipeline_id
+
+    available = [a for a in plots_engine.get_analysis_list(pipeline_id)
+                 if a["input_shape"] in result["shapes"]]
+    unavailable = [a for a in plots_engine.get_analysis_list(pipeline_id)
+                   if a["input_shape"] not in result["shapes"]]
+    result["analyses"] = [{"id": a["id"], "name": a["name"], "input_shape": a["input_shape"]}
+                          for a in available]
+    result["analyses_unavailable"] = [{"id": a["id"], "name": a["name"], "input_shape": a["input_shape"]}
+                                      for a in unavailable]
+    return result
+
+
+@app.post("/api/plots/scan_folder")
+def api_scan_folder(data: dict):
+    """Looks at a folder the app did not produce and reports what can be
+    plotted from it -- which pipeline it came from, which input shapes are
+    present, and which analyses those unlock.
+
+    Read-only on purpose: this is what the import dialog shows BEFORE the user
+    commits, so a folder that turns out to hold nothing usable costs a message
+    rather than a stray entry in the run list.
+    """
+    return _scan_with_analyses(data.get("folder") or "")
+
+
+@app.post("/api/plots/import_folder")
+def api_import_folder(data: dict):
+    """Registers a scanned folder as a finished run, so it appears in the
+    Plots tab alongside runs this app launched itself."""
+    folder = data.get("folder") or ""
+    scan = _scan_with_analyses(folder)
+    if not scan.get("ok"):
+        raise HTTPException(status_code=400,
+                            detail=f"Nothing plottable found in {folder} ({scan.get('reason')}).")
+
+    # Stored as the folder the user picked, not the resolved results/ path --
+    # the rest of the app appends "results" itself (see /api/plots/load), and
+    # a record pointing one level too deep would silently look for
+    # results/results.
+    output_dir = os.path.dirname(scan["results_dir"]) \
+        if os.path.basename(scan["results_dir"]) == "results" else scan["results_dir"]
+
+    existing = next((r for r in runs_store.list_runs()
+                     if os.path.realpath(r.get("output_dir") or "") == os.path.realpath(output_dir)), None)
+    if existing:
+        return {"run": existing, "already_registered": True, "scan": scan}
+
+    run = runs_store.add_imported_run(
+        pipeline_id=scan["effective_pipeline_id"],
+        pipeline_name=scan["pipeline_name"],
+        output_dir=output_dir,
+        name=data.get("name") or os.path.basename(output_dir.rstrip(os.sep)) or None,
+        detected_by=scan.get("detected_by"),
+    )
+    return {"run": run, "already_registered": False, "scan": scan}
+
+
 @app.get("/api/plots/analyses")
 def api_list_analyses(pipeline_id: str | None = None):
     """All analyses, or (with ?pipeline_id=...) only those whose applies_to
@@ -1743,7 +1829,12 @@ async def load_plot_data(data: dict):
     for shape in input_shapes:
         shape_info = INPUT_SHAPE_INFO.get(shape, INPUT_SHAPE_INFO["phyloseq"])
         cmd = [rscript, os.path.join(plots_engine.PLOTS_DIR, "scripts", shape_info["loader_script"]),
-               "--input", os.path.join(parent_run["output_dir"], "results"),
+               # resolve_results_dir, not a hardcoded join: a run this app
+               # launched has results/ under its output_dir, but an IMPORTED
+               # folder may BE the results directory, or a bare folder holding
+               # one exported table (see plots_detect). Joining "results"
+               # unconditionally pointed those at a path that does not exist.
+               "--input", plots_detect.resolve_results_dir(parent_run["output_dir"]),
                "--metadata", metadata_path,
                "--out_dir", out_dir,
                "--pipeline_id", parent_run["pipeline_id"],

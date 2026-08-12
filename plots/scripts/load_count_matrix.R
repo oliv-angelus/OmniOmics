@@ -21,8 +21,20 @@ source(file.path(lib_dir, "build_count_matrix.R"))
 suppressMessages(library(jsonlite))
 
 args <- parse_cli_args()
+# omniomics_count_matrix.tsv is the documented drop-in name for a count table
+# built outside DEFINE (see docs/plot_input_formats.md) -- identical column
+# contract to contagem_anotada.tsv, only the filename differs. DEFINE's own
+# name is tried first, so a real run never picks up a stray generic file.
 log_line("[load_count_matrix] resolving input under %s", args$input)
-counts_path <- find_input_file(args$input, "contagem_anotada\\.tsv$")
+counts_path <- tryCatch(
+  find_input_file(args$input, "contagem_anotada\\.tsv$"),
+  error = function(e) {
+    generic <- tryCatch(find_input_file(args$input, "omniomics_count_matrix\\.tsv$"), error = function(e2) NULL)
+    if (is.null(generic)) stop(conditionMessage(e), call. = FALSE)
+    log_line("[load_count_matrix] no contagem_anotada.tsv found -- using the generic omniomics_count_matrix.tsv instead")
+    generic
+  }
+)
 log_line("[load_count_matrix] counts file: %s", counts_path)
 
 if (is.null(args$metadata) || args$metadata == "") {

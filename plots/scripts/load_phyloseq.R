@@ -74,8 +74,27 @@ if (args$pipeline_id == "magma") {
                  args$classifier, paste(names(MAGMA_CLASSIFIER_PATTERNS), collapse = ", ")))
   }
 }
+# The documented drop-in name for a community table built OUTSIDE any
+# OmniOmics pipeline (see docs/plot_input_formats.md) -- same `tax` + one
+# column per sample shape build_phyloseq.R already reads, only the filename is
+# a new contract. Accepted for every phyloseq-shaped pipeline rather than
+# needing its own pipeline_id, so an imported folder plots through exactly the
+# same path a real run does. The pipeline's own pattern is tried FIRST: a real
+# run that happens to also contain a generic file must still use its own
+# table, never the drop-in.
+GENERIC_ABUNDANCE_PATTERN <- "omniomics_abundance_table\\.tsv$"
+
 log_line("[load_phyloseq] resolving input under %s (pipeline_id=%s)", args$input, args$pipeline_id)
-abundance_path <- find_input_file(args$input, file_spec$pattern, prefer = file_spec$prefer)
+abundance_path <- tryCatch(
+  find_input_file(args$input, file_spec$pattern, prefer = file_spec$prefer),
+  error = function(e) {
+    generic <- tryCatch(find_input_file(args$input, GENERIC_ABUNDANCE_PATTERN), error = function(e2) NULL)
+    if (is.null(generic)) stop(conditionMessage(e), call. = FALSE)
+    log_line("[load_phyloseq] no %s found -- using the generic omniomics_abundance_table.tsv instead",
+             file_spec$pattern)
+    generic
+  }
+)
 log_line("[load_phyloseq] abundance file (classifier=%s): %s", args$classifier, abundance_path)
 
 if (is.null(args$metadata) || args$metadata == "") {

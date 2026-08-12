@@ -7,6 +7,7 @@ import '../../theme/category_colors.dart';
 import '../../models/run_record.dart';
 import '../../models/pipeline_summary.dart';
 import '../hub/hub_screen.dart' show pipelinesProvider;
+import '../../widgets/import_plot_folder_dialog.dart';
 
 /// Plots tab entry point: a grid of finished-run cards, same visual language
 /// as the Hub's pipeline cards (icon + category tag + subtitle) -- picking
@@ -47,6 +48,14 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
     }
   }
 
+  Future<void> _importFolder() async {
+    final imported = await showDialog<bool>(
+      context: context,
+      builder: (_) => const ImportPlotFolderDialog(),
+    );
+    if (imported == true) await _loadRuns();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -69,6 +78,12 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
                   ],
                 ),
               ),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.drive_folder_upload, size: 18),
+                label: Text(ref.t('plots_import_button')),
+                onPressed: _importFolder,
+              ),
+              const SizedBox(width: 8),
               IconButton(icon: const Icon(Icons.refresh), tooltip: ref.t('review_refresh'), onPressed: _loadRuns),
             ],
           ),
@@ -85,7 +100,24 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
       return Center(child: Text('${ref.t('error_prefix')}: $_error', style: TextStyle(color: colors.statusError)));
     }
     if (_runs.isEmpty) {
-      return Center(child: Text(ref.t('plots_no_finished_runs'), style: TextStyle(color: colors.textMuted), textAlign: TextAlign.center));
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(ref.t('plots_no_finished_runs'), style: TextStyle(color: colors.textMuted), textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            // No runs is not necessarily "nothing to plot" -- results can
+            // exist on disk that this app has no record of, which is exactly
+            // what importing a folder is for. Offering it here turns a dead
+            // end into the next step.
+            OutlinedButton.icon(
+              icon: const Icon(Icons.drive_folder_upload, size: 18),
+              label: Text(ref.t('plots_import_button')),
+              onPressed: _importFolder,
+            ),
+          ],
+        ),
+      );
     }
     final pipelinesById = {for (final p in pipelinesAsync.value ?? const <PipelineSummary>[]) p.id: p};
 
