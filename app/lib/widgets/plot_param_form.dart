@@ -37,9 +37,12 @@ class PlotParamForm extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final p in analysis.parameters)
+        // A parameter whose visible_when condition isn't met is dropped from
+        // the form entirely, not just disabled -- it is also not sent and
+        // never blocks the run (see PlotParamsState).
+        for (final p in analysis.parameters.where((p) => p.isVisible(state.values)))
           _PlotParamRow(param: p, state: state, loadedData: loadedData,
-              shape: analysis.inputShape, onChanged: onChanged),
+              shape: p.optionsShape ?? analysis.inputShape, onChanged: onChanged),
       ],
     );
   }
@@ -57,7 +60,9 @@ class _PlotParamRow extends StatelessWidget {
 
   String get _label => param.flag.replaceFirst(RegExp(r'^--'), '');
   bool get _required =>
-      param.defaultValue == '' || param.type == 'column' || param.type == 'level' || param.type == 'sample' || param.type == 'samples';
+      !param.optional &&
+      (param.defaultValue == '' || param.type == 'column' || param.type == 'level' ||
+          param.type == 'sample' || param.type == 'samples');
 
   @override
   Widget build(BuildContext context) {

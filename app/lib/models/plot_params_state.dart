@@ -18,11 +18,14 @@ class PlotParamsState {
   /// Matches the shape plots_engine.build_params_args expects: a list of
   /// {flag, enabled, value} states.
   List<Map<String, dynamic>> toApiParameters(PlotAnalysis analysis) {
-    return analysis.parameters.map((p) => {
+    return analysis.parameters
+        .where((p) => p.isVisible(values))
+        .map((p) => {
               'flag': p.flag,
               'enabled': true,
               'value': values[p.flag] ?? p.defaultValue?.toString() ?? '',
-            }).toList();
+            })
+        .toList();
   }
 
   /// A parameter with an empty-string default (legacy free-text required
@@ -31,6 +34,7 @@ class PlotParamsState {
   /// once every such parameter has been filled in.
   bool isComplete(PlotAnalysis analysis) {
     for (final p in analysis.parameters) {
+      if (p.optional || !p.isVisible(values)) continue;
       final required = p.defaultValue == '' || p.type == 'column' || p.type == 'level';
       if (required && (values[p.flag] ?? '').trim().isEmpty) return false;
     }

@@ -126,7 +126,15 @@ build_upset_panel <- function(sets, direction_label) {
   queries <- lapply(non_empty_levels, function(lvl) ComplexUpset::upset_query(set = lvl, fill = unname(palette[[lvl]])))
   p <- ComplexUpset::upset(df, comparison_levels, name = group_var, width_ratio = 0.25, min_size = 1, queries = queries, sort_sets = "descending")
   p <- p & theme(text = element_text(family = font_family, color = "black"),
-                 panel.background = element_rect(fill = bg), plot.background = element_rect(fill = bg, color = NA))
+                 # colour = NA and no plot.background repaint, both deliberate: patchwork's
+                 # `&` adds this to each of ComplexUpset's sub-plots, whose own
+                 # panel.background is element_blank -- and an element_rect merged onto a
+                 # blank does not inherit theme_grey's borderless panel, it falls back to
+                 # the top-level `rect` element, i.e. a BLACK border around every
+                 # sub-plot. Painting plot.background as well made the body span
+                 # edge-to-edge while the title bar only paints its panel, so the title
+                 # band came out narrower than the figure by exactly one plot margin.
+                 panel.background = element_rect(fill = bg, colour = NA))
   with_title_bar(patchwork::wrap_elements(full = p), paste0(direction_label, "-regulated (padj < ", alpha, ", |log2FC| > ", min_lfc, ")"),
                  size = 6, title_height = 0.1, font_family = font_family)
 }

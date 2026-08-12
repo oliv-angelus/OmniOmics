@@ -41,6 +41,24 @@ class PlotParam {
   /// aggregation entirely, plot at the raw ASV/OTU level) after the real
   /// detected ranks.
   final bool includeAsv;
+  /// Show this parameter only while another parameter holds a given value,
+  /// as {flag: value}. Distinct from [dependsOn], which keeps a parameter
+  /// always visible and only changes WHICH options it offers: this hides the
+  /// row entirely, for a parameter that is meaningless under the other
+  /// setting (magma_functional_composition's --mags, which picks among the
+  /// run's MAGs and has nothing to select when --level is "sample").
+  /// A hidden parameter is not sent and never blocks the run.
+  final Map<String, String>? visibleWhen;
+  /// Which loaded input shape supplies this parameter's options, when that
+  /// is NOT the analysis's own shape. Every shape a pipeline uses is built
+  /// into the same cache directory (see main.py's /api/plots/load), so an
+  /// analysis reading one shape can still offer a picker populated from
+  /// another -- --mags on the functional analysis lists the MAGs that the
+  /// magma_mags shape discovered.
+  final String? optionsShape;
+  /// Parameter that may legitimately be left empty even though its type
+  /// would otherwise mark it required (an empty --mags means "every MAG").
+  final bool optional;
 
   PlotParam({
     required this.flag,
@@ -53,6 +71,9 @@ class PlotParam {
     this.dependsOn,
     this.includeAll = false,
     this.includeAsv = false,
+    this.visibleWhen,
+    this.optionsShape,
+    this.optional = false,
   });
 
   factory PlotParam.fromJson(Map<String, dynamic> json, [String lang = 'en']) => PlotParam(
@@ -66,7 +87,18 @@ class PlotParam {
         dependsOn: json['depends_on'] as String?,
         includeAll: json['include_all'] as bool? ?? false,
         includeAsv: json['include_asv'] as bool? ?? false,
+        visibleWhen: (json['visible_when'] as Map?)?.map((k, v) => MapEntry(k.toString(), v.toString())),
+        optionsShape: json['options_shape'] as String?,
+        optional: json['optional'] as bool? ?? false,
       );
+
+  /// Whether this parameter should be shown/sent given the form's current
+  /// values. Always true for parameters with no [visibleWhen].
+  bool isVisible(Map<String, String> values) {
+    final cond = visibleWhen;
+    if (cond == null) return true;
+    return cond.entries.every((e) => (values[e.key] ?? '') == e.value);
+  }
 }
 
 class PlotAnalysis {

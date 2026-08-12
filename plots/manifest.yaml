@@ -220,24 +220,54 @@ analyses:
       en: "Read Cleaning (Before vs. After)"
       pt: "Limpeza de Reads (Antes vs. Depois)"
     description:
-      en: "Total reads and Q30 quality rate per sample, before and after cleaning -- fastp for short/hybrid samples, NanoPlot for long-read samples, whichever actually ran for that sample's read type."
-      pt: "Total de reads e taxa de qualidade Q30 por amostra, antes e depois da limpeza -- fastp para amostras curtas/híbridas, NanoPlot para amostras de leitura longa, o que de fato rodou para o tipo de leitura da amostra."
+      en: "Read counts, bases, quality and length per sample, before and after cleaning -- fastp for short/hybrid samples, NanoPlot for long-read samples, whichever actually ran for that sample's read type."
+      pt: "Contagem de reads, bases, qualidade e comprimento por amostra, antes e depois da limpeza -- fastp para amostras curtas/híbridas, NanoPlot para amostras de leitura longa, o que de fato rodou para o tipo de leitura da amostra."
     applies_to: [magma]
     input_shape: magma_qc
     script: analyses/magma_read_qc.R
-    parameters: []
+    parameters:
+      - flag: "--metric"
+        type: choice
+        default: "all"
+        enabled: true
+        choices: [all, reads, bases, q30, gc, length, n50]
+        description:
+          en: "Which QC metric to plot, one panel each; 'all' stacks every metric this run has data for. Which ones exist depends on the tool that ran: fastp reports reads, bases, Q30 and GC; NanoPlot reports reads, bases, mean read length and read-length N50."
+          pt: "Qual métrica de QC plotar, um painel para cada; 'all' empilha todas as métricas com dado nesta execução. Quais existem depende da ferramenta que rodou: o fastp reporta reads, bases, Q30 e GC; o NanoPlot reporta reads, bases, comprimento médio e N50 de comprimento."
+      - flag: "--samples"
+        type: samples
+        optional: true
+        enabled: true
+        description:
+          en: "Which samples to draw. Leave empty for all of them -- useful on a run with enough samples that the x axis becomes unreadable."
+          pt: "Quais amostras desenhar. Deixe vazio para todas -- útil quando a execução tem amostras demais e o eixo x fica ilegível."
 
   - id: magma_assembly_quality
     name:
       en: "Assembly Quality"
       pt: "Qualidade da Montagem"
     description:
-      en: "N50 and total assembly length per sample from MetaQuast, for the full assembly and the Tiara-filtered prokaryotic subset side by side."
-      pt: "N50 e comprimento total da montagem por amostra (MetaQuast), para a montagem completa e o subconjunto procariótico filtrado pelo Tiara, lado a lado."
+      en: "Assembly metrics per sample from MetaQuast, for the full assembly and the Tiara-filtered prokaryotic subset side by side -- the gap between the two is how much Tiara flagged as non-prokaryotic."
+      pt: "Métricas de montagem por amostra (MetaQuast), para a montagem completa e o subconjunto procariótico filtrado pelo Tiara, lado a lado -- a diferença entre os dois é quanto o Tiara marcou como não-procariótico."
     applies_to: [magma]
     input_shape: magma_qc
     script: analyses/magma_assembly_quality.R
-    parameters: []
+    parameters:
+      - flag: "--metric"
+        type: choice
+        default: "all"
+        enabled: true
+        choices: [all, n50, total_length, num_contigs, largest_contig, l50, gc]
+        description:
+          en: "Which assembly metric to plot, one panel each; 'all' stacks every one. N50 and L50 are worth reading together: N50 is the contig length at which half the assembly sits in contigs at least that long, L50 is how many contigs that takes."
+          pt: "Qual métrica de montagem plotar, um painel para cada; 'all' empilha todas. N50 e L50 valem ser lidos juntos: o N50 é o comprimento de contig no qual metade da montagem está em contigs pelo menos daquele tamanho, e o L50 é quantos contigs isso exige."
+      - flag: "--samples"
+        type: samples
+        optional: true
+        enabled: true
+        description:
+          en: "Which samples to draw. Leave empty for all of them."
+          pt: "Quais amostras desenhar. Deixe vazio para todas."
 
   - id: magma_community_taxonomy
     name:
@@ -304,6 +334,16 @@ analyses:
         description:
           en: "Which eggNOG functional vocabulary to plot. COG_category gives the broad-strokes view (~25 categories); KEGG_Pathway/Module and CAZy/PFAMs are more specific. A vocabulary eggNOG found no hits for in this run is reported as such instead of drawing an empty figure."
           pt: "Qual vocabulário funcional do eggNOG plotar. COG_category dá a visão geral (~25 categorias); KEGG_Pathway/Module e CAZy/PFAMs são mais específicos. Um vocabulário sem nenhum acerto do eggNOG nesta execução é reportado como tal em vez de gerar uma figura vazia."
+      - flag: "--mags"
+        type: samples
+        options_shape: magma_mags
+        optional: true
+        visible_when:
+          "--level": mag
+        enabled: true
+        description:
+          en: "Which MAGs to draw. Leave empty for every MAG this run recovered. Percentages are computed per MAG, so selecting a subset changes which genomes are shown but not the bars themselves."
+          pt: "Quais MAGs desenhar. Deixe vazio para todos os MAGs recuperados nesta execução. As porcentagens são calculadas por MAG, então selecionar um subconjunto muda quais genomas aparecem, não as barras em si."
       - flag: "--top_n"
         type: int
         default: 15

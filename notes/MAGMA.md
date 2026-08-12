@@ -268,3 +268,48 @@ interpretação real, não detalhe de implementação.
 
 MAGMA: 16 análises, todas passando. As 6 falhas de UniFrac/wUniFrac são a recusa intencional
 (MAGMA não tem árvore filogenética — a mensagem explica e sugere bray/jaccard).
+
+## Retorno do teste do usuário (2026-08-11)
+
+**QC e Montagem tinham a caixa de parâmetros vazia** — as duas análises não tinham parâmetro
+nenhum no manifesto. Olhando o código, as duas tabelas já *parseavam* métricas que nunca eram
+desenhadas: o QC lia bases, GC, comprimento médio e N50 de leitura e plotava só reads e Q30; a
+montagem lia contigs, maior contig, L50 e GC e plotava só N50 e comprimento total. Ganharam
+`--metric` (`all` ou uma específica) e `--samples`. Não é métrica inventada: é exposição do que
+já vinha do disco e era descartado.
+
+Métrica sem dado na execução é recusada com mensagem explicando por quê (`length`/`n50` de
+leitura só existem se o NanoPlot rodou, ou seja, amostras long-read), mesma convenção do
+`--annotation_column` do DOGMA.
+
+**Seletor de MAG no funcional** — exigiu um mecanismo novo no manifesto, `visible_when`. É
+diferente do `depends_on` que já existia: o `depends_on` mantém o campo visível e só troca as
+opções (o `--reference_group` seguindo o `--group_var`); o `visible_when` **esconde a linha
+inteira**, não envia o parâmetro e não bloqueia o botão de rodar. O `--mags` do funcional só
+aparece com `--level mag`, porque no nível de amostra não há MAG nenhum para escolher.
+
+Junto vieram `options_shape` (o campo lê as opções de OUTRA forma de entrada carregada — o
+`--mags` do funcional lista os MAGs que a forma `magma_mags` descobriu) e `optional` (campo que
+pode legitimamente ficar vazio apesar do tipo; `--mags` vazio significa todos).
+
+**UpSet: dois bugs, um deles nosso.**
+
+1. `element_rect(fill = bg)` sem `colour` **não** preserva o painel sem borda. Os sub-gráficos
+   do ComplexUpset têm `panel.background = element_blank`, e um `element_rect` mesclado sobre um
+   blank não herda do painel existente — cai no elemento `rect` de topo, cuja cor é preta. Daí
+   uma caixa preta em volta de cada sub-painel, que era o que fazia as barras de set size
+   parecerem transbordar. (Os scripts que usam `base_theme` não têm o problema: lá a mescla é
+   sobre o `panel.background` do `theme_grey`, que tem `colour = NA`.)
+2. Pintávamos `plot.background` no corpo — que cobre também a margem — enquanto o `title_bar()`
+   pinta só o painel dele. A faixa do título saía mais estreita que a figura por exatamente uma
+   margem de cada lado.
+
+Corrigido nos três scripts de UpSet (`upset_plot`, `de_upset`, `dogma_de_upset`).
+
+**Pergunta do usuário sobre o DESeq2, respondida e não implementada**: o modelo já é ajustado
+com todos os grupos de uma vez (`~ group`), usando as 18 amostras para estimar dispersão; o
+`--reference_group`/`--test_group` só escolhe qual contraste extrair. O que falta é o **LRT**
+(`~ group` vs `~ 1`), que responde outra pergunta — "esse gene responde ao gradiente de alguma
+forma?" em vez de "polluted difere de control?". Para o desenho de 3 grupos ao longo de um
+gradiente, o LRT seria a primeira passada natural. Fica registrado como possível
+`--test_type wald|lrt`; o usuário só perguntou, não pediu.
