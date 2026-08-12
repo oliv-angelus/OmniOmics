@@ -33,7 +33,7 @@ cor_cutoff <- as.numeric(args$cor_cutoff)
 p_cutoff <- as.numeric(args$p_cutoff)
 seed <- as.integer(args$seed)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 
 log_line("[cooccurrence_network] reading cached phyloseq object from %s", args$phyloseq_rds)

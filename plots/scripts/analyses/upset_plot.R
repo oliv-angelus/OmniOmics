@@ -29,7 +29,7 @@ group_var <- args$group_var
 rank <- args$rank
 min_abundance <- as.numeric(args$min_abundance)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 
 log_line("[upset_plot] reading cached phyloseq object from %s", args$phyloseq_rds)

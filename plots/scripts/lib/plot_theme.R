@@ -9,7 +9,7 @@ suppressMessages({
   library(RColorBrewer)
 })
 
-#' The shared panel look: serif font by default, gray90 panel with white
+#' The shared panel look: serif font by default, a white panel with a grid
 #' gridlines, black axis text -- present in every plot in microbiome.R
 #' regardless of plot type. `bg`/`font_family` are overridable (the Plots
 #' tab's "Personalizar" panel writes a style.json with these, see
@@ -25,14 +25,42 @@ suppressMessages({
 #' override (e.g. differential_abundance_deseq2's italic genus labels) still
 #' wins for that specific element, same as any other layered theme call --
 #' a deliberate, minimal scope, not every hardcoded size in every script.
-base_theme <- function(bg = "gray90", font_family = "serif", font_scale = 1.0) {
+#' Grid/border colors derived from the background rather than fixed.
+#'
+#' The grid used to be hardcoded white, which worked only because every
+#' analysis defaulted to a gray background. With white as the default (and any
+#' color reachable from the Personalizar panel's color picker) a fixed white
+#' grid is invisible on most of them, which would make the grid toggle look
+#' broken rather than off. Blending the background toward black on a light
+#' background and toward white on a dark one keeps the grid visible for any
+#' color the user picks, at roughly the same contrast.
+.contrast_color <- function(bg, amount) {
+  rgbv <- tryCatch(grDevices::col2rgb(bg)[, 1] / 255, error = function(e) c(1, 1, 1))
+  luminance <- 0.299 * rgbv[1] + 0.587 * rgbv[2] + 0.114 * rgbv[3]
+  target <- if (luminance > 0.5) 0 else 1
+  mixed <- rgbv * (1 - amount) + target * amount
+  grDevices::rgb(mixed[1], mixed[2], mixed[3])
+}
+
+#' `show_grid` / `show_border` come from the Personalizar panel via `style`
+#' rather than as bare arguments, so the 30-odd call sites stay identical --
+#' every analysis already has `style` in scope. Defaults match what the
+#' analyses looked like before the toggles existed: grid on, no panel border.
+base_theme <- function(bg = "white", font_family = "serif", font_scale = 1.0, style = NULL) {
+  show_grid <- if (is.null(style$show_grid)) TRUE else isTRUE(style$show_grid)
+  show_border <- isTRUE(style$show_panel_border)
+  grid_major <- if (show_grid) element_line(color = .contrast_color(bg, 0.14), linewidth = 0.5) else element_blank()
+  grid_minor <- if (show_grid) element_line(color = .contrast_color(bg, 0.08), linewidth = 0.25) else element_blank()
   theme(
     text = element_text(family = font_family),
     axis.text = element_text(size = 12 * font_scale, color = "black"),
     axis.title = element_text(size = 13 * font_scale, face = "bold", color = "black"),
     panel.background = element_rect(fill = bg),
-    panel.grid.major = element_line(color = "white", linewidth = 0.5),
-    panel.grid.minor = element_line(color = "white", linewidth = 0.25),
+    panel.grid.major = grid_major,
+    panel.grid.minor = grid_minor,
+    # fill = NA is required, not cosmetic: a panel.border with a fill paints
+    # OVER the data, since ggplot draws the border after the layers.
+    panel.border = if (show_border) element_rect(fill = NA, color = .contrast_color(bg, 0.85), linewidth = 0.6) else element_blank(),
     plot.margin = unit(c(0, 0.5, 0.5, 0.5), "cm")
   )
 }

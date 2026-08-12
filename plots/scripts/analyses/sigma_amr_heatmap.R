@@ -27,7 +27,7 @@ args <- parse_cli_args(defaults = list(source_filter = "all", top_n = "40"))
 source_filter <- args$source_filter  # "all" | "amrfinder" | "abricate_ncbi" | "abricate_card" | "abricate_vfdb"
 top_n_genes <- as.integer(args$top_n)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -95,7 +95,7 @@ p <- ggplot(grid, aes(x = sample, y = gene, fill = present)) +
   geom_tile(color = "white", linewidth = 0.3) +
   scale_fill_manual(values = c(`TRUE` = "#D95F02", `FALSE` = "gray92"), labels = c(`TRUE` = "Present", `FALSE` = "Absent"), name = NULL) +
   labs(x = NULL, y = NULL) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
     axis.text.y = element_text(size = 9),

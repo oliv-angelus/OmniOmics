@@ -32,7 +32,7 @@ test_group <- args$test_group
 alpha <- as.numeric(args$alpha)
 min_lfc <- as.numeric(args$min_lfc)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -173,11 +173,11 @@ p <- ggplot(sigtab, aes(x = Genus, y = log2FoldChange, color = Enriched_In)) +
   scale_color_manual(values = colors_groups, name = "More abundant in:") +
   labs(y = "Log2 Fold Change", x = NULL) +
   coord_flip() +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(
     axis.text.y = element_text(size = 11, face = "italic"),
     legend.position = "top",
-    legend.background = element_rect(fill = "gray90", color = NA)
+    legend.background = element_rect(fill = bg, color = NA)
   )
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

@@ -19,7 +19,19 @@ import '../theme/app_theme.dart';
 /// sub-plots, not something base_theme/apply_axis_visibility reaches --
 /// see plot_theme.R). Font size + axis visibility controls are hidden for
 /// these rather than shown as a checkbox that silently does nothing.
-const _kNoAxisControlAnalyses = {'cooccurrence_network', 'venn_diagram', 'upset_plot'};
+/// Analyses that never call plot_theme.R's base_theme, so none of the
+/// controls it implements (font scale, axis hiding, grid lines, panel
+/// border) would reach them -- a network's theme_void layout, a Venn
+/// diagram and ComplexUpset's own internally-composed theme have no single
+/// cartesian panel for any of those to apply to. Shown for everything else.
+///
+/// de_upset/dogma_de_upset were missing from this list, which meant they
+/// already displayed font-scale and axis controls that silently did
+/// nothing; grouped here with the UpSet they are variants of.
+const _kNoBaseThemeAnalyses = {
+  'cooccurrence_network', 'venn_diagram',
+  'upset_plot', 'de_upset', 'dogma_de_upset',
+};
 
 class PlotStylePanel extends ConsumerWidget {
   final PlotStyleState style;
@@ -160,7 +172,7 @@ class PlotStylePanel extends ConsumerWidget {
             ),
           ],
         ),
-        if (!_kNoAxisControlAnalyses.contains(analysisId))...[
+        if (!_kNoBaseThemeAnalyses.contains(analysisId))...[
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,6 +230,39 @@ class PlotStylePanel extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                   title: Text(ref.t('plots_customize_hide_y_axis'), style: const TextStyle(fontSize: 12.5)),
+                ),
+              ),
+            ],
+          ),
+          // Same scope as the axis toggles above and for the same reason:
+          // both are base_theme settings, so they only reach the analyses
+          // that call it (see _kNoBaseThemeAnalyses).
+          Row(
+            children: [
+              Expanded(
+                child: CheckboxListTile(
+                  value: style.showGrid,
+                  onChanged: (v) {
+                    style.showGrid = v ?? true;
+                    onChanged();
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Text(ref.t('plots_customize_show_grid'), style: const TextStyle(fontSize: 12.5)),
+                ),
+              ),
+              Expanded(
+                child: CheckboxListTile(
+                  value: style.showPanelBorder,
+                  onChanged: (v) {
+                    style.showPanelBorder = v ?? false;
+                    onChanged();
+                  },
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Text(ref.t('plots_customize_show_border'), style: const TextStyle(fontSize: 12.5)),
                 ),
               ),
             ],

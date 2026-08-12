@@ -41,7 +41,7 @@ suppressMessages({
 args <- parse_cli_args(defaults = list(mags = ""))
 
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 
@@ -155,7 +155,7 @@ if (nrow(plot_df) > 0) {
                     max.overlaps = 30, box.padding = 0.4, show.legend = FALSE) +
     scale_color_manual(values = palette, name = "MIMAG") +
     labs(x = "Completeness (%)", y = "Contamination (%)") +
-    base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
     theme(legend.position = "right")
   title <- if (length(selected) == 1) sprintf("MAG Summary: %s", selected) else
     sprintf("MAG Summary (%d MAGs)", length(selected))

@@ -27,7 +27,7 @@ suppressMessages({
 args <- parse_cli_args()
 group_var <- args$group_var  # optional -- NULL/"" is fine, every genome just gets one color then
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -79,7 +79,7 @@ p <- ggplot(df, aes(x = checkm2_completeness, y = checkm2_contamination)) +
   scale_color_manual(values = palette, name = if (has_group) group_var else NULL) +
   scale_size_continuous(name = "N50 (bp)", range = c(2, 9), labels = function(x) format(x, big.mark = ",", scientific = FALSE)) +
   labs(x = "Completeness (%)", y = "Contamination (%)") +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "right")
 if (!has_group) p <- p + guides(color = "none")
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)

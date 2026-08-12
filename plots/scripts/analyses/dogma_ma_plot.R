@@ -34,7 +34,7 @@ reference_group <- args$reference_group
 test_group <- args$test_group
 alpha <- as.numeric(args$alpha)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -71,7 +71,7 @@ p <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange, color = Significant)) 
   scale_color_manual(values = c(`TRUE` = "#D95F02", `FALSE` = "gray60"),
                       labels = c(`TRUE` = paste0("padj < ", alpha), `FALSE` = "not significant"), name = NULL) +
   labs(x = "Mean of normalized counts", y = "Log2 fold change (shrunk)") +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "top")
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

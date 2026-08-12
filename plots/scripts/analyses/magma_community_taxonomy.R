@@ -46,7 +46,7 @@ args <- parse_cli_args(defaults = list(classifier = "kraken2", rank = "all", top
 classifier <- args$classifier
 top_n_taxa <- as.integer(args$top_n)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -122,7 +122,7 @@ if (classifier == "compare") {
     scale_y_continuous(labels = scales::percent) +
     scale_fill_manual(values = palette, name = "Taxon") +
     labs(x = NULL, y = "Relative abundance (combined across samples)") +
-    base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
     theme(legend.position = "right")
 
   title <- sprintf("Classifier Concordance  |  %d shared, %d Kraken2-only, %d Kaiju-only",

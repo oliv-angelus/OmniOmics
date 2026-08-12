@@ -28,7 +28,7 @@ args <- parse_cli_args(defaults = list(annotation_column = "eggnog_KEGG_ko", top
 annotation_col <- args$annotation_column
 top_n_families <- as.integer(args$top_n)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -90,7 +90,7 @@ p <- ggplot(df_agg, aes(x = sample_domain, y = pct, fill = Family_Plot)) +
   scale_fill_manual(values = colors_final) +
   labs(x = NULL, y = "Relative Abundance (% of assigned reads)", fill = annotation_col) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 100.1)) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 9),
     legend.text = element_text(size = 9),

@@ -30,7 +30,7 @@ if (is.null(args$group_var) || args$group_var == "") stop("--group_var is requir
 group_var <- args$group_var
 annotation_col <- args$annotation_column
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -62,7 +62,7 @@ p <- ggplot(pca_data, aes(x = PC1, y = PC2, color =.data[[group_var]], fill =.da
   scale_color_manual(values = palette, name = group_var) +
   scale_fill_manual(values = palette, name = group_var) +
   labs(x = paste0("PC1 (", percent_var[1], "%)"), y = paste0("PC2 (", percent_var[2], "%)")) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "right", legend.background = element_rect(fill = "gray95", color = "gray80"))
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

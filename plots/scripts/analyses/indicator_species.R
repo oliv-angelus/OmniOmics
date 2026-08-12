@@ -28,7 +28,7 @@ rank <- args$rank
 p_cutoff <- as.numeric(args$p_cutoff)
 seed <- as.integer(args$seed)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -84,7 +84,7 @@ p <- ggplot(df_plot, aes(x = stat, y = TaxonName, color = Indicated_Group)) +
   geom_point(size = 5) +
   scale_color_manual(values = palette, name = "Bioindicator of:") +
   labs(x = "Indicator Value (IndVal Stat)", y = NULL) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(
     axis.text.y = element_text(size = 11, face = "italic"),
     panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5),

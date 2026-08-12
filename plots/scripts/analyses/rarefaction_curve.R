@@ -25,7 +25,7 @@ suppressMessages({
 args <- parse_cli_args(defaults = list(step = "100"))
 step <- as.integer(args$step)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -61,7 +61,7 @@ p <- ggplot(rare_df, aes(x = Reads, y = Richness, group = SampleID)) +
   geom_vline(xintercept = min_depth, linetype = "dashed", color = "darkred", linewidth = 0.5) +
   scale_x_continuous(expand = expansion(mult = c(0.02, 0.2))) +
   labs(x = "Sequencing Depth (Reads)", y = "Observed Richness (ASVs)") +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "none", axis.title = element_text(size = 11, face = "bold"))
 
 if (show_curve_labels) {

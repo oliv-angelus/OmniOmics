@@ -25,7 +25,7 @@ rank <- args$rank
 prevalence <- as.numeric(args$prevalence)
 min_abundance <- as.numeric(args$min_abundance)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -69,7 +69,7 @@ p <- ggplot(df_core, aes(x = Sample, y = Taxon_Label, fill = log10(Abundance * 1
   scale_fill_distiller(palette = "Spectral", direction = -1, name = "Log10(%)") +
   facet_grid(~.data[[group_var]], scales = "free_x", space = "free_x") +
   labs(x = NULL, y = paste(rank, "(Core)")) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(
     axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8),
     axis.text.y = element_text(size = 10, face = "italic"),

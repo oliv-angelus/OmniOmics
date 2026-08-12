@@ -37,7 +37,7 @@ alpha <- as.numeric(args$alpha)
 min_lfc <- as.numeric(args$min_lfc)
 label_top_n <- as.integer(args$label_top_n)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -81,7 +81,7 @@ p <- ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = Direction)
                    fontface = "italic", max.overlaps = 30, box.padding = 0.4, show.legend = FALSE) +
   scale_color_manual(values = palette, name = paste0("Enriched in (padj < ", alpha, ", |log2FC| > ", min_lfc, ")")) +
   labs(x = "Log2 Fold Change", y = expression(-log[10](padj))) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "top")
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

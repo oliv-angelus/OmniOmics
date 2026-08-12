@@ -9,7 +9,7 @@
 # Temperature vs Control -> UpSet of up-regulated + UpSet of down-regulated
 # -> a "core" gene list per direction, the intersection present in every
 # comparison) -- same statistical content, this app's own house visual style
-# (serif/gray90/title-bar), not a visual clone of the reference figures.
+# (serif/background/title-bar), not a visual clone of the reference figures.
 # DEFINE-only; see plots/manifest.yaml for parameter descriptions.
 this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
@@ -40,7 +40,7 @@ reference_group <- args$reference_group
 alpha <- as.numeric(args$alpha)
 min_lfc <- as.numeric(args$min_lfc)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 
 log_line("[de_upset] reading cached count matrix from %s", args$count_matrix_rds)

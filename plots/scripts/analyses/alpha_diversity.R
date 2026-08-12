@@ -27,7 +27,7 @@ if (is.null(args$group_var) || args$group_var == "") {
 group_var <- args$group_var
 seed <- as.integer(args$seed)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -94,7 +94,7 @@ plot_metric <- function(metric, title_text) {
     geom_jitter(width = 0.2, size = 2.5, shape = 21, fill = "red", color = "black", stroke = 0.3) +
     scale_fill_manual(values = palette) +
     labs(x = NULL, y = NULL) +
-    base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1, size = 11),
       legend.position = "none"
