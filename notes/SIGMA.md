@@ -55,3 +55,48 @@ User picked SIGMA as the second Plots-tab pipeline to build (after DOGMA), with 
 **A real, persistent demo run built for manual click-testing**, same as DOGMA's: `~/omniomics_demo_runs/sigma_demo`'s `05_QUALITY`/`06_TAXONOMY`/`07_COVERAGE`/`08_ANNOTATION`/`09_TYPING` results (confirmed fake stub data, same class of fixture already caught for `dogma_demo`) replaced with the real-shaped 4-genome fixture above; other stages (`00_SCREENING`/`03_POLISH`/`10_VIRAL`/`11_BGC`, not read by the new Plots-tab code) deliberately left untouched, so those stages still reference the old `isolate_A`/`isolate_B` sample names -- a real, acknowledged cross-stage naming inconsistency in this demo run specifically, harmless for Plots-tab testing. Optional metadata at `~/Documentos/omniomics_test_metadata/metadata_sigma_demo.tsv` (isolation_source/collection_year, on top of the built-in taxonomy/typing columns).
 
 **Not yet done**: only 3 analyses (a first slice, matching DOGMA's own initial scope before the user asked for more); the other ~5 SIGMA output categories (viral/mobilome: ISEScan, MOB-suite, geNomad, VirSorter2, CheckV, VIBRANT; secondary metabolites: antiSMASH, BiG-SCAPE) have no Plots-tab analyses at all yet -- real candidates for a future round (e.g. a BGC/mobilome summary per genome, reusing the same `--genome` picker). No dynamic annotation-source dropdown was needed here (unlike DOGMA) since the "sample" type IS the new dynamic mechanism this round was about.
+
+## Aba Plots: de 3 para 6 análises (2026-08-12)
+
+A aba lia **5 dos 12** diretórios de saída do SIGMA. Ficavam sem uso: GUNC, o QC de leituras, o
+MOB-suite, o ISEScan, o bloco viral inteiro (geNomad/VirSorter2/CheckV) e o antiSMASH/BiG-SCAPE.
+Não era falta de gráfico a inventar — era dado no disco sem ninguém ler.
+
+**Formatos verificados clonando os repositórios e lendo o código que ESCREVE a saída**, não a
+documentação. Registro completo com arquivo e linha em `docs/tool_output_samples/VERIFIED_FORMATS.md`.
+Dois achados que mudaram o desenho:
+
+1. **O `contig_id` do MOB-suite não casa com o dos hits de AMR.** O `mob_recon` reescreve os
+   cabeçalhos do FASTA e mapeia de volta com `record.description` (`utils.py:837`) — a linha
+   inteira, com descrição — enquanto AMRFinder e ABRicate usam o primeiro token. Sem cortar no
+   primeiro espaço, o gráfico "AMR em plasmídeo vs cromossomo" sai **vazio sem erro nenhum**.
+   A fixture escreve `contig_id` com descrição de propósito e o teste prova: sem o corte casam
+   0 de 5, com ele 5 de 5. A taxa de casamento é logada, e casamento zero vira erro dizendo que
+   é divergência de nomenclatura — não ausência de resistência em plasmídeo. São conclusões
+   opostas a partir da mesma figura vazia.
+
+2. **O antiSMASH não escreve tabela nenhuma** (`outputs/` só tem `html`), mas isso deixou de
+   importar: o BiG-SCAPE 2.x carrega `Class` e `Category` no `record_annotations.tsv`, e o SIGMA
+   roda o BiG-SCAPE **uma vez por amostra**, então o genoma é o diretório. O gráfico de BGC sai
+   de um TSV simples, sem parsear JSON.
+
+O BiG-SCAPE 2.x é uma reescrita e os nomes de arquivo do 1.x não existem mais no mesmo lugar —
+as notas antigas assumiam o layout velho.
+
+**Análises novas**: `sigma_read_qc`, `sigma_genome_landscape` e `sigma_mobilome` (7 visões:
+amr_location, plasmid_mobility, plasmid_replicons, prophage_quality, is_families, bgc_class,
+bgc_family). O GUNC entrou na tabela de genomas e aparece como a **forma do ponto** no panorama
+de qualidade — uma quimera pontua bem nos dois eixos daquele gráfico e cai dentro do retângulo
+verde parecendo perfeita, então marcar a reprovação ali põe a contradição onde ela é visível.
+
+**Bug achado pela fixture nova**: o balde "Others" do agrupamento de cauda longa colidia com uma
+categoria da própria ferramenta literalmente chamada "Others" (o antiSMASH tem uma classe
+`other`), e o `factor()` recusava com "factor level is duplicated". Virou `top_n_factor()`,
+compartilhado pelas três visões que agrupam cauda.
+
+`build_magma_qc_table.R` virou `build_read_qc_table.R`: os caminhos de QC do SIGMA são idênticos
+aos do MAGMA, então o leitor serve sem alteração — e um arquivo chamado "magma" carregado pelo
+SIGMA engana quem ler depois.
+
+SIGMA: 30 combinações passando. As 2 falhas são métricas só do NanoPlot numa fixture só de
+leitura curta.

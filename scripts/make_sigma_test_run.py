@@ -361,6 +361,29 @@ def main():
                             "TIRseq1:TIRseq2"])
         w(os.path.join(res, "08_ANNOTATION", sample, "isescan", f"{sample}.fa.tsv"), tsv(is_rows))
 
+        # --- BiG-SCAPE 2.x: record_annotations.tsv + clustering ------------
+        # Real layout and headers from big_scape/output/legacy_output.py
+        # (183, 352, 382-394, 457, 490-495). SIGMA runs BiG-SCAPE once per
+        # sample, so the genome is the directory, not a column.
+        n_bgc = {"Streptomyces": 25}.get(genus, random.randint(1, 9))
+        bs_dir = os.path.join(res, "11_BGC", sample, "bigscape", "output_files", "run_c0.30")
+        classes = ["NRPS", "PKS", "PKSother", "Terpene", "RiPP", "Saccharide", "Others"]
+        ann_rows = [["Record", "GBK", "Record_Type", "Record_Number", "Class",
+                     "Category", "Organism", "Taxonomy", "Description"]]
+        clu_rows = [["Record", "GBK", "Record_Type", "Record_Number", "CC", "Family"]]
+        for j in range(1, n_bgc + 1):
+            gbk = f"{sample}_contig{j % 5 + 1}.region{j:03d}.gbk"
+            rec = f"{gbk}_region_{j}"
+            cls = random.choice(classes)
+            ann_rows.append([rec, gbk, "region", j, cls, cls.lower(),
+                             lineage.split("s__")[-1], lineage, f"{cls} biosynthetic gene cluster"])
+            # Some families are deliberately shared across genomes (low ids)
+            # so bgc_family has both unique and shared to separate.
+            fam = random.randint(1, 12) if random.random() < 0.6 else random.randint(100, 400)
+            clu_rows.append([rec, gbk, "region", j, random.randint(1, 5), f"FAM_{fam:0>5}"])
+        w(os.path.join(bs_dir, "record_annotations.tsv"), tsv(ann_rows))
+        w(os.path.join(bs_dir, "mix", "mix_clustering_c0.30.tsv"), tsv(clu_rows))
+
     w(os.path.join(OUT, "config", "config.yaml"),
       '{"samples": %s, "note": "synthetic SIGMA fixture"}\n' % (
           "[" + ", ".join(f'"{g[0]}"' for g in GENOMES) + "]"))

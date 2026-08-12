@@ -429,3 +429,69 @@ build_sigma_mobilome <- function(results_dir) {
     isescan  = gather(.read_isescan)
   )
 }
+
+#' BiG-SCAPE's record_annotations.tsv -- one row per BGC region, carrying the
+#' antiSMASH product Class and Category (legacy_output.py:382-394, BiG-SCAPE
+#' 2.x). Columns: Record, GBK, Record_Type, Record_Number, Class, Category,
+#' Organism, Taxonomy, Description.
+#'
+#' Read from BiG-SCAPE rather than from antiSMASH directly for a concrete
+#' reason: antiSMASH writes NO tabular output at all (its outputs/ module is
+#' html-only), so the same information would otherwise have to come out of its
+#' JSON. BiG-SCAPE already carries Class and Category in a plain TSV.
+#'
+#' The genome is the directory, not a column: SIGMA runs BiG-SCAPE once per
+#' sample over that sample's own gbk_pool (11_secondary_metabolites.smk:19-38).
+#'
+#' Path shape: 11_BGC/{sample}/bigscape/output_files/{label}_c{cutoff}/record_annotations.tsv
+#' -- label and cutoff vary with the run's parameters, so the file is found by
+#' name under the sample's own bigscape directory instead of by fixed path.
+#' Note BiG-SCAPE's own --db_only_output suppresses these TSVs entirely
+#' (legacy_output.py:344-346), leaving only its SQLite; that run has no BGC
+#' table here and the analysis says so.
+.read_bigscape <- function(results_dir, sample) {
+  dir_bs <- file.path(results_dir, "11_BGC", sample, "bigscape")
+  if (!dir.exists(dir_bs)) return(NULL)
+  hits <- list.files(dir_bs, pattern = "^record_annotations\\.tsv$", recursive = TRUE, full.names = TRUE)
+  hits <- hits[file.size(hits) > 0]
+  if (length(hits) == 0) return(NULL)
+  df <- try(read.delim(hits[1], header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0 || !("Class" %in% colnames(df))) return(NULL)
+  data.frame(
+    sample = sample,
+    record = as.character(df[["Record"]] %||% NA),
+    bgc_class = as.character(df$Class),
+    bgc_category = as.character(df[["Category"]] %||% NA),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' BiG-SCAPE's clustering file: which gene cluster family each BGC belongs to.
+#' Family is written as "FAM_00001" (legacy_output.py:511) and Record is the
+#' same key record_annotations.tsv uses, so the two join directly.
+.read_bigscape_families <- function(results_dir, sample) {
+  dir_bs <- file.path(results_dir, "11_BGC", sample, "bigscape")
+  if (!dir.exists(dir_bs)) return(NULL)
+  hits <- list.files(dir_bs, pattern = "_clustering_c.*\\.tsv$", recursive = TRUE, full.names = TRUE)
+  hits <- hits[file.size(hits) > 0]
+  if (length(hits) == 0) return(NULL)
+  parts <- lapply(hits, function(f) {
+    df <- try(read.delim(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+    if (inherits(df, "try-error") || nrow(df) == 0 || !("Family" %in% colnames(df))) return(NULL)
+    data.frame(sample = sample, record = as.character(df$Record),
+               family = as.character(df$Family), stringsAsFactors = FALSE)
+  })
+  parts <- Filter(Negate(is.null), parts)
+  if (length(parts) == 0) return(NULL)
+  distinct(bind_rows(parts), sample, record, .keep_all = TRUE)
+}
+
+#' The BGC tables this run has, or NULLs when antiSMASH/BiG-SCAPE did not run.
+build_sigma_bgc <- function(results_dir) {
+  samples <- .discover_sigma_samples(results_dir)
+  gather <- function(reader) {
+    parts <- Filter(Negate(is.null), lapply(samples, function(s) reader(results_dir, s)))
+    if (length(parts) == 0) NULL else bind_rows(parts)
+  }
+  list(regions = gather(.read_bigscape), families = gather(.read_bigscape_families))
+}
