@@ -52,8 +52,14 @@ stat_groups <- list(
   "Assembly" = c("Contigs" = "quast_num_contigs", "Total length (bp)" = "quast_total_length",
                  "Largest contig (bp)" = "quast_largest_contig", "N50" = "quast_n50",
                  "L50" = "quast_l50", "GC (%)" = "quast_gc_pct"),
+  # GUNC sits beside CheckM2, not folded into it: they are independent checks
+  # of different things (marker completeness vs. whether the genome's genes
+  # agree on one lineage), and a genome can pass one and fail the other -- see
+  # .read_gunc in build_sigma_table.R.
   "Quality" = c("Completeness (%)" = "checkm2_completeness", "Contamination (%)" = "checkm2_contamination",
-                "Coding sequences" = "checkm2_coding_sequences"),
+                "Coding sequences" = "checkm2_coding_sequences",
+                "GUNC pass" = "gunc_pass", "GUNC clade separation" = "gunc_css",
+                "GUNC contamination portion" = "gunc_contamination_portion"),
   "Taxonomy" = c("Domain" = "gtdbtk_domain", "Phylum" = "gtdbtk_phylum", "Class" = "gtdbtk_class",
                  "Order" = "gtdbtk_order", "Family" = "gtdbtk_family", "Genus" = "gtdbtk_genus", "Species" = "gtdbtk_species"),
   "Coverage" = c("Mean" = "coverm_mean", "Trimmed mean" = "coverm_trimmed_mean", "Covered fraction" = "coverm_covered_fraction"),

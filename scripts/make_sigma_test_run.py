@@ -26,6 +26,7 @@ archaeon, so the GTDB-Tk reader's ar53-vs-bac120 branch is exercised rather than
 assumed, and one has no MLST scheme match (literal "-", which is a real result,
 not missing data).
 """
+import json
 import os
 import random
 import shutil
@@ -179,6 +180,49 @@ def main():
             ["Genome", f"{sample} Mean", f"{sample} Trimmed Mean", f"{sample} Covered Fraction"],
             ["final_polished", mean, round(mean * random.uniform(0.9, 1.0), 4),
              round(random.uniform(0.94, 0.999), 4)]]))
+
+        # --- GUNC: real 13-column maxCSS_level.tsv, same shape MAGMA's own
+        # fixture writes and whose format was verified there. Two genomes are
+        # deliberately given a failing clade separation score DESPITE passing
+        # CheckM2 -- the exact case GUNC exists to catch, where a chimera of
+        # two organisms with complementary marker sets scores well on
+        # completeness and contamination.
+        chimeric = sample in ("iso_KP02", "iso_SA02")
+        css = round(random.uniform(0.55, 0.82), 4) if chimeric else round(random.uniform(0.01, 0.30), 4)
+        w(os.path.join(res, "05_QUALITY", sample, "gunc", "GUNC.progenomes_2.1.maxCSS_level.tsv"),
+          tsv([["genome", "n_genes_called", "n_genes_mapped", "n_contigs", "taxonomic_level",
+                "proportion_genes_retained_in_major_clades", "genes_retained_index",
+                "clade_separation_score", "contamination_portion", "n_effective_surplus_clades",
+                "mean_hit_identity", "reference_representation_score", "pass.GUNC"],
+               [sample, int(size / 1000), int(size / 1200), n_contigs, "species",
+                round(random.uniform(0.7, 0.99), 4), round(random.uniform(0.6, 0.95), 4),
+                css, round(random.uniform(0.25, 0.55), 4) if chimeric else round(random.uniform(0.0, 0.06), 4),
+                round(random.uniform(1.5, 4.0), 4) if chimeric else round(random.uniform(0.0, 0.6), 4),
+                round(random.uniform(0.85, 0.99), 4), round(random.uniform(0.6, 0.95), 4),
+                "False" if chimeric else "True"]]))
+
+        # --- fastp: the real JSON shape build_read_qc_table.R reads (a
+        # "summary" object with before_filtering/after_filtering sub-objects).
+        # Shared with MAGMA, same paths -- results/01_QC/{sample}/.
+        raw_reads = random.randint(1_200_000, 4_500_000)
+        kept = random.uniform(0.90, 0.985)
+        clean_reads = int(raw_reads * kept)
+        w(os.path.join(res, "01_QC", sample, f"{sample}_fastp.json"), json.dumps({
+            "summary": {
+                "before_filtering": {
+                    "total_reads": raw_reads, "total_bases": raw_reads * 150,
+                    "q30_rate": round(random.uniform(0.86, 0.93), 6),
+                    "gc_content": round(gc / 100, 6)},
+                "after_filtering": {
+                    "total_reads": clean_reads, "total_bases": int(clean_reads * 147),
+                    "q30_rate": round(random.uniform(0.93, 0.98), 6),
+                    "gc_content": round(gc / 100, 6)},
+            },
+            "filtering_result": {
+                "passed_filter_reads": clean_reads,
+                "low_quality_reads": int(raw_reads * (1 - kept) * 0.7),
+                "too_short_reads": int(raw_reads * (1 - kept) * 0.3)},
+        }, indent=2))
 
         # --- MLST: NO header, ragged trailing allele columns
         alleles = [f"{p}({random.randint(1, 300)})" for p in ("adk", "fumC", "gyrB", "icd", "mdh", "purA", "recA")]

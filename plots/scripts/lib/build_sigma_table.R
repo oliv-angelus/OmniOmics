@@ -157,6 +157,34 @@ suppressMessages({
   )
 }
 
+#' GUNC's own maxCSS_level.tsv, the same 13-column shape build_magma_mag_table.R
+#' already reads and whose format was verified there -- SIGMA writes it per
+#' genome under 05_QUALITY/{sample}/gunc/ instead of MAGMA's per-MAG location,
+#' so only the path differs.
+#'
+#' GUNC answers a question CheckM2 structurally cannot: CheckM2 measures
+#' completeness and contamination from single-copy marker genes, which a
+#' CHIMERIC assembly can satisfy perfectly while still being two organisms
+#' spliced together. GUNC instead asks whether the genome's genes agree on one
+#' lineage (Orakov et al. 2021, Genome Biol 22:178, doi:10.1186/s13059-021-02393-0).
+#' Reported alongside CheckM2, never folded into it -- they are independent
+#' checks, and a genome can pass one and fail the other.
+.read_gunc <- function(results_dir, sample) {
+  gunc_dir <- file.path(results_dir, "05_QUALITY", sample, "gunc")
+  if (!dir.exists(gunc_dir)) return(NULL)
+  reports <- list.files(gunc_dir, pattern = "maxCSS_level\\.tsv$", recursive = TRUE, full.names = TRUE)
+  if (length(reports) == 0) return(NULL)
+  df <- try(read.delim(reports[1], header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0) return(NULL)
+  data.frame(
+    sample = sample,
+    gunc_pass = as.logical(df[["pass.GUNC"]] %||% NA),
+    gunc_css = suppressWarnings(as.numeric(df[["clade_separation_score"]] %||% NA)),
+    gunc_contamination_portion = suppressWarnings(as.numeric(df[["contamination_portion"]] %||% NA)),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Builds the dense, one-row-per-genome summary table across every sample
 #' this SIGMA run has -- LEFT JOINs (not inner) so a genome missing one
 #' optional tool's output (e.g. GTDB-Tk still running, or intentionally
@@ -166,7 +194,7 @@ build_sigma_table <- function(results_dir) {
   samples <-.discover_sigma_samples(results_dir)
   log_line("build_sigma_table: %d genome(s) discovered", length(samples))
 
-  readers <- list(.read_quast,.read_checkm2,.read_gtdbtk,.read_coverm,.read_mlst)
+  readers <- list(.read_quast,.read_checkm2,.read_gunc,.read_gtdbtk,.read_coverm,.read_mlst)
   summary_df <- data.frame(sample = samples, stringsAsFactors = FALSE)
   for (reader in readers) {
     parts <- Filter(Negate(is.null), lapply(samples, function(s) reader(results_dir, s)))

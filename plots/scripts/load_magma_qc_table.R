@@ -15,7 +15,7 @@ this_script_dir <- function() {
 }
 lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
-source(file.path(lib_dir, "build_magma_qc_table.R"))
+source(file.path(lib_dir, "build_read_qc_table.R"))
 source(file.path(lib_dir, "build_magma_assembly_table.R"))
 
 suppressMessages(library(jsonlite))
@@ -37,7 +37,7 @@ if (length(samples) == 0) {
 }
 log_line("[load_magma_qc_table] %d sample(s): %s", length(samples), paste(samples, collapse = ", "))
 
-qc_table <- build_magma_qc_table(args$input, samples)
+qc_table <- build_read_qc_table(args$input, samples)
 log_line("[load_magma_qc_table] read-cleaning QC: %s",
          if (is.null(qc_table)) "no fastp/NanoPlot output found" else sprintf("%d row(s)", nrow(qc_table)))
 
