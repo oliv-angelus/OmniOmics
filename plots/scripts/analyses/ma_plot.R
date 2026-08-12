@@ -83,7 +83,7 @@ p <- ggplot(res_df, aes(x = baseMean, y = log2FoldChange, color = Significant)) 
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("MA Plot: ", test_group, " vs ", reference_group, " (", sum(res_df$Significant), " significant)")
-final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family, plot_width_in = 10)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 8, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = 10, height = 8),

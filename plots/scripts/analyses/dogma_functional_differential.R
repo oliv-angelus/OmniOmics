@@ -94,7 +94,7 @@ p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 n_sig <- sum(res_df$Direction != "NS")
 title <- paste0("Functional Differential Abundance (", annotation_col, "): ", test_group, " vs ", reference_group, " (", n_sig, " significant)")
-final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family, plot_width_in = 10)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 9, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = 10, height = 9),

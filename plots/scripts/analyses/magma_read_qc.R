@@ -109,7 +109,8 @@ log_line("[magma_read_qc] plotting %d metric panel(s): %s", length(panels), past
 
 combined <- wrap_plots(panels, ncol = 1)
 n_samples <- length(unique(df$sample))
-final_plot <- with_title_bar(combined, "Read Cleaning: Before vs. After", size = 10, font_family = font_family)
+width <- max(9, 0.5 * n_samples)
+final_plot <- with_title_bar(combined, "Read Cleaning: Before vs. After", size = 10, font_family = font_family, plot_width_in = width)
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -124,7 +125,7 @@ write_json(
   file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
 )
 
-width <- max(9, 0.5 * n_samples); height <- 4 * length(panels) + 1
+height <- 4 * length(panels) + 1
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
 saveRDS(list(plot = final_plot, width = width, height = height),

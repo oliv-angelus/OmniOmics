@@ -183,7 +183,7 @@ p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Differential Abundance (Genus): ", group_var, "\n",
                  "Significant Biomarkers (p < ", alpha, " | LFC > ", min_lfc, ")")
-final_plot <- with_title_bar(p, title, size = 6, title_height = 0.15, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 6, title_height = 0.15, font_family = font_family, plot_width_in = 14)
 height <- max(6, nrow(sigtab) * 0.25)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 14, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)

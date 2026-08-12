@@ -67,8 +67,8 @@ p <- ggplot(df, aes(x = SampleA, y = SampleB, fill = Distance)) +
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Sample Distance (VST, ", annotation_col, "-aggregated, hierarchically clustered): ", group_var)
-final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family)
 side <- max(6, ncol(dist_matrix) * 0.5)
+final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family, plot_width_in = side)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = side, height = side, units = "in", dpi = 150, bg = "white", limitsize = FALSE)
 saveRDS(list(plot = final_plot, width = side, height = side),

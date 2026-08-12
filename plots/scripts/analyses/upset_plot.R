@@ -183,9 +183,9 @@ title <- paste0("Shared/Unique Taxa (", rank, ", > ", min_abundance * 100, "% me
 # notes/Known Issues and Next Steps.md ), which the earlier
 # venn_diagram.R never hit only because ggVennDiagram returns a single plain
 # ggplot, not a nested patchwork the way ComplexUpset does.
-final_plot <- with_title_bar(patchwork::wrap_elements(full = p), title, size = 6, title_height = 0.08, font_family = font_family)
-
 width <- max(9, n_intersections_shown * 0.35)
+final_plot <- with_title_bar(patchwork::wrap_elements(full = p), title, size = 6, title_height = 0.08, font_family = font_family, plot_width_in = width)
+
 height <- max(6, 4 + length(groups) * 0.3)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)

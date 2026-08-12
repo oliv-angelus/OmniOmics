@@ -100,8 +100,8 @@ p <- ggplot(df_agg, aes(x = sample_domain, y = pct, fill = Family_Plot)) +
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Functional Composition: ", annotation_col)
-final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family)
 plot_width <- max(14, length(unique(df_agg$sample_domain)) * 0.25)
+final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family, plot_width_in = plot_width)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 8, units = "in", dpi = 120, bg = "white", limitsize = FALSE)
 saveRDS(list(plot = final_plot, width = plot_width, height = 8),

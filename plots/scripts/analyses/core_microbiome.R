@@ -112,11 +112,11 @@ write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))
 
 saveRDS(list(ps_core = ps_core_glom, table = table_out), file.path(args$out_dir, "core_microbiome.rds"))
 
-final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family)
+width <- max(12, nsamples(ps_core_glom) * 0.2)
+final_plot <- with_title_bar(p, title, size = 8, title_height = 0.08, font_family = font_family, plot_width_in = width)
 height <- max(6, length(unique(df_core$Taxon_Label)) * 0.3)
 # Each sample gets its own tile column -- width grows with the sample count
 # so tiles (and their per-sample x-axis labels) stay legible past ~25 samples.
-width <- max(12, nsamples(ps_core_glom) * 0.2)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = width, height = height, units = "in", dpi = 130, bg = "white", limitsize = FALSE)
 saveRDS(list(plot = final_plot, width = width, height = height),

@@ -503,3 +503,53 @@ está vazio, o arquivo nunca esteve no git e não está em lugar nenhum do disco
 `POST /api/plots/{run_id}/export` (backend/main.py) chama esse script, então o botão de
 exportar figura da aba Plots falha. É uma funcionalidade nunca escrita, não algo perdido no
 incidente. **Pendente de decisão** do usuário: escrever o script ou remover a rota/botão.
+
+## Runs de teste para SIGMA, DEFINE e PRISM (2026-08-12)
+
+MAGMA e DOGMA já tinham fixture; os outros três não, então 3 das 5 abas de Plots nunca tinham
+sido exercitadas contra dado nenhum. `scripts/make_{prism,define,sigma}_test_run.py`, mesmo
+padrão dos dois existentes: todo caminho e layout de coluna conferido contra as regras do
+próprio pipeline, números gerados.
+
+| Pipeline | Run | Desenho |
+|---|---|---|
+| PRISM | `prism_testrun` | 24 amostras, 4 habitats, 21 linhagens de 55 ASVs, **com árvore filogenética real** |
+| DEFINE | `define_testrun` | 12 amostras, 3 condições, 1600 genes em 11 módulos funcionais |
+| SIGMA | `sigma_testrun` | 11 genomas (clínicos/ambientais), 1 arqueia, 1 rascunho limítrofe, 1 montagem ruim |
+
+**O PRISM é o que mais importava**: é o único pipeline que constrói árvore, então **UniFrac e
+UniFrac ponderado nunca tinham rodado** — no MAGMA são recusados por falta de árvore, e essa
+recusa era o único caminho já testado. A árvore da fixture tem topologia que **segue a
+taxonomia** (ASVs dentro de gênero dentro de família…), de propósito: numa topologia estrela o
+UniFrac degenera para presença/ausência e a fixture não estaria testando a parte filogenética
+de nada. Com ela, dois cianobactérias ficam de fato mais próximos entre si do que de uma
+arqueia. Resultado: PCoA/NMDS/CAP × unifrac/wunifrac, 4 combinações antes intestáveis, todas
+passando e com separação real entre habitats.
+
+Detalhes de forma reproduzidos de propósito, porque o loader existe em boa parte para
+contorná-los:
+- **SIGMA**: a coluna `Assembly` do QUAST e a `Genome` do CoverM são ambas a string literal
+  `final_polished` em toda amostra, e o CoverM assa o nome da amostra nos *cabeçalhos*
+  (`{sample} Trimmed Mean`). Uma fixture "limpa" não testaria nada disso.
+- **PRISM**: `prism_abundance_table.tsv` existe em dois lugares (o do denoiser e a cópia do
+  `select_abundance_table`), e o do ramo não usado é um arquivo **vazio**. É exatamente o que a
+  regra `prefer` do `ABUNDANCE_FILE_PATTERNS` desambigua.
+- **DEFINE**: o `contagem_anotada.tsv` tem bloco de anotação, **depois** as colunas de amostra,
+  **depois** mais anotação. Essa ordem partida é real e é por isso que o
+  `build_count_matrix.R` identifica coluna de amostra por subtração do conjunto conhecido, e
+  não assumindo que são contíguas.
+
+### Dois bugs reais que as fixtures novas acharam
+
+**1. `de_heatmap` quebrava com nome de gene repetido** (`factor level [6] is duplicated`).
+Rotulava as linhas pela coluna `Gene`, que não é única — anotação real repete nome o tempo
+todo (parálogos, transposases em múltiplas cópias, subunidades homônimas). O nome repetido
+agora é desambiguado pelo `locus_tag`, que é único por construção; nome que aparece uma vez só
+fica limpo.
+
+**2. O título saía cortado em 31 das 35 análises.** O mecanismo de quebra
+(`wrap_title_to_width`) já existia desde que o problema apareceu nos heatmaps, mas só 4
+análises passavam `plot_width_in` — nunca foi propagado. Toda análise agora informa a própria
+largura. Nas que calculavam a largura *depois* de montar o título, a linha foi movida para
+antes; nas de painéis lado a lado (`cooccurrence_network`) o valor certo é a largura de **um
+painel**, não a da figura.

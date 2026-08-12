@@ -93,7 +93,7 @@ p <- ggplot(df_plot, aes(x = stat, y = TaxonName, color = Indicated_Group)) +
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Indicator Species Analysis (IndVal): ", rank, "\nTop Significant Bioindicators (p < ", p_cutoff, ")")
-final_plot <- with_title_bar(p, title, size = 6, title_height = 0.12, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 6, title_height = 0.12, font_family = font_family, plot_width_in = 12)
 height <- max(6, nrow(df_plot) * 0.25)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)

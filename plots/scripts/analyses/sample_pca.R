@@ -63,7 +63,7 @@ p <- ggplot(pca_data, aes(x = PC1, y = PC2, color =.data[[group_var]], fill =.da
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Sample PCA (VST-transformed counts): ", group_var)
-final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 8, title_height = 0.1, font_family = font_family, plot_width_in = 10)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 10, height = 8, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = 10, height = 8),

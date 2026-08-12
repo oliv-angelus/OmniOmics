@@ -201,7 +201,7 @@ if (show_point_labels) {
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Functional Beta Diversity (", annotation_col, ", ", toupper(dist_method), ")  |  PERMANOVA: ", format_p_value(p_value))
-final_plot <- with_title_bar(p, title, size = 10, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 10, font_family = font_family, plot_width_in = 12)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = 10, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = 12, height = 10),
