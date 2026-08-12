@@ -40,6 +40,12 @@ samples <- genome_summary$sample
 # run whose QC output was cleaned up, or that started from assemblies, simply
 # has no table here and the read-QC analysis says so instead of failing the
 # whole load.
+mobilome <- build_sigma_mobilome(args$input)
+log_line("[load_sigma_table] mobilome: %s",
+         paste(vapply(names(mobilome), function(k)
+           sprintf("%s=%s", k, if (is.null(mobilome[[k]])) "-" else nrow(mobilome[[k]])),
+           character(1)), collapse = ", "))
+
 qc_table <- build_read_qc_table(args$input, samples)
 log_line("[load_sigma_table] read QC: %s",
          if (is.null(qc_table)) "no fastp/NanoPlot output found" else
@@ -84,7 +90,8 @@ column_levels <- lapply(columns, function(col) {
 names(column_levels) <- columns
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
-saveRDS(list(genome_summary = genome_summary, gene_hits = gene_hits, qc_table = qc_table, coldata = coldata),
+saveRDS(list(genome_summary = genome_summary, gene_hits = gene_hits, qc_table = qc_table,
+             mobilome = mobilome, coldata = coldata),
         file.path(args$out_dir, "sigma_table.rds"))
 
 write_json(

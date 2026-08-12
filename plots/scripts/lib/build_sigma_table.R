@@ -219,6 +219,10 @@ build_sigma_table <- function(results_dir) {
   if (nrow(df) == 0) return(NULL)
   data.frame(
     sample = sample, source = "amrfinder",
+    # Real contig this hit sits on -- the join key for asking whether a
+    # resistance gene is on a plasmid. See .read_mobsuite_contigs below for
+    # why it must be cut at the first space before joining.
+    contig = as.character(df[["Contig id"]]),
     gene = df[["Element symbol"]], product = df[["Element name"]],
     class = df[["Class"]], subclass = df[["Subclass"]],
     pct_identity = suppressWarnings(as.numeric(df[["% Identity to reference"]])),
@@ -238,6 +242,7 @@ build_sigma_table <- function(results_dir) {
   if (nrow(df) == 0) return(NULL)
   data.frame(
     sample = sample, source = paste0("abricate_", db_label),
+    contig = as.character(df[["SEQUENCE"]]),
     gene = df[["GENE"]], product = df[["PRODUCT"]],
     class = df[["RESISTANCE"]], subclass = NA_character_,
     pct_identity = suppressWarnings(as.numeric(df[["%IDENTITY"]])),
@@ -262,9 +267,165 @@ build_sigma_gene_hits <- function(results_dir) {
   }
   parts <- Filter(Negate(is.null), parts)
   if (length(parts) == 0) {
-    return(data.frame(sample = character(0), source = character(0), gene = character(0),
+    return(data.frame(sample = character(0), source = character(0), contig = character(0),
+                       gene = character(0),
                        product = character(0), class = character(0), subclass = character(0),
                        pct_identity = numeric(0), pct_coverage = numeric(0), stringsAsFactors = FALSE))
   }
   bind_rows(parts)
+}
+
+# --- Mobilome: plasmids (MOB-suite), prophages (CheckV/geNomad), IS (ISEScan) --
+#
+# Every column name and literal value below was read from the tool's own source
+# code, not its documentation -- see docs/tool_output_samples/VERIFIED_FORMATS.md
+# for the exact file and line of each, so this can be rechecked when a tool
+# version changes.
+
+#' First whitespace-delimited token of a sequence identifier.
+#'
+#' Load-bearing, not cosmetic. MOB-suite rewrites the assembly's FASTA headers
+#' internally and maps them back using `record.description` (mob-suite's
+#' utils.py:837) -- the WHOLE header line, description included. AMRFinderPlus
+#' ("Contig id") and ABRicate ("SEQUENCE") report the first token instead.
+#'
+#' On an assembly whose headers carry a description (several assemblers emit
+#' those), joining the two tables on the raw strings matches NOTHING, and the
+#' "is this resistance gene on a plasmid" figure would come out empty with no
+#' error at all -- silent and plausible, the worst failure mode available.
+#' Both sides are cut to the first token so the join is on the same thing.
+.first_token <- function(x) sub("[[:space:]].*$", "", as.character(x))
+
+#' MOB-suite's per-contig report: which contigs are plasmid and which are
+#' chromosome. `molecule_type` is literally "chromosome" or "plasmid"
+#' (mob_recon.py:669-700); `predicted_mobility` is "conjugative",
+#' "mobilizable" or "non-mobilizable" (mob_typer.py:530-534).
+#'
+#' mob_recon writes contig_report.txt, or {prefix}.contig_report.txt when a
+#' --prefix was passed (mob_recon.py:1007-1009) -- matched by suffix so both
+#' work.
+.read_mobsuite_contigs <- function(results_dir, sample) {
+  dir_mob <- file.path(results_dir, "08_ANNOTATION", sample, "mobsuite")
+  if (!dir.exists(dir_mob)) return(NULL)
+  hits <- list.files(dir_mob, pattern = "contig_report\\.txt$", full.names = TRUE)
+  if (length(hits) == 0) return(NULL)
+  df <- try(read.delim(hits[1], header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0 || !("molecule_type" %in% colnames(df))) return(NULL)
+  data.frame(
+    sample = sample,
+    contig = .first_token(df$contig_id),
+    molecule_type = as.character(df$molecule_type),
+    plasmid_cluster = as.character(df[["primary_cluster_id"]] %||% NA),
+    circularity = as.character(df[["circularity_status"]] %||% NA),
+    rep_types = as.character(df[["rep_type(s)"]] %||% NA),
+    predicted_mobility = as.character(df[["predicted_mobility"]] %||% NA),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' MOB-suite's per-plasmid report (one row per reconstructed plasmid).
+#' Same directory, same --prefix rule (mob_recon.py:1397-1399).
+.read_mobtyper <- function(results_dir, sample) {
+  dir_mob <- file.path(results_dir, "08_ANNOTATION", sample, "mobsuite")
+  if (!dir.exists(dir_mob)) return(NULL)
+  hits <- list.files(dir_mob, pattern = "mobtyper_results\\.txt$", full.names = TRUE)
+  if (length(hits) == 0) return(NULL)
+  df <- try(read.delim(hits[1], header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0) return(NULL)
+  data.frame(
+    sample = sample,
+    plasmid_cluster = as.character(df[["primary_cluster_id"]] %||% NA),
+    size = suppressWarnings(as.numeric(df[["size"]] %||% NA)),
+    gc = suppressWarnings(as.numeric(df[["gc"]] %||% NA)),
+    rep_types = as.character(df[["rep_type(s)"]] %||% NA),
+    relaxase_types = as.character(df[["relaxase_type(s)"]] %||% NA),
+    predicted_mobility = as.character(df[["predicted_mobility"]] %||% NA),
+    host_range = as.character(df[["predicted_host_range_overall_name"]] %||% NA),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' CheckV's quality_summary.tsv (quality_summary.py:146-161). checkv_quality is
+#' one of five ORDERED categories -- Complete, High-quality, Medium-quality,
+#' Low-quality, Not-determined (quality_summary.py:129-142) -- so it must be a
+#' factor with those levels, not sorted alphabetically.
+CHECKV_QUALITY_LEVELS <- c("Complete", "High-quality", "Medium-quality", "Low-quality", "Not-determined")
+
+.read_checkv <- function(results_dir, sample) {
+  f <- file.path(results_dir, "10_VIRAL", sample, "checkv", "quality_summary.tsv")
+  if (!file.exists(f) || file.size(f) == 0) return(NULL)
+  df <- try(read.delim(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0) return(NULL)
+  data.frame(
+    sample = sample,
+    contig = .first_token(df$contig_id),
+    contig_length = suppressWarnings(as.numeric(df$contig_length)),
+    provirus = as.character(df[["provirus"]] %||% NA),
+    checkv_quality = as.character(df[["checkv_quality"]] %||% NA),
+    completeness = suppressWarnings(as.numeric(df[["completeness"]] %||% NA)),
+    viral_genes = suppressWarnings(as.integer(df[["viral_genes"]] %||% NA)),
+    host_genes = suppressWarnings(as.integer(df[["host_genes"]] %||% NA)),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' geNomad's virus summary (summary.py:670). Its `taxonomy` column is a
+#' ';'-separated viral lineage, kept whole -- unlike a prokaryotic lineage it
+#' has no fixed rank depth to split on.
+.read_genomad_virus <- function(results_dir, sample) {
+  dir_g <- file.path(results_dir, "10_VIRAL", sample, "genomad")
+  if (!dir.exists(dir_g)) return(NULL)
+  hits <- list.files(dir_g, pattern = "_virus_summary\\.tsv$", recursive = TRUE, full.names = TRUE)
+  if (length(hits) == 0) return(NULL)
+  df <- try(read.delim(hits[1], header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0) return(NULL)
+  data.frame(
+    sample = sample,
+    contig = .first_token(df$seq_name),
+    length = suppressWarnings(as.numeric(df[["length"]] %||% NA)),
+    topology = as.character(df[["topology"]] %||% NA),
+    virus_score = suppressWarnings(as.numeric(df[["virus_score"]] %||% NA)),
+    n_hallmarks = suppressWarnings(as.integer(df[["n_hallmarks"]] %||% NA)),
+    taxonomy = as.character(df[["taxonomy"]] %||% NA),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' ISEScan writes .csv and .tsv with identical content (pred.py:1129,1131) --
+#' the .tsv is read because a comma inside a field cannot break it. Column
+#' order from pred.py:728-751; `family` is the IS family (IS3, IS5,
+#' IS200/IS605, ...), which is the column worth plotting.
+.read_isescan <- function(results_dir, sample) {
+  dir_is <- file.path(results_dir, "08_ANNOTATION", sample, "isescan")
+  if (!dir.exists(dir_is)) return(NULL)
+  hits <- list.files(dir_is, pattern = "\\.tsv$", recursive = TRUE, full.names = TRUE)
+  hits <- hits[file.size(hits) > 0]
+  if (length(hits) == 0) return(NULL)
+  df <- try(read.delim(hits[1], header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), silent = TRUE)
+  if (inherits(df, "try-error") || nrow(df) == 0 || !("family" %in% colnames(df))) return(NULL)
+  data.frame(
+    sample = sample,
+    contig = .first_token(df$seqID),
+    is_family = as.character(df$family),
+    is_cluster = as.character(df[["cluster"]] %||% NA),
+    is_length = suppressWarnings(as.numeric(df[["isLen"]] %||% NA)),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Every mobilome table this run has, as one list -- each element NULL when the
+#' tool did not run, which is the normal case (all four are optional steps).
+build_sigma_mobilome <- function(results_dir) {
+  samples <- .discover_sigma_samples(results_dir)
+  gather <- function(reader) {
+    parts <- Filter(Negate(is.null), lapply(samples, function(s) reader(results_dir, s)))
+    if (length(parts) == 0) NULL else bind_rows(parts)
+  }
+  list(
+    contigs  = gather(.read_mobsuite_contigs),
+    plasmids = gather(.read_mobtyper),
+    checkv   = gather(.read_checkv),
+    genomad  = gather(.read_genomad_virus),
+    isescan  = gather(.read_isescan)
+  )
 }
