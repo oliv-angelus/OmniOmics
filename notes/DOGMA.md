@@ -354,8 +354,11 @@ nenhum**, nem sintético. O layout de coluna de cada uma veio de leitura da docu
 verificação. É exatamente a classe de erro que só aparece rodando (o incidente da limpeza por
 regex e os bugs de `{output.json()}` / `--file_suffix.fa` / `--p_ext.pep` foram todos assim).
 
-Estender a fixture para as 15 ferramentas é a próxima coisa a fazer aqui — não foi feito nesta
-sessão para não misturar com a consolidação dos cards. Ver [[Known Issues and Next Steps]].
+**AUDITADO em 2026-08-12**: os 10 leitores foram conferidos um a um contra a fonte (clonando os
+repositórios das ferramentas, ou contra a nossa própria regra quando o formato é nosso).
+**Nenhum bug** — os leitores estavam certos, o que faltava era prova. Ver
+`docs/tool_output_samples/VERIFIED_FORMATS.md`. Estender a fixture para as 15 ferramentas
+continua valendo, mas agora é cobertura de execução, não risco de formato errado. Ver [[Known Issues and Next Steps]].
 
 Cobertura atual da suíte do DOGMA: 5 colunas de 15, todas as combinações de parâmetro passando
 (6 resultados vazios legítimos, onde nenhuma família passou o corte de significância).
