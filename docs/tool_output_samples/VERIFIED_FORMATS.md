@@ -261,3 +261,57 @@ escreve, então a regra **é** a fonte.
 `NanoStats.txt` verificado contra o arquivo real que o próprio repositório traz
 em `scripts/agm_tests/` (copiado para esta pasta). O leitor parseia certo,
 inclusive os separadores de milhar (`45,338.0` → 45338).
+
+---
+
+## Bakta (`oschwengers/bakta`)
+
+Verificado no código-fonte. É a peça central do anel genômico: um arquivo só
+traz as coordenadas de **todos** os tipos de feature.
+
+**`{prefix}.tsv`** (`bakta/main.py:543`, escrito por `bakta/io/tsv.py:20-30`):
+
+```
+#Sequence Id  Type  Start  Stop  Strand  Locus Tag  Gene  Product  DbXrefs
+```
+
+Precedido por **5 linhas de banner** com `#` (`# Annotated with Bakta`,
+`# Software:`, `# Database:`, `# DOI:`, `# URL:`), e o próprio cabeçalho começa
+com um `#` — exatamente o mesmo padrão do eggNOG-mapper. O leitor tem que
+descartar as linhas de banner e tirar o `#` do cabeçalho, não deixar o
+`comment.char` do R comer as duas coisas.
+
+**Valores literais de `Type`** (`bakta/constants.py:104-121`), que são o que os
+toggles do anel filtram:
+
+```
+cds  tRNA  tmRNA  rRNA  ncRNA  ncRNA-region  crispr  crispr-repeat
+crispr-spacer  orf  sorf  signal-peptide  gap  oriC  oriV  oriT  is  mite
+```
+
+Repare que são **case-sensitive e inconsistentes de propósito**: `cds` e
+`crispr` minúsculos, `tRNA`/`rRNA`/`tmRNA` em camel. Comparar com `tolower()`
+ou assumir capitalização uniforme quebra silenciosamente.
+
+Outros arquivos que a mesma execução escreve e podem ser úteis depois:
+`{prefix}.inference.tsv` (`main.py:568`) e `{prefix}.hypotheticals.tsv`
+(`main.py:580`), além do `.gff3`/`.faa`/`.json` que a nossa regra já declara.
+
+### O que isso resolve para o anel
+
+Os toggles pedidos mapeiam quase todos neste único arquivo:
+
+| Toggle | Fonte | Situação |
+|---|---|---|
+| CDS por fita | Bakta `Type == "cds"` + `Strand` | **verificado** |
+| rRNA (5S/16S/23S) | Bakta `Type == "rRNA"`, subtipo em `Gene`/`Product` | **verificado** |
+| tRNA | Bakta `Type == "tRNA"` | **verificado** |
+| CRISPR | Bakta `Type == "crispr"` | **verificado** |
+| AMR / virulência | AMRFinder + ABRicate (já lidos, com coordenadas) | **verificado** |
+| BGC | BiG-SCAPE `record_annotations.tsv` | **verificado** |
+| Profago | CheckV / geNomad | **verificado** |
+| IS | ISEScan (ou Bakta `Type == "is"`) | **verificado** |
+| Plasmídeo vs cromossomo | MOB-suite `molecule_type` | **verificado** |
+| GC skew | calculado do FASTA | sem ferramenta envolvida |
+
+Ou seja: **nenhuma peça do anel depende de formato não verificado**.
