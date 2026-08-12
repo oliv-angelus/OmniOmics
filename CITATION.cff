@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+title: "OmniOmics: an integrated desktop environment for reproducible multi-omics analysis"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - given-names: "Angelo Felipe"
+    family-names: "Barbosa de Oliveira"
+    orcid: "https://orcid.org/0000-0003-0831-447X"
+    affiliation: "Programa de Pós-Graduação em Genética e Biologia Molecular, Universidade Federal do Pará (UFPA), Belém, PA, Brazil"
+version: "0.0.1-alpha"
+date-released: "2026-08-12"
+license: MIT
+repository-code: "https://github.com/oliv-angelus/OmniOmics"
+abstract: >-
+  OmniOmics is a desktop application that packages five Snakemake workflows for
+  metagenomics, metatranscriptomics, isolate genomics, differential expression
+  and amplicon sequencing behind a graphical interface, together with an
+  integrated plotting environment that turns each workflow's output into
+  publication-ready figures. It is aimed at researchers who need reproducible
+  multi-omics analysis without assembling and maintaining the toolchain by hand.
+keywords:
+  - bioinformatics
+  - metagenomics
+  - metatranscriptomics
+  - amplicon sequencing
+  - Snakemake
+  - reproducibility

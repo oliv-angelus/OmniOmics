@@ -56,7 +56,7 @@ class _LoadingApp extends StatelessWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Iniciando OmniOmics…'),
+              Text('Iniciando OmniOmics… / Starting OmniOmics…'),
             ],
           ),
         ),
