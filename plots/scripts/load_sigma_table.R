@@ -46,6 +46,11 @@ log_line("[load_sigma_table] mobilome: %s",
            sprintf("%s=%s", k, if (is.null(mobilome[[k]])) "-" else nrow(mobilome[[k]])),
            character(1)), collapse = ", "))
 
+bgc <- build_sigma_bgc(args$input)
+log_line("[load_sigma_table] BGC: %s",
+         if (is.null(bgc$regions)) "no BiG-SCAPE output found" else
+           sprintf("%d region(s) across %d genome(s)", nrow(bgc$regions), length(unique(bgc$regions$sample))))
+
 qc_table <- build_read_qc_table(args$input, samples)
 log_line("[load_sigma_table] read QC: %s",
          if (is.null(qc_table)) "no fastp/NanoPlot output found" else
@@ -91,7 +96,7 @@ names(column_levels) <- columns
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 saveRDS(list(genome_summary = genome_summary, gene_hits = gene_hits, qc_table = qc_table,
-             mobilome = mobilome, coldata = coldata),
+             mobilome = mobilome, bgc = bgc, coldata = coldata),
         file.path(args$out_dir, "sigma_table.rds"))
 
 write_json(

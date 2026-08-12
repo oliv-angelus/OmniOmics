@@ -144,6 +144,49 @@ custo real, não como detalhe.
 
 ---
 
-## BiG-SCAPE
+## BiG-SCAPE (`medema-group/BiG-SCAPE`, commit 6bf7ca7, 2026-04-01)
 
-Ainda **não verificado**. Continua como já estava registrado nas notas.
+Verificado. **A saída mudou em relação ao que as notas assumiam** — este é o
+BiG-SCAPE 2.x, uma reescrita, e os nomes de arquivo do 1.x (`Network_Annotations_Full.tsv`,
+`*_clustering_c*.tsv` na raiz) não existem mais no mesmo lugar.
+
+Layout real (`big_scape/output/legacy_output.py:183,352,457`):
+
+```
+<output_dir>/output_files/<label>_c<cutoff>/record_annotations.tsv
+<output_dir>/output_files/<label>_c<cutoff>/<bin>/<bin>_clustering_c<cutoff>.tsv
+```
+
+**`record_annotations.tsv`** (`legacy_output.py:382-394`) — o antigo
+`Network_Annotations_Full.tsv`:
+
+```
+Record  GBK  Record_Type  Record_Number  Class  Category  Organism  Taxonomy  Description
+```
+
+**`<bin>_clustering_c<cutoff>.tsv`** (`legacy_output.py:490-495`):
+
+```
+Record  GBK  Record_Type  Record_Number  CC  Family
+```
+
+`Family` vem formatado como `FAM_00001` (`legacy_output.py:511`), e `Record`
+como `{nome_do_gbk}_{Record_Type}_{Record_Number}` — a chave para juntar as
+duas tabelas.
+
+Observações que importam para desenhar o gráfico:
+
+- **`Class` e `Category` estão no `record_annotations.tsv`**, não no
+  clustering. Um gráfico de "BGCs por classe por genoma" sai só desse arquivo,
+  sem precisar do antiSMASH nem do clustering.
+- O genoma de origem **não** é uma coluna, mas isso não importa aqui: o SIGMA
+  roda o BiG-SCAPE **uma vez por amostra**, em
+  `results/11_BGC/{sample}/bigscape` (ver `11_secondary_metabolites.smk:19-38`,
+  que junta os `.gbk` daquela amostra num `gbk_pool` próprio). O genoma é o
+  diretório, não algo a extrair do nome do arquivo.
+- Consequência boa: **o gráfico de BGC por classe sai só deste arquivo**, sem
+  precisar parsear o JSON do antiSMASH nem o clustering. Era o custo que eu
+  tinha registrado como real na seção do antiSMASH; ele desaparece.
+- Há também um `--db_only_output` que **suprime esses TSVs inteiros**
+  (`legacy_output.py:344-346`), deixando só o SQLite. Se o SIGMA passar essa
+  flag, nenhum dos arquivos acima existe.

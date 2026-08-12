@@ -36,7 +36,23 @@ suppressMessages({
   library(jsonlite)
 })
 
-VIEWS <- c("amr_location", "plasmid_mobility", "plasmid_replicons", "prophage_quality", "is_families")
+VIEWS <- c("amr_location", "plasmid_mobility", "plasmid_replicons", "prophage_quality",
+           "is_families", "bgc_class", "bgc_family")
+
+#' Collapses everything outside the top-N into "Others", as an ordered factor.
+#'
+#' unique() on the levels is load-bearing, not defensive tidiness: a tool can
+#' report a category LITERALLY named "Others" -- antiSMASH has an "other"
+#' product class -- and it then appears both in the kept set and as the
+#' collapse bucket, which factor() rejects outright ("factor level is
+#' duplicated"). Shared by the three views that collapse a long tail, so the
+#' collision is handled once rather than three times.
+top_n_factor <- function(values, n) {
+  values[is.na(values) | values == ""] <- "unclassified"
+  keep <- names(sort(table(values), decreasing = TRUE))[seq_len(min(n, length(unique(values))))]
+  collapsed <- ifelse(values %in% keep, values, "Others")
+  factor(collapsed, levels = unique(c(keep, "Others"))[unique(c(keep, "Others")) %in% collapsed])
+}
 
 args <- parse_cli_args(defaults = list(view = "amr_location", top_n = "25"))
 view <- args$view
@@ -55,6 +71,7 @@ if (!(view %in% VIEWS)) {
 log_line("[sigma_mobilome] reading cached SIGMA table from %s", args$sigma_table_rds)
 loaded <- readRDS(args$sigma_table_rds)
 mob <- loaded$mobilome %||% list()
+bgc <- loaded$bgc %||% list()
 
 #' Refuses a view whose tool did not run, naming the tool -- an empty figure
 #' would otherwise be indistinguishable from "this genome collection genuinely
@@ -136,10 +153,7 @@ if (view == "amr_location") {
       tidyr::separate_rows(rep_types, sep = ",") %>%
       mutate(rep_types = trimws(rep_types)) %>%
       filter(nzchar(rep_types))
-    keep <- plasmids %>% count(rep_types, sort = TRUE) %>% slice_head(n = top_n) %>% pull(rep_types)
-    plasmids$Key <- factor(ifelse(plasmids$rep_types %in% keep, plasmids$rep_types, "Others"),
-                           levels = c(keep, "Others")[c(keep, "Others") %in%
-                                                        unique(ifelse(plasmids$rep_types %in% keep, plasmids$rep_types, "Others"))])
+    plasmids$Key <- top_n_factor(plasmids$rep_types, top_n)
     y_lab <- "Plasmid replicon hits"
     title <- "Plasmid replicon types per genome"
   }
@@ -173,11 +187,53 @@ if (view == "amr_location") {
   records <- lapply(seq_len(nrow(agg)), function(i)
     list(genome = agg$sample[i], checkv_quality = as.character(agg$Key[i]), n = agg$n[i]))
 
+} else if (view == "bgc_class") {
+  # Class comes from BiG-SCAPE's record_annotations.tsv, which carries
+  # antiSMASH's own product class per region -- antiSMASH itself writes no
+  # tabular output at all, so this is the cheap path to the same information.
+  regions <- require_table(bgc$regions, "BiG-SCAPE", "Secondary-metabolite clustering")
+  regions$Key <- top_n_factor(regions$bgc_class, top_n)
+  agg <- regions %>% count(sample, Key, name = "n")
+  palette <- resolve_palette(levels(agg$Key), style)
+  p <- ggplot(agg, aes(x = sample, y = n, fill = Key)) +
+    geom_col(width = 0.75) +
+    scale_fill_manual(values = palette, name = "BGC class") +
+    labs(x = NULL, y = "Biosynthetic gene clusters") +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "right")
+  title <- sprintf("Biosynthetic gene clusters by class (%d regions)", nrow(regions))
+  fill_levels <- levels(agg$Key)
+  records <- lapply(seq_len(nrow(agg)), function(i)
+    list(genome = agg$sample[i], bgc_class = as.character(agg$Key[i]), n = agg$n[i]))
+
+} else if (view == "bgc_family") {
+  # Gene cluster families: BiG-SCAPE groups similar BGCs across genomes, so a
+  # family present in several genomes is a shared biosynthetic capability
+  # while a singleton family is that genome's own. Counting DISTINCT families
+  # per genome, not regions, is what makes the two different questions.
+  fams <- require_table(bgc$families, "BiG-SCAPE", "Secondary-metabolite clustering")
+  shared <- fams %>% distinct(sample, family) %>% count(family, name = "n_genomes")
+  fams <- left_join(distinct(fams, sample, family), shared, by = "family")
+  fams$Key <- ifelse(fams$n_genomes == 1, "unique to one genome",
+                     ifelse(fams$n_genomes >= 3, "shared by 3+ genomes", "shared by 2 genomes"))
+  fams$Key <- factor(fams$Key, levels = c("unique to one genome", "shared by 2 genomes", "shared by 3+ genomes"))
+  agg <- fams %>% count(sample, Key, name = "n")
+  palette <- resolve_palette(levels(agg$Key), style)
+  p <- ggplot(agg, aes(x = sample, y = n, fill = Key)) +
+    geom_col(width = 0.75) +
+    scale_fill_manual(values = palette, name = NULL) +
+    labs(x = NULL, y = "Distinct gene cluster families") +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "right")
+  title <- sprintf("Gene cluster families per genome (%d distinct families in the run)",
+                   length(unique(fams$family)))
+  fill_levels <- levels(agg$Key)
+  records <- lapply(seq_len(nrow(agg)), function(i)
+    list(genome = agg$sample[i], sharing = as.character(agg$Key[i]), n_families = agg$n[i]))
+
 } else {
   isescan <- require_table(mob$isescan, "ISEScan", "Insertion-sequence detection")
-  keep <- isescan %>% count(is_family, sort = TRUE) %>% slice_head(n = top_n) %>% pull(is_family)
-  isescan$Key <- ifelse(isescan$is_family %in% keep, isescan$is_family, "Others")
-  isescan$Key <- factor(isescan$Key, levels = c(keep, "Others")[c(keep, "Others") %in% unique(isescan$Key)])
+  isescan$Key <- top_n_factor(isescan$is_family, top_n)
   agg <- isescan %>% count(sample, Key, name = "n")
   palette <- resolve_palette(levels(agg$Key), style)
   p <- ggplot(agg, aes(x = sample, y = n, fill = Key)) +

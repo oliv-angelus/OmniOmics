@@ -1543,8 +1543,8 @@ analyses:
 
   - id: sigma_mobilome
     name:
-      en: "Mobilome (plasmids, prophages, IS)"
-      pt: "Mobiloma (plasmídeos, profagos, IS)"
+      en: "Mobilome & BGCs (plasmids, prophages, IS, clusters)"
+      pt: "Mobiloma e BGCs (plasmídeos, profagos, IS, clusters)"
     description:
       en: "The mobile fraction of each genome, and the question that ties it to the resistome: is a resistance gene sitting on a plasmid or on the chromosome? A chromosomal gene is inherited vertically and stays in its lineage; the same gene on a conjugative plasmid can cross between species. Reads MOB-suite, CheckV and ISEScan, all optional steps -- a view whose tool did not run says so rather than drawing an empty figure."
       pt: "A fração móvel de cada genoma, e a pergunta que a liga ao resistoma: o gene de resistência está num plasmídeo ou no cromossomo? Um gene cromossômico é herdado verticalmente e fica na linhagem dele; o mesmo gene num plasmídeo conjugativo atravessa entre espécies. Lê MOB-suite, CheckV e ISEScan, todos passos opcionais -- uma visão cuja ferramenta não rodou diz isso em vez de desenhar uma figura vazia."
@@ -1556,10 +1556,10 @@ analyses:
         type: choice
         default: "amr_location"
         enabled: true
-        choices: [amr_location, plasmid_mobility, plasmid_replicons, prophage_quality, is_families]
+        choices: [amr_location, plasmid_mobility, plasmid_replicons, prophage_quality, is_families, bgc_class, bgc_family]
         description:
-          en: "amr_location crosses the AMR/virulence hits with MOB-suite's chromosome-vs-plasmid call, split by predicted mobility. plasmid_mobility and plasmid_replicons profile the reconstructed plasmids themselves. prophage_quality shows CheckV's completeness tiers for predicted proviruses; is_families the insertion-sequence families found by ISEScan."
-          pt: "amr_location cruza os hits de AMR/virulência com a classificação cromossomo-vs-plasmídeo do MOB-suite, separada por mobilidade prevista. plasmid_mobility e plasmid_replicons perfilam os plasmídeos reconstruídos em si. prophage_quality mostra os níveis de completude do CheckV para os provírus previstos; is_families as famílias de sequências de inserção achadas pelo ISEScan."
+          en: "amr_location crosses the AMR/virulence hits with MOB-suite's chromosome-vs-plasmid call, split by predicted mobility. plasmid_mobility and plasmid_replicons profile the reconstructed plasmids themselves. prophage_quality shows CheckV's completeness tiers for predicted proviruses; is_families the insertion-sequence families found by ISEScan. bgc_class counts biosynthetic gene clusters by class, and bgc_family shows how many cluster families are unique to one genome versus shared."
+          pt: "amr_location cruza os hits de AMR/virulência com a classificação cromossomo-vs-plasmídeo do MOB-suite, separada por mobilidade prevista. plasmid_mobility e plasmid_replicons perfilam os plasmídeos reconstruídos em si. prophage_quality mostra os níveis de completude do CheckV para os provírus previstos; is_families as famílias de sequências de inserção achadas pelo ISEScan. bgc_class conta os clusters biossintéticos por classe, e bgc_family mostra quantas famílias de cluster são exclusivas de um genoma versus compartilhadas."
       - flag: "--top_n"
         type: int
         default: 25
