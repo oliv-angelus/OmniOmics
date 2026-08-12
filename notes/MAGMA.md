@@ -188,7 +188,10 @@ formas (`magma_mags`, `magma_qc`) escrevendo significados diferentes nela, a úl
 vencia silenciosamente. Corrigido com `samples_by_shape`, mesmo tratamento já dado a `columns`.
 
 **Pendências que ficaram para trás, registradas para não esquecer**:
-- NanoStats.txt do NanoPlot: formato ainda não conferido contra saída real (só documentação).
+- ~~NanoStats.txt do NanoPlot: formato ainda não conferido~~ **FECHADO em 2026-08-12**:
+  verificado contra o `NanoStats.txt` real que o próprio repositório do NanoPlot traz em
+  `scripts/agm_tests/`, guardado em `docs/tool_output_samples/`. O leitor parseia certo,
+  inclusive os separadores de milhar ("45,338.0" -> 45338).
 - MetaQuast na fixture: as duas variantes (completa/procariótica) saem com os mesmos números —
   não simula a diferença real que o Tiara produziria.
 - `render_final.R`/exportação não testado com as novas 5 análises desta fase (deveria
@@ -197,7 +200,13 @@ vencia silenciosamente. Corrigido com `samples_by_shape`, mesmo tratamento já d
 ## Fase B — ainda não iniciada
 
 Anel genômico estilo Proksee (circlize) + resto da anotação (CRISPR, vírus, elementos móveis,
-BiG-SCAPE). Ver plano completo na seção anterior. BiG-SCAPE segue sem verificar.
+BiG-SCAPE). Ver plano completo na seção anterior.
+
+**BiG-SCAPE: FECHADO em 2026-08-12** — verificado no código-fonte, ver
+`docs/tool_output_samples/VERIFIED_FORMATS.md`. É o 2.x, uma reescrita: os nomes de arquivo do
+1.x não existem mais no mesmo lugar, e o `record_annotations.tsv` já carrega Class e Category,
+o que tornou o gráfico de BGC barato. Já implementado no SIGMA (`sigma_mobilome`, visões
+`bgc_class` e `bgc_family`); falta só levar o mesmo para as MAGs do MAGMA na Fase B.
 
 ## Consolidação dos cards e nível de MAG no funcional (2026-08-11)
 
