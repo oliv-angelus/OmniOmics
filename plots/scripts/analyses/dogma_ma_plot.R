@@ -34,7 +34,7 @@ reference_group <- args$reference_group
 test_group <- args$test_group
 alpha <- as.numeric(args$alpha)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "white"
+bg <- style$background %||% "gray90"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)

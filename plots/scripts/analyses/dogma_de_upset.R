@@ -35,7 +35,7 @@ reference_group <- args$reference_group
 alpha <- as.numeric(args$alpha)
 min_lfc <- as.numeric(args$min_lfc)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "white"
+bg <- style$background %||% "gray90"
 font_family <- style$font_family %||% "serif"
 
 log_line("[dogma_de_upset] reading cached DOGMA table from %s", args$dogma_table_rds)
