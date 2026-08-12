@@ -190,3 +190,74 @@ Observações que importam para desenhar o gráfico:
 - Há também um `--db_only_output` que **suprime esses TSVs inteiros**
   (`legacy_output.py:344-346`), deixando só o SQLite. Se o SIGMA passar essa
   flag, nenhum dos arquivos acima existe.
+
+---
+
+# Auditoria dos leitores do DOGMA (2026-08-12)
+
+Motivo: as notas registravam que **10 das 15 colunas de anotação do DOGMA nunca
+tinham rodado contra arquivo nenhum**, porque a fixture só escreve eggnog,
+ncycdb e catbat. Auditados um a um contra a fonte.
+
+Resultado: **nenhum bug**. Os leitores estavam certos. O que faltava era prova.
+
+| Coluna | Formato definido por | Situação |
+|---|---|---|
+| `cazy_*` | dbCAN **v5** (`bcb-unl/run_dbcan`) | **verificado agora** |
+| `ncycdb_gene`, `scycdb_gene`, `mcycdb_gene` | a nossa própria regra | **verificado agora** |
+| `canthyd_*` | HMMER `--tblout` | já conferido antes contra run real |
+| `fegenie_*` | `Arkadiy-Garber/FeGenie` | **verificado agora** |
+| `eukulele_*` | `AlexanderLabWHOI/EUKulele` | **verificado agora** |
+| `magma_xref_*` | a nossa própria regra | **verificado agora** |
+| `eggnog_*` | eggNOG-mapper v2 | já conferido antes |
+| `catbat_*` | CAT/BAT | já conferido antes |
+
+## O detalhe que quase virou um falso positivo
+
+O repositório `linnabrown/run_dbcan` (o que aparece em qualquer busca) escreve
+**`overview.txt`** e não tem o subcomando `CAZyme_annotation` que a nossa regra
+chama. Parecia bug grave: regra declarando saída que a ferramenta não produz
+faria o Snakemake falhar com `MissingOutputException`.
+
+Não é. Aquele repositório parou na **v4** (último tag `4.2.0-rc.1`, master de
+2025-04-22). Nós fixamos `dbcan=5.2.9`, e a v5 vive em **`bcb-unl/run_dbcan`**
+— outra origem. Lá o subcomando existe (`dbcan/main.py:73`) e a saída é
+`overview.tsv` (`tests/test_dbcan.py:81`).
+
+Lição para a próxima auditoria: **conferir o tag/versão do repositório contra o
+pin da env antes de concluir qualquer coisa**. Ler a fonte errada é tão ruim
+quanto ler documentação.
+
+### Cabeçalho real do `overview.tsv` (v5)
+
+`dbcan/constants/OverviewGenerator_constants.py:17`:
+
+```
+Gene ID    EC#    dbCAN_hmm    dbCAN_sub    DIAMOND    #ofTools    Recommend Results
+```
+
+Confirma duas coisas do nosso leitor: a coluna 1 é `Gene ID`, e o nome
+`dbCAN_hmm` é **da v5** — na v4 essa mesma coluna se chamava `HMMER`. O nosso
+manifesto usa `cazy_dbCAN_hmm`, coerente com o pin.
+
+`cazy_Substrate` só existe quando a predição de substrato roda
+(`utils.py:205`, "compatible with the added Substrate column") — é opcional,
+não uma coluna que sempre deveria estar lá.
+
+### Formatos definidos pela nossa própria regra
+
+Esses não têm ferramenta externa a consultar: o formato é o que o nosso shell
+escreve, então a regra **é** a fonte.
+
+- **NCyc/SCyc/MCycDB** (`dogma/rules/05_annotation.smk:109-112`):
+  `diamond blastp --outfmt 6 qseqid sseqid pident length evalue bitscore`, e um
+  `awk` anexa uma 7ª coluna com o gene, ou o literal `"NA"`. Bate com o leitor,
+  inclusive o tratamento do `"NA"` como texto e não como ausência.
+- **magma_xref** (`dogma/rules/08_magma_xref.smk:84-96`): as mesmas 6 colunas do
+  DIAMOND, mais `mag` e `taxonomy` anexadas por Python. Bate com as 8 do leitor.
+
+## NanoPlot
+
+`NanoStats.txt` verificado contra o arquivo real que o próprio repositório traz
+em `scripts/agm_tests/` (copiado para esta pasta). O leitor parseia certo,
+inclusive os separadores de milhar (`45,338.0` → 45338).
