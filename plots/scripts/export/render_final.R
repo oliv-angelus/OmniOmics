@@ -33,7 +33,21 @@ if (!dir.exists(args$run_dir)) {
 }
 
 plot_rds <- file.path(args$run_dir, "plot_final.rds")
+
+# An analysis that draws straight to a device rather than building a ggplot
+# object -- sigma_genome_ring, via circlize -- has no plot object to
+# re-render, so it writes its own publication-resolution figure at analysis
+# time instead. Finding that file is a success, not the failure the message
+# below describes: reporting it as missing would tell the user to re-run an
+# analysis that already produced exactly what they asked for.
 if (!file.exists(plot_rds)) {
+  existing <- list.files(args$run_dir, pattern = "^figure_final\\.(tiff|png|pdf|svg)$", full.names = TRUE)
+  if (length(existing) > 0) {
+    log_line(paste0("[render_final] %s draws directly to a device and has no re-renderable plot object; ",
+                    "its publication figure was written at analysis time -- using %s (%.2f MB)."),
+             basename(args$run_dir), basename(existing[1]), file.size(existing[1]) / 1024^2)
+    quit(save = "no", status = 0)
+  }
   stop(sprintf(paste0("No plot_final.rds in %s -- this run predates the export ",
                       "feature, or the analysis failed before writing its figure. ",
                       "Re-run the analysis and export again."), args$run_dir))

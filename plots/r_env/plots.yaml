@@ -29,6 +29,9 @@ dependencies:
   - r-hmisc
   - r-ggvenndiagram
   - r-complexupset
+  # circlize: the circular genome ring (sigma_genome_ring). Gu et al. 2014,
+  # Bioinformatics 30:2811, doi:10.1093/bioinformatics/btu393.
+  - r-circlize
   - r-svglite
   - r-jsonlite
   - r-optparse

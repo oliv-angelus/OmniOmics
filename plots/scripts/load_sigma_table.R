@@ -95,8 +95,13 @@ column_levels <- lapply(columns, function(col) {
 names(column_levels) <- columns
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
+# results_dir is recorded so the genome ring can go back to the run folder for
+# per-feature COORDINATES. Caching every feature of every genome here instead
+# would grow this .rds by orders of magnitude to serve one analysis that looks
+# at a single genome at a time.
 saveRDS(list(genome_summary = genome_summary, gene_hits = gene_hits, qc_table = qc_table,
-             mobilome = mobilome, bgc = bgc, coldata = coldata),
+             mobilome = mobilome, bgc = bgc, coldata = coldata,
+             results_dir = normalizePath(args$input, mustWork = FALSE)),
         file.path(args$out_dir, "sigma_table.rds"))
 
 write_json(
