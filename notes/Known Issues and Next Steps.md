@@ -553,3 +553,46 @@ análises passavam `plot_width_in` — nunca foi propagado. Toda análise agora 
 largura. Nas que calculavam a largura *depois* de montar o título, a linha foi movida para
 antes; nas de painéis lado a lado (`cooccurrence_network`) o valor certo é a largura de **um
 painel**, não a da figura.
+
+## Importar pasta de resultados (2026-08-12)
+
+**A causa de "a run não aparece na aba de plotagem"**: a aba lista runs a partir do
+`~/.omniomics.json`, não do disco. Uma pasta de resultados perfeitamente boa é **invisível**
+sempre que o app não tem registro dela — saída produzida em outra máquina ou num cluster,
+arquivo de settings perdido/resetado, app reinstalado, ou uma tabela que alguém montou fora do
+OmniOmics. Os dados estão lá; o app é que não sabe.
+
+Solução: **Plots → Importar pasta**. Dois passos, varredura e confirmação, de propósito — a
+varredura é somente leitura e mostra quais entradas foram reconhecidas e quais análises elas
+destravam **antes** de commitar, então uma pasta sem nada útil custa uma mensagem em vez de uma
+entrada morta na lista de runs.
+
+`backend/plots_detect.py` é a detecção. A restrição de projeto que define cada sonda: ela tem
+que casar com **o que o loader realmente abre**, não com algo que pareça relacionado. Detectar
+uma forma que o loader depois não consegue construir é *pior* que não detectar nada — troca uma
+mensagem clara de "não há nada usável aqui" por um erro opaco de R vários passos adiante. Então
+todo padrão ali é o mesmo padrão do loader correspondente (o `find_input_file` para as formas
+de tabela, os `.discover_*` para as que varrem diretório), e todo arquivo que precisa ser
+não-vazio é conferido como tal.
+
+Custo: um único `os.walk`, e toda sonda respondida a partir dessa listagem — uma árvore de
+resultados real tem dezenas de milhares de arquivos e re-globar por forma deixaria a varredura
+visivelmente lenta.
+
+**Contrato de entrada genérico**, para quem gerou dados fora dos pipelines:
+`omniomics_abundance_table.tsv` (forma phyloseq) e `omniomics_count_matrix.tsv` (forma
+count_matrix). Ambos aceitos por todos os loaders da forma correspondente, e sempre **depois**
+do nome próprio do pipeline — uma run real que por acaso contenha um arquivo genérico continua
+usando a tabela dela. Documentado em `docs/plot_input_formats.md`, com os limites reais
+verificados contra o código (7 ou 8 ranks obrigatórios, prefixos `d__`/`k__` mantidos e não
+removidos, tamanhos mínimos de grupo por análise).
+
+Pasta "custom" não vira pseudo-pipeline: é registrada sob o pipeline cujas análises servem
+aquela forma (prism para tabela de comunidade, define para matriz de contagem). Assim tudo a
+jusante — `applies_to` do manifesto, `INPUT_SHAPE_INFO`, os loaders — funciona sem um caminho
+paralelo para dado importado.
+
+**Bug achado ao testar o fluxo completo**: o `/api/plots/load` acrescentava `"results"` ao
+`output_dir` incondicionalmente. Correto para run lançada aqui, errado para pasta importada que
+**é** o diretório de resultados, ou que é uma pasta rasa com uma tabela só. Passou a usar o
+`resolve_results_dir`.

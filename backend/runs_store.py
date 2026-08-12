@@ -53,6 +53,41 @@ def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: 
     return run
 
 
+def add_imported_run(pipeline_id: str, pipeline_name: str, output_dir: str,
+                     name: str | None = None, detected_by: str | None = None) -> dict:
+    """Records a results folder the app never produced itself, so it appears in
+    the Plots tab like any other finished run.
+
+    Distinct from add_run because none of what that records is true here: there
+    was no launch, no config, no core count, no start or end time this app can
+    claim. The record is created already `done` -- the work happened elsewhere,
+    which is the whole point -- and carries `imported: True` plus what the scan
+    matched on, so the origin of the entry stays visible later. `started_at` is
+    set to now purely so the run list's ordering (most recent first) has
+    something to sort by.
+    """
+    run = {
+        "id": uuid.uuid4().hex[:12],
+        "name": name or generate_run_name(),
+        "pipeline_id": pipeline_id,
+        "pipeline_name": pipeline_name,
+        "output_dir": output_dir,
+        "config_path": None,
+        "cores": None,
+        "started_at": time.time(),
+        "finished_at": time.time(),
+        "status": "done",
+        "exit_code": 0,
+        "imported": True,
+        "detected_by": detected_by,
+    }
+    settings = load_settings()
+    runs = settings.get("runs", [])
+    runs.insert(0, run)
+    save_settings({"runs": runs[:_MAX_RUNS]})
+    return run
+
+
 def update_run(run_id: str, **fields):
     settings = load_settings()
     runs = settings.get("runs", [])
