@@ -52,6 +52,60 @@ suppressMessages(library(DESeq2))
   )
 }
 
+#' Likelihood-ratio test against the intercept-only model.
+#'
+#' A genuinely different question from the Wald contrast run_deseq performs,
+#' not a variant of it. The Wald test asks "does level B differ from level A",
+#' and with three or more groups it answers about two of them while ignoring
+#' the rest. The LRT compares the full model (~ group) against ~ 1 and asks
+#' "does this feature respond to the grouping variable AT ALL", which is the
+#' question a gradient design (control / moderate / polluted) is actually
+#' built to answer -- see Love, Huber & Anders 2014 (Genome Biol 15:550) and
+#' DESeq2's own vignette section on likelihood ratio tests.
+#'
+#' Deliberately a separate function rather than a flag on run_deseq: what
+#' comes out is not comparable. results() after an LRT still carries a
+#' log2FoldChange column, but it belongs to one arbitrary coefficient of the
+#' full model, NOT to the effect the test measured. Anything that filters or
+#' plots on that column is silently reporting something other than what it
+#' claims, which is why the LRT gets its own analysis and its own figure
+#' instead of a toggle on the Wald one.
+#' Takes an already-built DESeqDataSet rather than raw counts: the caller is
+#' better placed to build it (phyloseq analyses go through
+#' phyloseq_to_deseq2, which handles the otu_table/sample_data conversion and
+#' its orientation; count-matrix analyses build theirs directly), and
+#' duplicating that here just reintroduces the conversion bugs those helpers
+#' exist to avoid.
+run_deseq_lrt <- function(dds, group_var, reduced = ~ 1) {
+  n_levels <- nlevels(factor(colData(dds)[[group_var]]))
+  if (n_levels < 2) {
+    stop(sprintf("'%s' has only %d level -- there is nothing to test.", group_var, n_levels))
+  }
+  # The LRT earns its keep from THREE levels up; with exactly two it is
+  # asymptotically the same test as the Wald contrast, and the pairwise
+  # analysis additionally reports the effect size. Said plainly rather than
+  # silently producing a redundant figure.
+  if (n_levels == 2) {
+    log_line(paste0("[deseq_helpers] '%s' has only 2 levels -- the LRT here answers the same question ",
+                    "as the pairwise test, which also gives you the fold change. Consider that instead."),
+             group_var)
+  }
+
+  dds <- dds[rowSums(counts(dds)) > 0, ]
+  dds <- .size_factors(dds)
+  tryCatch(
+    DESeq(dds, test = "LRT", reduced = reduced, quiet = TRUE),
+    error = function(e) {
+      log_line("[deseq_helpers] parametric dispersion fit failed under LRT (%s) -- falling back to gene-wise estimates.",
+               conditionMessage(e))
+      dds <- .size_factors(dds)
+      dds <- estimateDispersionsGeneEst(dds)
+      dispersions(dds) <- mcols(dds)$dispGeneEst
+      nbinomLRT(dds, reduced = reduced, quiet = TRUE)
+    }
+  )
+}
+
 run_deseq <- function(count_data, group_var, reference_group = NULL) {
   coldata <- count_data$coldata
   if (!(group_var %in% colnames(coldata))) {
