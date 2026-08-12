@@ -9,3 +9,9 @@ app/.dart_tool/
 # Stray default graphics device output, written whenever an R script
 # opens a plot device without a filename while cwd is the repo root.
 Rplots.pdf
+TRANSFER_NOTES.txt
+free.csv
+
+# Currículo com dados pessoais -- fica local, nunca no repositório
+Currículo Lattes.pdf
+*.lattes.pdf
