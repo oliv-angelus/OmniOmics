@@ -75,12 +75,28 @@ const _pt = <String, String>{
   'plots_mag_sequence_protein': 'Sequência de proteína (AMRFinderPlus, via Prodigal)',
   'plots_mag_sequence_nucleotide': 'Sequência de nucleotídeos (VFDB, via abricate)',
   'about_title': 'Sobre',
+  'about_version_label': 'Versão',
+  'about_alpha_note': 'Versão alpha. Os pipelines e a aba de plotagem rodam de ponta a ponta e são testados por uma suíte automatizada, mas o app ainda não teve uso prolongado com dados reais além do autor. Leia as limitações conhecidas no repositório antes de depender dos resultados.',
+
+  'about_what': 'O que é o OmniOmics',
+  'about_what_body': 'Um ambiente de desktop que reúne cinco fluxos de trabalho Snakemake -- metagenômica, metatranscriptômica, genômica de isolados, expressão diferencial e sequenciamento de amplicon -- atrás de uma interface gráfica, com um ambiente de plotagem que transforma a saída de cada um em figuras prontas para publicação.\n\nEle existe porque a análise que um laboratório precisa raramente é uma ferramenta: são vinte, cada uma com sua instalação, suas versões e seu jeito de quebrar. O OmniOmics faz essa montagem uma vez, de forma declarativa, e mantém tudo reprodutível.',
+
   'about_author': 'Autor',
-  'about_author_placeholder': 'Nome, formação e linha de pesquisa vão aqui.',
-  'about_lab': 'Laboratório',
-  'about_lab_placeholder': 'Nome do laboratório, instituição e link do site vão aqui.',
-  'about_publications': 'Publicações que usam o OmniOmics',
-  'about_publications_placeholder': 'Lista de artigos/citações que usaram este app vai aqui.',
+  'about_author_name': 'Angelo Felipe Barbosa de Oliveira',
+  'about_author_role': 'Doutorando em Bioinformática\nPrograma de Pós-Graduação em Genética e Biologia Molecular\nUniversidade Federal do Pará (UFPA) -- Belém, Pará, Brasil\nLaboratório de Engenharia Biológica',
+  'about_author_research': 'Linha de pesquisa: análises multiômicas aplicadas à genética microbiana ambiental, com foco em DNA e RNA ambiental em plataformas Illumina e Nanopore.',
+
+  'about_cite': 'Como citar',
+  'about_cite_body': 'Se o OmniOmics contribuiu para um trabalho publicado, cite o app usando o arquivo CITATION.cff do repositório.\n\nCite também as ferramentas que você de fato usou: o OmniOmics apenas as orquestra, a ciência é delas. O arquivo docs/CITATIONS.md lista todas, com a versão fixada e a referência, organizadas por pipeline -- a seção de métodos pode ser montada direto de lá.',
+
+  'about_license': 'Licença',
+  'about_license_body': 'OmniOmics é distribuído sob a licença MIT.\n\nA licença cobre o OmniOmics em si: a interface, os fluxos de trabalho e os scripts de análise. Ela NÃO cobre as ferramentas de bioinformática orquestradas, que permanecem sob suas próprias licenças -- várias mais restritivas -- nem os bancos de dados, que têm seus próprios termos de uso.',
+
+  'about_tools': 'Ferramentas de terceiros',
+  'about_tools_body': 'Cada ferramenta é instalada em seu próprio ambiente conda, com versão fixada. A lista completa, com versões e referências, está em docs/CITATIONS.md no repositório.',
+
+  'confirm': 'Confirmar',
+  'about_copied': 'Copiado para a área de transferência',
 
   'install': 'Instalar',
   'cancel': 'Cancelar',
@@ -403,12 +419,28 @@ const _en = <String, String>{
   'plots_mag_sequence_protein': 'Protein sequence (AMRFinderPlus, via Prodigal)',
   'plots_mag_sequence_nucleotide': 'Nucleotide sequence (VFDB, via abricate)',
   'about_title': 'About',
+  'about_version_label': 'Version',
+  'about_alpha_note': 'Alpha release. The pipelines and the plotting environment run end to end and are covered by an automated test suite, but the application has not yet seen sustained use on real data by anyone other than the author. Read the known limitations in the repository before relying on any result.',
+
+  'about_what': 'What OmniOmics is',
+  'about_what_body': 'A desktop environment that packages five Snakemake workflows -- metagenomics, metatranscriptomics, isolate genomics, differential expression and amplicon sequencing -- behind a graphical interface, with a plotting environment that turns each one\'s output into publication-ready figures.\n\nIt exists because the analysis a lab needs is rarely one tool: it is twenty, each with its own installation, its own version pins and its own way of breaking. OmniOmics does that assembly once, declaratively, and keeps it reproducible.',
+
   'about_author': 'Author',
-  'about_author_placeholder': 'Name, background and research area go here.',
-  'about_lab': 'Lab',
-  'about_lab_placeholder': 'Lab name, institution and website link go here.',
-  'about_publications': 'Publications using OmniOmics',
-  'about_publications_placeholder': 'List of papers/citations that used this app goes here.',
+  'about_author_name': 'Angelo Felipe Barbosa de Oliveira',
+  'about_author_role': 'Doctoral student in Bioinformatics\nGraduate Program in Genetics and Molecular Biology\nUniversidade Federal do Pará (UFPA) -- Belém, Pará, Brazil\nLaboratório de Engenharia Biológica',
+  'about_author_research': 'Research area: multi-omics analysis applied to environmental microbial genetics, focused on environmental DNA and RNA across Illumina and Nanopore platforms.',
+
+  'about_cite': 'How to cite',
+  'about_cite_body': 'If OmniOmics contributed to published work, cite the application using the repository\'s CITATION.cff file.\n\nPlease also cite the tools you actually used: OmniOmics only orchestrates them, the science is theirs. docs/CITATIONS.md lists every one with its pinned version and reference, organised by pipeline, so a methods section can be assembled directly from it.',
+
+  'about_license': 'Licence',
+  'about_license_body': 'OmniOmics is distributed under the MIT licence.\n\nThe licence covers OmniOmics itself: the interface, the workflows and the analysis scripts. It does NOT cover the bioinformatics tools it orchestrates, which remain under their own licences -- several more restrictive -- nor the reference databases, which carry their own terms of use.',
+
+  'about_tools': 'Third-party tools',
+  'about_tools_body': 'Each tool is installed into its own conda environment at a pinned version. The full list, with versions and references, is in docs/CITATIONS.md in the repository.',
+
+  'confirm': 'Confirm',
+  'about_copied': 'Copied to clipboard',
 
   'install': 'Install',
   'cancel': 'Cancel',

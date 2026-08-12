@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$(realpath "$0")")"
 
-VERSION="0.1.0"
+VERSION="0.0.1"
 PKG_NAME="omniomics"
 BIN_NAME="omniomics"
 
@@ -81,6 +81,14 @@ cp -r "$BUNDLE_DIR"/. "$INSTALL_DIR/"
 mkdir -p "$INSTALL_DIR/backend"
 cp backend/dist/server "$INSTALL_DIR/backend/server"
 cp -r pipelines "$INSTALL_DIR/pipelines"
+# plots/ is NOT optional: plots_engine resolves PLOTS_DIR as <binary>/../plots,
+# so without it the whole Plots tab fails at run time in the packaged build
+# while working perfectly in development. It holds the analysis manifest, the R
+# scripts and the r-plots conda spec.
+cp -r plots "$INSTALL_DIR/plots"
+# Shipped so the licence travels with the binary, which the MIT terms require.
+cp LICENSE "$INSTALL_DIR/LICENSE"
+cp README.md "$INSTALL_DIR/README.md"
 
 ln -sf "/opt/$PKG_NAME/$BIN_NAME" "$STAGE/usr/bin/$BIN_NAME"
 cp build/app_icon.png "$STAGE/usr/share/pixmaps/$PKG_NAME.png"
@@ -106,10 +114,15 @@ Architecture: amd64
 Installed-Size: $INSTALLED_SIZE
 Recommends: conda | miniforge3
 Maintainer: OmniOmics <sch.felipe.01@gmail.com>
-Description: Visual interface for multi-omics bioinformatics pipelines
- OmniOmics is a desktop hub for Snakemake bioinformatics pipelines:
- MAGMA (metagenomics), SIGMA (isolate genomics), and DOGMA
- (metatranscriptomics), with more planned.
+Description: Integrated desktop environment for multi-omics analysis
+ OmniOmics packages five Snakemake workflows behind a graphical interface,
+ with an integrated plotting environment that turns each workflow's output
+ into publication-ready figures: MAGMA (metagenomics), SIGMA (isolate
+ genomics), DOGMA (metatranscriptomics), DEFINE (differential expression)
+ and PRISM (amplicon sequencing).
+ .
+ Alpha release: run end to end and covered by an automated test suite, but
+ not yet in sustained use on real data beyond the author.
 EOF
 
 # ─── 4. Gerar .deb ─────────────────────────────────────────────────────────

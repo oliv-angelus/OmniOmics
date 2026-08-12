@@ -15,3 +15,6 @@ free.csv
 # Currículo com dados pessoais -- fica local, nunca no repositório
 Currículo Lattes.pdf
 *.lattes.pdf
+
+# Pacotes gerados pelo build -- vão para a Release, não para o repositório
+dist/
