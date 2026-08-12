@@ -76,6 +76,17 @@ mat_z <- t(scale(t(mat)))
 gene_info <- count_data$gene_info
 gene_labels <- ifelse(is.na(gene_info[sig_genes, "Gene"]) | gene_info[sig_genes, "Gene"] == "-",
                        sig_genes, gene_info[sig_genes, "Gene"])
+
+# The Gene column is NOT unique, and a repeat among the selected genes used to
+# crash outright ("factor level [n] is duplicated") once it reached the
+# factor(levels = row_order) call below. Real annotations repeat gene names
+# routinely -- paralogs, multi-copy transposases, subunits sharing a name --
+# so the heatmap has to survive it rather than assume uniqueness. A repeated
+# name is disambiguated by its own locus_tag, which is unique by construction
+# (it is the count table's key); a name that occurs once is left clean.
+dup_names <- gene_labels[duplicated(gene_labels)]
+needs_locus <- gene_labels %in% dup_names
+gene_labels[needs_locus] <- paste0(gene_labels[needs_locus], " (", sig_genes[needs_locus], ")")
 rownames(mat_z) <- gene_labels
 
 # Hierarchical clustering on both axes -- genes with similar patterns group

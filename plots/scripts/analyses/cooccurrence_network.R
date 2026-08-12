@@ -136,7 +136,7 @@ build_group_network <- function(group) {
     )
 
   title <- paste0(group, "  |  Top ", top_n_taxa, " ", rank, ", rho > ", cor_cutoff, ", p < ", p_cutoff)
-  list(plot = with_title_bar(p, title, size = 5, title_height = 0.12, font_family = font_family),
+  list(plot = with_title_bar(p, title, size = 5, title_height = 0.12, font_family = font_family, plot_width_in = 9),
        edges = edge_table, nodes = node_table, group = group, palette = colors_phylum)
 }
 

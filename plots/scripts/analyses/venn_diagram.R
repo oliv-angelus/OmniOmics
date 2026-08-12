@@ -110,7 +110,7 @@ p <- ggVennDiagram(present_sets, label = "count", set_color = unname(palette), l
         plot.background = element_rect(fill = bg, color = NA))
 
 title <- paste0("Shared/Unique Taxa (", rank, ", > ", min_abundance * 100, "% mean rel. abundance): ", group_var)
-final_plot <- with_title_bar(p, title, size = 7, title_height = 0.1, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 7, title_height = 0.1, font_family = font_family, plot_width_in = 11)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 11, height = 9, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = 11, height = 9),

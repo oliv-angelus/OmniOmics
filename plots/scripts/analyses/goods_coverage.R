@@ -55,7 +55,7 @@ p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
-final_plot <- with_title_bar(p, "Good's Coverage", size = 8, title_height = 0.1, font_family = font_family)
+final_plot <- with_title_bar(p, "Good's Coverage", size = 8, title_height = 0.1, font_family = font_family, plot_width_in = 12)
 height <- max(4, nrow(dados_cov) * 0.35)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)

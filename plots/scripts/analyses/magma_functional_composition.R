@@ -119,9 +119,9 @@ p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 level_label <- if (level == "mag") "per MAG" else "per sample"
 # size 6, not 8: adding the level to the title made it long enough to be
 # clipped at the figure's own width for the longer column names.
-final_plot <- with_title_bar(p, paste0("Functional Composition: ", annotation_col, " (eggNOG, ", level_label, ")"),
-                             size = 6, title_height = 0.08, font_family = font_family)
 plot_width <- max(11, length(unique(df_agg$unit)) * 0.4)
+final_plot <- with_title_bar(p, paste0("Functional Composition: ", annotation_col, " (eggNOG, ", level_label, ")"),
+                             size = 6, title_height = 0.08, font_family = font_family, plot_width_in = plot_width)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 8, units = "in", dpi = 120, bg = "white", limitsize = FALSE)
 saveRDS(list(plot = final_plot, width = plot_width, height = 8),

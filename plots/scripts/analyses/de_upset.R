@@ -136,7 +136,8 @@ build_upset_panel <- function(sets, direction_label) {
                  # band came out narrower than the figure by exactly one plot margin.
                  panel.background = element_rect(fill = bg, colour = NA))
   with_title_bar(patchwork::wrap_elements(full = p), paste0(direction_label, "-regulated (padj < ", alpha, ", |log2FC| > ", min_lfc, ")"),
-                 size = 6, title_height = 0.1, font_family = font_family)
+                 size = 6, title_height = 0.1, font_family = font_family,
+                 plot_width_in = max(9, length(comparison_levels) * 2.5))
 }
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)

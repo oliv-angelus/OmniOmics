@@ -156,7 +156,7 @@ p <- ggplot(enrich_df, aes(x = GeneRatioNum, y = Label, size = Count, color = p.
 
 title <- paste0("Functional Enrichment (", term_source, "): ", test_group, " vs ", reference_group,
                  "\n", length(sig_genes), " DE genes tested against ", nrow(term2gene %>% distinct(gene)), " annotated genes")
-final_plot <- with_title_bar(p, title, size = 6, title_height = 0.14, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 6, title_height = 0.14, font_family = font_family, plot_width_in = 12)
 height <- max(6, nrow(enrich_df) * 0.35)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = height, units = "in", dpi = 150, bg = "white", limitsize = FALSE)

@@ -159,7 +159,7 @@ if (nrow(plot_df) > 0) {
     theme(legend.position = "right")
   title <- if (length(selected) == 1) sprintf("MAG Summary: %s", selected) else
     sprintf("MAG Summary (%d MAGs)", length(selected))
-  final_plot <- with_title_bar(p, title, size = 10, font_family = font_family)
+  final_plot <- with_title_bar(p, title, size = 10, font_family = font_family, plot_width_in = 9)
 } else {
   # No MAG in the selection has both CheckM2 numbers -- draws a plain
   # placeholder rather than crashing ggplot on an empty aesthetic mapping;

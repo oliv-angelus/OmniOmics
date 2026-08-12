@@ -118,7 +118,7 @@ plot_metric <- function(metric, title_text) {
       legend.position = "none"
     )
   p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
-  list(plot = with_title_bar(p, title, size = 6, title_height = 0.15, font_family = font_family), p_value = p_value)
+  list(plot = with_title_bar(p, title, size = 6, title_height = 0.15, font_family = font_family), p_value = p_value, plot_width_in = 16)
 }
 
 panels <- lapply(names(metrics), function(m) plot_metric(m, metrics[[m]]))

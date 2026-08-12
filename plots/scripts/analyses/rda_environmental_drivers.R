@@ -194,7 +194,7 @@ p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 title <- paste0("Redundancy Analysis (RDA): Key Environmental Drivers\n",
                  "Model ", format_p_value(p_model), " | Adjusted R² = ", round(r2_adj, 3))
-final_plot <- with_title_bar(p, title, size = 6, title_height = 0.14, font_family = font_family)
+final_plot <- with_title_bar(p, title, size = 6, title_height = 0.14, font_family = font_family, plot_width_in = 12)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = 12, height = 10, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = 12, height = 10),
