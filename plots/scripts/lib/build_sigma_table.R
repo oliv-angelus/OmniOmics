@@ -223,6 +223,11 @@ build_sigma_table <- function(results_dir) {
     # resistance gene is on a plasmid. See .read_mobsuite_contigs below for
     # why it must be cut at the first space before joining.
     contig = as.character(df[["Contig id"]]),
+    # Coordinates, for placing the hit on the genome ring. AMRFinder's columns
+    # are "Start"/"Stop"; ABRicate's are "START"/"END" (both 1-based, and both
+    # report START < END regardless of strand).
+    start = suppressWarnings(as.numeric(df[["Start"]])),
+    end = suppressWarnings(as.numeric(df[["Stop"]])),
     gene = df[["Element symbol"]], product = df[["Element name"]],
     class = df[["Class"]], subclass = df[["Subclass"]],
     pct_identity = suppressWarnings(as.numeric(df[["% Identity to reference"]])),
@@ -243,6 +248,8 @@ build_sigma_table <- function(results_dir) {
   data.frame(
     sample = sample, source = paste0("abricate_", db_label),
     contig = as.character(df[["SEQUENCE"]]),
+    start = suppressWarnings(as.numeric(df[["START"]])),
+    end = suppressWarnings(as.numeric(df[["END"]])),
     gene = df[["GENE"]], product = df[["PRODUCT"]],
     class = df[["RESISTANCE"]], subclass = NA_character_,
     pct_identity = suppressWarnings(as.numeric(df[["%IDENTITY"]])),
@@ -268,7 +275,7 @@ build_sigma_gene_hits <- function(results_dir) {
   parts <- Filter(Negate(is.null), parts)
   if (length(parts) == 0) {
     return(data.frame(sample = character(0), source = character(0), contig = character(0),
-                       gene = character(0),
+                       start = numeric(0), end = numeric(0), gene = character(0),
                        product = character(0), class = character(0), subclass = character(0),
                        pct_identity = numeric(0), pct_coverage = numeric(0), stringsAsFactors = FALSE))
   }
@@ -408,6 +415,10 @@ CHECKV_QUALITY_LEVELS <- c("Complete", "High-quality", "Medium-quality", "Low-qu
     contig = .first_token(df$seqID),
     is_family = as.character(df$family),
     is_cluster = as.character(df[["cluster"]] %||% NA),
+    # Coordinates as well as length: the genome ring places each insertion
+    # sequence at its real position, which a length alone cannot give.
+    is_begin = suppressWarnings(as.numeric(df[["isBegin"]] %||% NA)),
+    is_end = suppressWarnings(as.numeric(df[["isEnd"]] %||% NA)),
     is_length = suppressWarnings(as.numeric(df[["isLen"]] %||% NA)),
     stringsAsFactors = FALSE
   )

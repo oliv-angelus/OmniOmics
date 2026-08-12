@@ -1585,6 +1585,105 @@ analyses:
           en: "Write each genome's name next to its point"
           pt: "Escrever o nome de cada genoma ao lado do ponto"
 
+  - id: sigma_genome_ring
+    name:
+      en: "Genome Ring (circular map)"
+      pt: "Anel Genômico (mapa circular)"
+    description:
+      en: "The circular map of one genome, in the layout circular genome viewers converged on: coordinate ruler outermost, coding sequences split by strand, then the sparse features worth spotting (RNA, CRISPR, AMR, BGC, prophage, insertion sequences), with GC content and GC skew innermost. Every track is a toggle -- turn one off and press Reanalisar. A draft assembly is drawn as one arc per contig rather than a single closed circle, because a fragmented assembly has no single circle and drawing one would invent adjacencies the data does not support."
+      pt: "O mapa circular de um genoma, no layout em que os visualizadores de genoma circular convergiram: régua de coordenadas mais externa, sequências codificantes separadas por fita, depois as features esparsas que valem ser localizadas (RNA, CRISPR, AMR, BGC, profago, sequências de inserção), e GC e GC skew mais internos. Cada trilha é um botão -- desligue e aperte Reanalisar. Uma montagem rascunho é desenhada como um arco por contig, não um círculo fechado, porque uma montagem fragmentada não tem um círculo só e desenhá-lo inventaria adjacências que o dado não sustenta."
+    applies_to: [sigma]
+    input_shape: sigma_genomes
+    script: analyses/sigma_genome_ring.R
+    parameters:
+      - flag: "--genome"
+        type: sample
+        enabled: true
+        description:
+          en: "Which genome to draw -- the ring shows one at a time"
+          pt: "Qual genoma desenhar -- o anel mostra um por vez"
+      - flag: "--show_cds"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "Coding sequences, one ring per strand"
+          pt: "Sequências codificantes, um anel por fita"
+      - flag: "--show_rna"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "rRNA, tRNA and other non-coding RNA"
+          pt: "rRNA, tRNA e outros RNAs não codificantes"
+      - flag: "--show_crispr"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "CRISPR arrays"
+          pt: "Arranjos CRISPR"
+      - flag: "--show_amr"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "AMR and virulence gene hits"
+          pt: "Hits de genes de AMR e virulência"
+      - flag: "--show_bgc"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "Biosynthetic gene clusters (antiSMASH regions)"
+          pt: "Clusters biossintéticos (regiões do antiSMASH)"
+      - flag: "--show_prophage"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "Prophage regions predicted by geNomad"
+          pt: "Regiões de profago previstas pelo geNomad"
+      - flag: "--show_is"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "Insertion sequences (ISEScan)"
+          pt: "Sequências de inserção (ISEScan)"
+      - flag: "--show_gc"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "GC content along the genome"
+          pt: "Conteúdo GC ao longo do genoma"
+      - flag: "--show_gc_skew"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "GC skew. In a complete chromosome it changes sign at the replication origin and terminus, so the two become visible; a fragmented assembly will not show it cleanly, which is itself informative."
+          pt: "GC skew. Num cromossomo completo ele troca de sinal na origem e no término da replicação, tornando os dois visíveis; uma montagem fragmentada não mostra isso com clareza, o que já é informativo."
+      - flag: "--min_contig_length"
+        type: int
+        default: 5000
+        enabled: true
+        min: 0
+        max: 1000000
+        description:
+          en: "Skip contigs shorter than this. Below a few kb a sector is too thin to carry any mark, and dozens of them turn the ring into a dashed line."
+          pt: "Pular contigs menores que isto. Abaixo de alguns kb o setor fica fino demais para carregar qualquer marca, e dezenas deles transformam o anel numa linha tracejada."
+      - flag: "--max_contigs"
+        type: int
+        default: 20
+        enabled: true
+        min: 1
+        max: 200
+        description:
+          en: "Draw at most this many contigs, largest first"
+          pt: "Desenhar no máximo esta quantidade de contigs, do maior para o menor"
+
   - id: sigma_mobilome
     name:
       en: "Mobilome & BGCs (plasmids, prophages, IS, clusters)"

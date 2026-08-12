@@ -361,11 +361,124 @@ def main():
                             "TIRseq1:TIRseq2"])
         w(os.path.join(res, "08_ANNOTATION", sample, "isescan", f"{sample}.fa.tsv"), tsv(is_rows))
 
+        # --- Polished assembly FASTA: the ring's backbone ------------------
+        # Real contig lengths matter here: the ring lays contigs out by length,
+        # and deriving them from annotation coordinates would shorten each one
+        # by whatever unannotated tail it has. Sequence is generated with a
+        # per-genome GC target so the GC track has real structure, and with a
+        # skew that flips sign at the midpoint of contig 1, which is what a
+        # real chromosome does at the replication origin/terminus.
+        contig_lengths = []
+        fa_parts = []
+        remaining = size
+        for j in range(1, 6):
+            clen = remaining if j == 5 else int(size * [0.55, 0.2, 0.12, 0.08, 0.05][j - 1])
+            remaining -= clen
+            clen = max(clen, 20000)
+            contig_lengths.append(clen)
+            gc_frac = gc / 100.0
+            half = clen // 2
+            seq = []
+            for pos in range(clen):
+                # Leading half G-rich, trailing half C-rich: a real GC skew
+                # inversion, so the skew track is not flat noise.
+                skew = 0.12 if pos < half else -0.12
+                r = random.random()
+                if r < gc_frac:
+                    seq.append("G" if random.random() < 0.5 + skew else "C")
+                else:
+                    seq.append("A" if random.random() < 0.5 else "T")
+            fa_parts.append(f">{sample}_contig{j} len={clen}\n" +
+                            "\n".join("".join(seq[k:k + 70]) for k in range(0, clen, 70)) + "\n")
+        w(os.path.join(res, "03_POLISH", sample, "final_polished.fa"), "".join(fa_parts))
+
+        # --- Bakta {prefix}.tsv --------------------------------------------
+        # Real shape from bakta/io/tsv.py:25-30: five "# " banner lines, then a
+        # header row starting with a single "#". Type values are
+        # case-sensitive and inconsistent on purpose (bakta/constants.py:
+        # 104-121) -- "cds"/"crispr" lower, "tRNA"/"rRNA" camel.
+        bakta_lines = [
+            "# Annotated with Bakta",
+            "# Software: v1.9.4",
+            "# Database: v5.1, full",
+            "# DOI: 10.1099/mgen.0.000685",
+            "# URL: github.com/oschwengers/bakta",
+            "#Sequence Id\tType\tStart\tStop\tStrand\tLocus Tag\tGene\tProduct\tDbXrefs",
+        ]
+        locus_n = 0
+        for j, clen in enumerate(contig_lengths, start=1):
+            cid = f"{sample}_contig{j}"
+            pos = 200
+            while pos < clen - 2000:
+                glen = random.randint(300, 2400)
+                locus_n += 1
+                # One rRNA operon and a few tRNAs per contig, plus a CRISPR
+                # array on the first contig only -- the realistic distribution.
+                r = random.random()
+                if r < 0.012:
+                    ftype, gene = "tRNA", f"tRNA-{random.choice(['Ala','Gly','Leu','Ser','Met'])}"
+                    product, glen = gene, random.randint(70, 95)
+                elif r < 0.02:
+                    sub = random.choice(["5S", "16S", "23S"])
+                    ftype, gene = "rRNA", f"rrn{sub}"
+                    product = f"{sub} ribosomal RNA"
+                    glen = {"5S": 120, "16S": 1550, "23S": 2900}[sub]
+                elif r < 0.023 and j == 1:
+                    ftype, gene, product = "crispr", "", "CRISPR array"
+                    glen = random.randint(400, 3000)
+                else:
+                    ftype, gene = "cds", f"gene{locus_n:04d}"
+                    product = random.choice(["hypothetical protein", "ABC transporter permease",
+                                             "DNA-binding response regulator", "aminotransferase",
+                                             "TonB-dependent receptor", "acetyltransferase"])
+                bakta_lines.append("\t".join(str(v) for v in [
+                    cid, ftype, pos, pos + glen, random.choice(["+", "-"]),
+                    f"{sample.upper()}_{locus_n:05d}", gene, product, ""]))
+                pos += glen + random.randint(30, 220)
+        w(os.path.join(res, "08_ANNOTATION", sample, "bakta", f"{sample}.tsv"),
+          "\n".join(bakta_lines) + "\n")
+
+        # --- antiSMASH region GenBanks: only the header block is read -------
+        # (helpers.py:71-72 writes Orig. start / Orig. end into the
+        # antiSMASH-Data structured comment; the ring reads just those two.)
+        n_regions = {"Streptomyces": 25}.get(genus, random.randint(1, 9))
+        for j in range(1, n_regions + 1):
+            cidx = (j % 5) + 1
+            r_start = random.randint(1000, max(2000, contig_lengths[cidx - 1] - 60000))
+            r_end = r_start + random.randint(15000, 55000)
+            w(os.path.join(res, "11_BGC", sample, "antismash",
+                           f"{sample}_contig{cidx}.region{j:03d}.gbk"),
+              "LOCUS       %s_contig%d %d bp    DNA     linear UNK\n"
+              "DEFINITION  synthetic region.\n"
+              "COMMENT     ##antiSMASH-Data-START##\n"
+              "            Version      :: 7.1.0\n"
+              "            NOTE         :: This is a single region extracted from a larger record!\n"
+              "            Orig. start  :: %d\n"
+              "            Orig. end    :: %d\n"
+              "            ##antiSMASH-Data-END##\n"
+              "ORIGIN\n//\n" % (sample, cidx, r_end - r_start, r_start, r_end))
+
+        # --- geNomad virus summary: the prophage coordinates ---------------
+        # Header from genomad/modules/summary.py:670.
+        gen_rows = [["seq_name", "length", "topology", "coordinates", "n_genes", "genetic_code",
+                     "virus_score", "fdr", "n_hallmarks", "marker_enrichment", "taxonomy"]]
+        for j in range(random.randint(0, 3)):
+            cidx = (j % 5) + 1
+            p_start = random.randint(2000, max(3000, contig_lengths[cidx - 1] - 60000))
+            p_end = p_start + random.randint(18000, 52000)
+            gen_rows.append([f"{sample}_contig{cidx}|provirus_{p_start}_{p_end}", p_end - p_start,
+                             "Provirus", f"{p_start}..{p_end}", random.randint(20, 70), 11,
+                             round(random.uniform(0.8, 0.99), 4), round(random.uniform(0, 0.05), 4),
+                             random.randint(1, 8), round(random.uniform(1, 6), 3),
+                             "Viruses;Duplodnaviria;Heunggongvirae;Uroviricota"])
+        w(os.path.join(res, "10_VIRAL", sample, "genomad", "summary",
+                       f"{sample}_virus_summary.tsv"), tsv(gen_rows))
+
         # --- BiG-SCAPE 2.x: record_annotations.tsv + clustering ------------
         # Real layout and headers from big_scape/output/legacy_output.py
         # (183, 352, 382-394, 457, 490-495). SIGMA runs BiG-SCAPE once per
         # sample, so the genome is the directory, not a column.
-        n_bgc = {"Streptomyces": 25}.get(genus, random.randint(1, 9))
+        n_bgc = n_regions
         bs_dir = os.path.join(res, "11_BGC", sample, "bigscape", "output_files", "run_c0.30")
         classes = ["NRPS", "PKS", "PKSother", "Terpene", "RiPP", "Saccharide", "Others"]
         ann_rows = [["Record", "GBK", "Record_Type", "Record_Number", "Class",

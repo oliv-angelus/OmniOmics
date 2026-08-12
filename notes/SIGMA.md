@@ -100,3 +100,43 @@ SIGMA engana quem ler depois.
 
 SIGMA: 30 combinações passando. As 2 falhas são métricas só do NanoPlot numa fixture só de
 leitura curta.
+
+## Anel genômico (2026-08-12)
+
+`sigma_genome_ring`: o mapa circular de um genoma, no layout em que Proksee/CGView (Grant et al.
+2023, Nucleic Acids Res 51:W484) e GenoVi (Cumsille et al. 2023, doi:10.1371/journal.pcbi.1010998)
+convergiram — régua mais externa, CDS separadas por fita, depois as features esparsas, e GC e GC
+skew mais internos. As esparsas ficam **fora** das de GC porque um punhado de marcas finas é
+ilegível espremido no menor raio.
+
+Cada trilha é um parâmetro booleano: desligar e apertar Reanalisar redesenha. Foi a escolha do
+usuário entre isso e um canvas interativo, e é o que cabe no modelo "computa e renderiza" da aba.
+
+**Decisões que a figura obrigou:**
+
+- **Contigs vêm do FASTA polido, não de coordenada de anotação.** Derivar o comprimento do maior
+  Stop anotado encurtaria cada contig pela cauda não anotada e deslocaria tudo perto da origem.
+- **Marca mínima nas trilhas esparsas.** Um gene de AMR de 900 pb num contig de 3 Mb ocupa 0,03%
+  do arco — sub-pixel em qualquer tamanho de figura de artigo. As marcas esparsas têm largura
+  mínima, então **a largura da marca não é o comprimento da feature** nessas trilhas. O Proksee
+  faz o mesmo. A trilha densa de CDS fica em escala real, porque lá a textura da banda é a
+  informação.
+- **Montagem rascunho vira um arco por contig, não um círculo fechado.** Uma montagem fragmentada
+  não tem um círculo só, e desenhar um inventaria adjacências que o dado não sustenta.
+- **Coordenadas de BGC saem do `.gbk` de região do antiSMASH**, do comentário estruturado
+  `Orig. start`/`Orig. end` (`helpers.py:71-72`) — o antiSMASH não escreve tabela nenhuma, e ler
+  duas linhas do cabeçalho é muito mais barato e menos frágil que parsear GenBank. A classe já
+  vem do BiG-SCAPE.
+- **Profago vem do geNomad, não do CheckV**: o CheckV não tem coluna de coordenada; o geNomad tem
+  (`coordinates`, `summary.py:670`).
+
+**Exportação**: o circlize desenha direto no device, então não existe objeto ggplot para o
+`render_final.R` reprocessar. Em vez de deixar o anel inexportável, ele desenha **duas vezes**
+da mesma função — preview e TIFF 600 dpi — para as duas nunca divergirem, e o exportador
+reconhece o arquivo já pronto em vez de reportar falha.
+
+**Bug de escopo achado ao testar**: sobrou um `drawn <- character(0)` dentro da função de
+desenho, criando uma variável local vazia — cada `<<-` então lia a local e gravava só o último
+elemento na global, e a legenda saía com uma trilha só.
+
+SIGMA: 7 análises. `circlize` entrou no `plots/r_env/plots.yaml`.
