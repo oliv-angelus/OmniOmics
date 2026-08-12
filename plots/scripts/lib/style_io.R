@@ -19,7 +19,7 @@ suppressMessages(library(jsonlite))
 #' Builds the default style from a categorical grouping vector, in the same
 #' Dark2 palette every analysis in microbiome.R already uses (see
 #' plot_theme.R's dark2_palette). background/font_family are always included
-#' (even though every analysis' own default is already "gray90"/"serif") so
+#' (even though every analysis' own default is already "white"/"serif") so
 #' the Flutter "Personalizar" panel always has a complete, consistent shape
 #' to seed its editable state from, regardless of which analysis produced it.
 #'
@@ -34,13 +34,17 @@ suppressMessages(library(jsonlite))
 #' reverting to the original Dark2 defaults instead of what was actually
 #' just applied.
 default_style_for_groups <- function(groups, legend_position = "right", show_labels = FALSE,
-                                      background = "gray90", font_family = "serif", palette = NULL) {
+                                      background = "white", font_family = "serif", palette = NULL) {
   list(
     palette = as.list(palette %||% dark2_palette(groups)),
     legend_position = legend_position,
     show_labels = show_labels,
     background = background,
-    font_family = font_family
+    font_family = font_family,
+    # Seeds the Personalizar panel's own toggles with the same defaults
+    # base_theme applies when a style has neither key (see plot_theme.R).
+    show_grid = TRUE,
+    show_panel_border = FALSE
   )
 }
 

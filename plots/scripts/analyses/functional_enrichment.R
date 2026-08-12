@@ -64,7 +64,7 @@ min_lfc <- as.numeric(args$min_lfc)
 term_source <- args$term_source
 p_cutoff <- as.numeric(args$p_cutoff)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 
@@ -151,7 +151,7 @@ p <- ggplot(enrich_df, aes(x = GeneRatioNum, y = Label, size = Count, color = p.
   scale_color_distiller(palette = "Spectral", name = "padj") +
   scale_size_continuous(range = c(3, 10), name = "Gene count") +
   labs(x = "Gene ratio", y = NULL) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "right", axis.text.y = element_text(size = 10))
 
 title <- paste0("Functional Enrichment (", term_source, "): ", test_group, " vs ", reference_group,

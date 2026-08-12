@@ -313,3 +313,31 @@ com todos os grupos de uma vez (`~ group`), usando as 18 amostras para estimar d
 forma?" em vez de "polluted difere de control?". Para o desenho de 3 grupos ao longo de um
 gradiente, o LRT seria a primeira passada natural. Fica registrado como possível
 `--test_type wald|lrt`; o usuário só perguntou, não pediu.
+
+### Personalizar: grade, borda do painel, fundo branco por padrão (2026-08-11)
+
+Dois toggles novos no painel Personalizar, `show_grid` e `show_panel_border`, e o fundo padrão
+passou de `gray90` para **branco**.
+
+Isso obrigou a **derivar a cor da grade do fundo** em vez de fixá-la. A grade era `"white"`
+hardcoded, o que só funcionava porque toda análise assumia fundo cinza; com fundo branco (e com
+qualquer cor alcançável pelo color picker) uma grade branca é invisível, e o toggle pareceria
+quebrado em vez de desligado. `.contrast_color(bg, amount)` mistura o fundo em direção ao preto
+quando ele é claro e em direção ao branco quando é escuro, mantendo contraste parecido para
+qualquer cor escolhida. A borda usa a mesma função com mistura mais forte.
+
+`panel.border` precisa de `fill = NA`: o ggplot desenha a borda **depois** das camadas, então
+uma borda com preenchimento pinta por cima dos dados.
+
+Os toggles chegam pelo `style` e não como argumentos soltos — os 32 pontos de chamada do
+`base_theme` são byte a byte idênticos e todo script já tem `style` em escopo, então foi uma
+substituição mecânica única em vez de 32 assinaturas diferentes.
+
+**Bug pré-existente achado junto**: `de_upset` e `dogma_de_upset` não chamam `base_theme`, mas
+não estavam na lista de exclusão do painel — já vinham exibindo controles de escala de fonte e
+de ocultar eixo que não faziam nada. A lista virou `_kNoBaseThemeAnalyses` e agora inclui os
+dois.
+
+Verificado: MAGMA com as mesmas 8 recusas intencionais de antes (nenhuma regressão dos 32
+pontos editados), fundo escuro chegando ao painel do DOGMA, grade desligada deixando o painel
+branco puro, e borda saindo quase preta sobre fundo branco.

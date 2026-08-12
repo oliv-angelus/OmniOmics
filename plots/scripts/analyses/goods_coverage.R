@@ -20,7 +20,7 @@ suppressMessages({
 args <- parse_cli_args(defaults = list(cutoff = "0.98"))
 cutoff <- as.numeric(args$cutoff)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -49,7 +49,7 @@ p <- ggplot(dados_cov, aes(x = reorder(SampleID, Goods_Coverage), y = Goods_Cove
   geom_hline(yintercept = cutoff, color = "red", linetype = "dashed", linewidth = 0.8) +
   coord_flip() +
   labs(x = NULL, y = NULL) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "none")
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 

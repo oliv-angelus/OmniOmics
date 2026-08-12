@@ -51,6 +51,15 @@ class PlotStyleState {
   /// UpSet plot has no single cartesian "X axis"/"Y axis" to hide).
   bool hideXAxis;
   bool hideYAxis;
+  /// Panel grid lines (base_theme's panel.grid.major/minor). On by default,
+  /// which is what every analysis looked like before the toggle existed.
+  /// The grid COLOR is derived from the background on the R side rather than
+  /// fixed, so it stays visible whatever color the user picks.
+  bool showGrid;
+  /// A box drawn around the plotting panel (base_theme's panel.border). Off
+  /// by default -- ggplot's own default is borderless, and journals differ on
+  /// whether they want one.
+  bool showPanelBorder;
 
   PlotStyleState({
     required this.background,
@@ -60,6 +69,8 @@ class PlotStyleState {
     this.fontScale = 1.0,
     this.hideXAxis = false,
     this.hideYAxis = false,
+    this.showGrid = true,
+    this.showPanelBorder = false,
   });
 
   factory PlotStyleState.fromJson(Map<String, dynamic> json) {
@@ -71,13 +82,17 @@ class PlotStyleState {
       });
     }
     return PlotStyleState(
-      background: json['background'] as String? ?? 'gray90',
+      background: json['background'] as String? ?? 'white',
       fontFamily: json['font_family'] as String? ?? 'serif',
       palette: palette,
       accentColor: json['accent_color'] as String?,
       fontScale: (json['font_scale'] as num?)?.toDouble() ?? 1.0,
       hideXAxis: json['hide_x_axis'] as bool? ?? false,
       hideYAxis: json['hide_y_axis'] as bool? ?? false,
+      // Absent means "the default", and the defaults differ: a style.json
+      // written before these keys existed had a grid and no border.
+      showGrid: json['show_grid'] as bool? ?? true,
+      showPanelBorder: json['show_panel_border'] as bool? ?? false,
     );
   }
 
@@ -89,6 +104,8 @@ class PlotStyleState {
         'font_scale': fontScale,
         'hide_x_axis': hideXAxis,
         'hide_y_axis': hideYAxis,
+        'show_grid': showGrid,
+        'show_panel_border': showPanelBorder,
         'legend_position': 'right',
         'show_labels': false,
       };

@@ -30,7 +30,7 @@ args <- parse_cli_args()
 if (is.null(args$genome) || args$genome == "") stop("--genome is required")
 genome <- args$genome
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 
@@ -104,7 +104,7 @@ p_card <- ggplot(card_rows) +
   scale_x_continuous(limits = c(-0.05, 2.2), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, nrow(card_rows) + 1), expand = c(0, 0)) +
   labs(x = NULL, y = NULL) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(axis.text = element_blank(), axis.ticks = element_blank(), panel.grid = element_blank())
 
 # AMR/virulence gene hits, grouped by real database/class -- only drawn
@@ -117,7 +117,7 @@ if (nrow(hits) > 0) {
     coord_flip() +
     scale_fill_brewer(palette = "Set2") +
     labs(x = NULL, y = "Gene hits") +
-    base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
     theme(legend.position = "none")
   final_plot <- p_card | p_hits
 } else {

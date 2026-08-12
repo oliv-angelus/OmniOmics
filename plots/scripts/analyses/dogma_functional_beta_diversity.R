@@ -46,7 +46,7 @@ dist_method <- args$distance_method
 permutations <- as.integer(args$permutations)
 seed        <- as.integer(args$seed)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
@@ -190,7 +190,7 @@ p <- ggplot(df, aes(x =.data[[axis_cols[1]]], y =.data[[axis_cols[2]]],
   scale_color_manual(values = palette, name = "Group") +
   scale_fill_manual(values = palette, name = "Group") +
   labs(x = paste0(ord_method, " 1"), y = paste0(ord_method, " 2")) +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+  base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "right",
         legend.background = element_rect(fill = "gray95", color = "gray80"))
 

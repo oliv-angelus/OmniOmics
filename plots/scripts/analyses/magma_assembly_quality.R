@@ -24,7 +24,7 @@ suppressMessages({
 
 args <- parse_cli_args(defaults = list(metric = "all", samples = ""))
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "gray90"
+bg <- style$background %||% "white"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 
@@ -82,7 +82,7 @@ build_panel <- function(spec, show_legend) {
     geom_col(position = "dodge", width = 0.7) +
     scale_fill_manual(values = palette, name = NULL) +
     labs(x = NULL, y = spec$label) +
-    base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = if (show_legend) "top" else "none")
   if (spec$comma) {

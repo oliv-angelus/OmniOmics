@@ -65,7 +65,7 @@ build_taxonomic_panel <- function(ps, rank, top_n_taxa, style, bg, font_family, 
     scale_fill_manual(values = colors_final) +
     labs(x = NULL, y = "Relative Abundance (%)", fill = rank) +
     scale_y_continuous(expand = c(0, 0), limits = c(0, 100.1)) +
-    base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
+    base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
     theme(
       axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 9),
       legend.text = element_text(size = 10, face = "italic"),
