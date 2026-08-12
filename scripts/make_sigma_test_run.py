@@ -114,6 +114,29 @@ AMRFINDER_COLUMNS = ["Protein id", "Contig id", "Start", "Stop", "Strand", "Elem
                      "Target length", "Reference sequence length", "% Coverage of reference",
                      "% Identity to reference", "Alignment length", "Closest reference accession",
                      "Closest reference name", "HMM accession", "HMM description"]
+# Verified against each tool's own source -- see
+# docs/tool_output_samples/VERIFIED_FORMATS.md for file and line of each.
+MOBRECON_COLUMNS = ["sample_id", "molecule_type", "primary_cluster_id", "secondary_cluster_id",
+                    "contig_id", "size", "gc", "md5", "circularity_status", "rep_type(s)",
+                    "rep_type_accession(s)", "relaxase_type(s)", "relaxase_type_accession(s)",
+                    "mpf_type", "mpf_type_accession(s)", "orit_type(s)", "orit_accession(s)",
+                    "predicted_mobility", "mash_nearest_neighbor", "mash_neighbor_distance",
+                    "mash_neighbor_identification", "repetitive_dna_id", "repetitive_dna_type",
+                    "filtering_reason"]
+MOBTYPER_COLUMNS = ["sample_id", "num_contigs", "size", "gc", "md5", "rep_type(s)",
+                    "rep_type_accession(s)", "relaxase_type(s)", "relaxase_type_accession(s)",
+                    "mpf_type", "mpf_type_accession(s)", "orit_type(s)", "orit_accession(s)",
+                    "predicted_mobility", "mash_nearest_neighbor", "mash_neighbor_distance",
+                    "mash_neighbor_identification", "primary_cluster_id", "secondary_cluster_id",
+                    "predicted_host_range_overall_rank", "predicted_host_range_overall_name",
+                    "observed_host_range_ncbi_rank", "observed_host_range_ncbi_name",
+                    "reported_host_range_lit_rank", "reported_host_range_lit_name", "associated_pmid(s)"]
+CHECKV_COLUMNS = ["contig_id", "contig_length", "provirus", "proviral_length", "gene_count",
+                  "viral_genes", "host_genes", "checkv_quality", "miuvig_quality", "completeness",
+                  "completeness_method", "contamination", "kmer_freq", "warnings"]
+ISESCAN_COLUMNS = ["seqID", "family", "cluster", "isBegin", "isEnd", "isLen", "ncopy4is",
+                   "start1", "end1", "start2", "end2", "score", "irId", "irLen", "nGaps",
+                   "orfBegin", "orfEnd", "strand", "orfLen", "E-value", "ov", "tir"]
 ABRICATE_COLUMNS = ["#FILE", "SEQUENCE", "START", "END", "STRAND", "GENE", "COVERAGE", "COVERAGE_MAP",
                     "GAPS", "%COVERAGE", "%IDENTITY", "DATABASE", "ACCESSION", "PRODUCT", "RESISTANCE"]
 
@@ -262,6 +285,81 @@ def main():
           abricate([(g_, f"{g_} (CARD)", c_) for g_, c_, _ in amr[: max(0, len(amr) - 1)]], "card"))
         w(os.path.join(res, "08_ANNOTATION", sample, "vfdb", "vfdb_results.tab"),
           abricate([(v, f"{v} virulence factor", "") for v in VF_BY_GENUS.get(genus, [])], "vfdb"))
+
+        # --- MOB-suite: contig_report.txt + mobtyper_results.txt --------
+        # Column names taken from mob-suite's own constants.py
+        # (MOB_RECON_INFO_HEADER / MOB_TYPER_REPORT_HEADER), values from the
+        # code that assigns them -- see docs/tool_output_samples/VERIFIED_FORMATS.md.
+        #
+        # The contig ids here deliberately carry a DESCRIPTION after the first
+        # space, which is what mob_recon really writes back (it maps ids
+        # through record.description, utils.py:837) while AMRFinder/ABRicate
+        # report only the first token. A fixture that used bare ids would make
+        # the join look fine and hide the exact mismatch the reader exists to
+        # survive.
+        n_plasmids = {"Escherichia": 2, "Klebsiella": 3, "Pseudomonas": 1,
+                      "Staphylococcus": 2, "Acinetobacter": 2}.get(genus, 0)
+        mobilities = ["conjugative", "mobilizable", "non-mobilizable"]
+        rep_pool = ["rep_cluster_1254", "IncFIB", "IncFII", "IncX3", "IncN", "repUS12", "IncP"]
+
+        contig_rows = [MOBRECON_COLUMNS]
+        plasmid_of_contig = {}
+        for j in range(1, 6):
+            cid = f"{sample}_contig{j}"
+            is_plasmid = j <= n_plasmids
+            cluster = f"AA{random.randint(100, 999)}" if is_plasmid else ""
+            mobility = random.choice(mobilities) if is_plasmid else ""
+            reps = ",".join(random.sample(rep_pool, random.randint(1, 2))) if is_plasmid else ""
+            if is_plasmid:
+                plasmid_of_contig[cid] = (cluster, mobility, reps)
+            contig_rows.append([
+                sample, "plasmid" if is_plasmid else "chromosome", cluster, "",
+                # description after the first space, on purpose
+                f"{cid} len={random.randint(20000, 900000)} cov={random.uniform(20, 200):.1f}",
+                random.randint(20000, 900000), round(random.uniform(0.3, 0.65), 4),
+                "%032x" % random.getrandbits(128),
+                "circular" if is_plasmid and random.random() < 0.5 else "incomplete",
+                reps, "", "MOBF" if mobility == "conjugative" else "", "",
+                "MPF_F" if mobility == "conjugative" else "", "", "", "",
+                mobility, "", "", "", "", "", ""])
+        w(os.path.join(res, "08_ANNOTATION", sample, "mobsuite", "contig_report.txt"), tsv(contig_rows))
+
+        mobtyper_rows = [MOBTYPER_COLUMNS]
+        for cid, (cluster, mobility, reps) in plasmid_of_contig.items():
+            mobtyper_rows.append([
+                sample, 1, random.randint(20000, 300000), round(random.uniform(0.4, 0.6), 4),
+                "%032x" % random.getrandbits(128), reps, "", "MOBF" if mobility == "conjugative" else "", "",
+                "MPF_F" if mobility == "conjugative" else "", "", "", "", mobility,
+                "", "", "", cluster, "", "family", "Enterobacteriaceae", "", "", "", "", ""])
+        w(os.path.join(res, "08_ANNOTATION", sample, "mobsuite", "mobtyper_results.txt"), tsv(mobtyper_rows))
+
+        # --- CheckV quality_summary.tsv (quality_summary.py:146-161) -------
+        n_prophage = random.randint(0, 4)
+        checkv_rows = [CHECKV_COLUMNS]
+        for j in range(n_prophage):
+            q = random.choice(["Complete", "High-quality", "Medium-quality", "Low-quality", "Not-determined"])
+            length = random.randint(8000, 65000)
+            checkv_rows.append([f"{sample}_contig{j % 5 + 1} provirus", length, "Yes", length,
+                                random.randint(8, 70), random.randint(4, 40), random.randint(0, 6),
+                                q, "High-quality" if q in ("Complete", "High-quality") else "Genome-fragment",
+                                round(random.uniform(20, 100), 2), "AAI-based",
+                                round(random.uniform(0, 12), 2), round(random.uniform(0, 1), 4), ""])
+        w(os.path.join(res, "10_VIRAL", sample, "checkv", "quality_summary.tsv"), tsv(checkv_rows))
+
+        # --- ISEScan .tsv (pred.py:728-751 column order) --------------------
+        is_rows = [ISESCAN_COLUMNS]
+        for j in range(random.randint(2, 25)):
+            fam = random.choice(["IS3", "IS5", "IS200/IS605", "IS110", "IS21", "IS1", "IS6", "IS256"])
+            begin = random.randint(500, 900000)
+            is_len = random.randint(700, 2600)
+            is_rows.append([f"{sample}_contig{j % 5 + 1} len=100000", fam, f"{fam}_c{random.randint(1,40)}",
+                            begin, begin + is_len, is_len, random.randint(1, 6),
+                            begin, begin + 20, begin + is_len - 20, begin + is_len,
+                            round(random.uniform(10, 60), 1), random.randint(10, 25), random.randint(12, 30),
+                            random.randint(0, 3), begin + 60, begin + is_len - 60, random.choice("+-"),
+                            is_len - 120, f"{10 ** -random.randint(5, 40):.1e}", random.randint(0, 3),
+                            "TIRseq1:TIRseq2"])
+        w(os.path.join(res, "08_ANNOTATION", sample, "isescan", f"{sample}.fa.tsv"), tsv(is_rows))
 
     w(os.path.join(OUT, "config", "config.yaml"),
       '{"samples": %s, "note": "synthetic SIGMA fixture"}\n' % (
