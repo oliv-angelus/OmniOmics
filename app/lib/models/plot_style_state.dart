@@ -82,7 +82,7 @@ class PlotStyleState {
       });
     }
     return PlotStyleState(
-      background: json['background'] as String? ?? 'white',
+      background: json['background'] as String? ?? 'gray90',
       fontFamily: json['font_family'] as String? ?? 'serif',
       palette: palette,
       accentColor: json['accent_color'] as String?,

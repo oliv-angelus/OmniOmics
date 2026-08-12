@@ -40,7 +40,7 @@ reference_group <- args$reference_group
 alpha <- as.numeric(args$alpha)
 min_lfc <- as.numeric(args$min_lfc)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "white"
+bg <- style$background %||% "gray90"
 font_family <- style$font_family %||% "serif"
 
 log_line("[de_upset] reading cached count matrix from %s", args$count_matrix_rds)

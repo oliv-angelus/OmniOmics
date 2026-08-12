@@ -316,15 +316,18 @@ gradiente, o LRT seria a primeira passada natural. Fica registrado como possíve
 
 ### Personalizar: grade, borda do painel, fundo branco por padrão (2026-08-11)
 
-Dois toggles novos no painel Personalizar, `show_grid` e `show_panel_border`, e o fundo padrão
-passou de `gray90` para **branco**.
+Dois toggles novos no painel Personalizar, `show_grid` e `show_panel_border`. O fundo padrão
+chegou a ir para branco e o usuário pediu de volta o `gray90` — **`gray90` é o padrão**.
 
-Isso obrigou a **derivar a cor da grade do fundo** em vez de fixá-la. A grade era `"white"`
-hardcoded, o que só funcionava porque toda análise assumia fundo cinza; com fundo branco (e com
-qualquer cor alcançável pelo color picker) uma grade branca é invisível, e o toggle pareceria
-quebrado em vez de desligado. `.contrast_color(bg, amount)` mistura o fundo em direção ao preto
-quando ele é claro e em direção ao branco quando é escuro, mantendo contraste parecido para
-qualquer cor escolhida. A borda usa a mesma função com mistura mais forte.
+Mesmo com o padrão cinza, a cor da grade **não pode** seguir fixa em `"white"`: o color picker
+alcança qualquer fundo, e sobre um branco ou quase-branco uma grade branca é invisível, o que
+faria o toggle parecer quebrado em vez de desligado. `.grid_color()` resolve isso mantendo o
+visual histórico onde ele existia: **branco**, a não ser que o fundo esteja perto demais do
+branco para o traço registrar, caso em que mistura em direção ao preto.
+
+O limiar de 0.06 de luminância é fronteira real, não número redondo: o `gray90` fica 0.10
+abaixo do branco, folgadamente do lado da grade branca; o branco puro fica em 0. A borda usa
+`.contrast_color()` com mistura forte, o que dá contorno visível sobre qualquer cor.
 
 `panel.border` precisa de `fill = NA`: o ggplot desenha a borda **depois** das camadas, então
 uma borda com preenchimento pinta por cima dos dados.
@@ -338,6 +341,7 @@ não estavam na lista de exclusão do painel — já vinham exibindo controles d
 de ocultar eixo que não faziam nada. A lista virou `_kNoBaseThemeAnalyses` e agora inclui os
 dois.
 
-Verificado: MAGMA com as mesmas 8 recusas intencionais de antes (nenhuma regressão dos 32
-pontos editados), fundo escuro chegando ao painel do DOGMA, grade desligada deixando o painel
-branco puro, e borda saindo quase preta sobre fundo branco.
+Verificado por pixel: `gray90` com grade branca, idêntico ao visual original; fundo escuro
+chegando ao painel do DOGMA com grade branca por cima; grade desligada deixando o painel liso;
+borda quase preta sobre fundo claro. MAGMA rodou inteiro com as mesmas 8 recusas intencionais
+de antes, sem regressão dos 32 pontos de chamada editados.

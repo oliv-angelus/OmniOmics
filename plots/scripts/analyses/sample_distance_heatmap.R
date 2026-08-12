@@ -26,7 +26,7 @@ args <- parse_cli_args()
 if (is.null(args$group_var) || args$group_var == "") stop("--group_var is required")
 group_var <- args$group_var
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "white"
+bg <- style$background %||% "gray90"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)

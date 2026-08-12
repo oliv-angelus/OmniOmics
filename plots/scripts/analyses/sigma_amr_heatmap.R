@@ -27,7 +27,7 @@ args <- parse_cli_args(defaults = list(source_filter = "all", top_n = "40"))
 source_filter <- args$source_filter  # "all" | "amrfinder" | "abricate_ncbi" | "abricate_card" | "abricate_vfdb"
 top_n_genes <- as.integer(args$top_n)
 style <- read_style_from_path(args$style_json)
-bg <- style$background %||% "white"
+bg <- style$background %||% "gray90"
 font_family <- style$font_family %||% "serif"
 font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
