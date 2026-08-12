@@ -1,7 +1,7 @@
 # Real before-vs-after read-cleaning comparison: total reads and Q30 rate
 # per sample, from whichever QC tool actually ran for that sample's read
 # type (fastp for short/hybrid, NanoPlot for long -- see
-# build_magma_qc_table.R). Answers a basic, always-worth-checking question
+# build_read_qc_table.R). Answers a basic, always-worth-checking question
 # every pipeline run raises: how much did cleaning actually remove, and did
 # quality improve the way it's supposed to.
 
@@ -56,7 +56,7 @@ df$stage <- factor(df$stage, levels = c("before", "after"),
                    labels = c("Before cleaning", "After cleaning"))
 palette <- resolve_palette(levels(df$stage), style)
 
-# Every metric build_magma_qc_table.R actually parses, not just the two the
+# Every metric build_read_qc_table.R actually parses, not just the two the
 # first version drew. Which ones have data depends on which QC tool ran for
 # the sample's read type: fastp reports quality and GC, NanoPlot reports read
 # length and read-length N50, both report read and base counts. A metric with

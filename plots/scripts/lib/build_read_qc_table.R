@@ -1,6 +1,13 @@
-# Builds MAGMA's before/after read-cleaning QC table for the Plots tab.
+# Builds the before/after read-cleaning QC table for the Plots tab.
 #
-# MAGMA can run short-read (fastp), long-read (filtlong + NanoPlot), or
+# Shared by MAGMA and SIGMA, not copied: both write fastp's JSON to
+# results/01_QC/{sample}/{sample}_fastp.json and NanoPlot's stats to
+# results/01_QC/{sample}/nanoplot_{raw,clean}/NanoStats.txt -- the same
+# layout, because both pipelines branch read QC on read type the same way.
+# Named for what it reads rather than for one pipeline, so a SIGMA loader
+# sourcing it does not look like a mistake.
+#
+# A pipeline can run short-read (fastp), long-read (filtlong + NanoPlot), or
 # hybrid samples in the same run (see 01_qc_tax.smk's read_type-branched
 # fastp/filtlong rules) -- a sample gets whichever of the two QC tools
 # actually apply to it, never both. Long rows (one metric per sample per
@@ -83,7 +90,7 @@ suppressMessages({
 #' Long QC table: one row per sample x tool x stage(before/after). A sample
 #' contributes fastp rows, NanoPlot rows, or both, depending on which QC tool
 #' actually ran for its read type.
-build_magma_qc_table <- function(results_dir, samples) {
+build_read_qc_table <- function(results_dir, samples) {
   parts <- list(.read_fastp(results_dir, samples), .read_nanostats(results_dir, samples))
   parts <- Filter(Negate(is.null), parts)
   if (length(parts) == 0) return(NULL)

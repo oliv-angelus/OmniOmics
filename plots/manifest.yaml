@@ -1480,3 +1480,63 @@ analyses:
         description:
           en: "Maximum number of genes to show, ranked by how many genomes carry them"
           pt: "Número máximo de genes a mostrar, ranqueados por quantos genomas os carregam"
+
+  - id: sigma_read_qc
+    name:
+      en: "Read Cleaning (Before vs. After)"
+      pt: "Limpeza de Reads (Antes vs. Depois)"
+    description:
+      en: "Read counts, bases, quality and length per genome, before and after cleaning. A SIGMA genome is assembled from one sample's reads, so this is the direct upstream explanation for a fragmented or incomplete assembly."
+      pt: "Contagem de reads, bases, qualidade e comprimento por genoma, antes e depois da limpeza. Um genoma do SIGMA é montado a partir das leituras de uma amostra só, então este é o motivo, a montante, de uma montagem fragmentada ou incompleta."
+    applies_to: [sigma]
+    input_shape: sigma_genomes
+    script: analyses/sigma_read_qc.R
+    parameters:
+      - flag: "--metric"
+        type: choice
+        default: "all"
+        enabled: true
+        choices: [all, reads, bases, q30, gc, length, n50]
+        description:
+          en: "Which QC metric to plot, one panel each; 'all' stacks every metric this run has data for. Which ones exist depends on the tool that ran: fastp reports reads, bases, Q30 and GC; NanoPlot reports reads, bases, mean read length and read-length N50."
+          pt: "Qual métrica de QC plotar, um painel para cada; 'all' empilha todas as métricas com dado nesta execução. Quais existem depende da ferramenta que rodou: o fastp reporta reads, bases, Q30 e GC; o NanoPlot reporta reads, bases, comprimento médio e N50 de comprimento."
+      - flag: "--genomes"
+        type: samples
+        optional: true
+        enabled: true
+        description:
+          en: "Which genomes to draw. Leave empty for all of them."
+          pt: "Quais genomas desenhar. Deixe vazio para todos."
+
+  - id: sigma_genome_landscape
+    name:
+      en: "Genome Landscape (size vs. metric)"
+      pt: "Panorama dos Genomas (tamanho vs. métrica)"
+    description:
+      en: "Assembly size against GC content (or contiguity, coding density, coverage), coloured by taxonomy or any grouping column. Genome size and GC are strongly conserved within a genus, so an isolate sitting far from its own cluster is misassigned, contaminated, or genuinely unusual -- something the completeness/contamination view cannot show, since a chimera of two organisms with complementary marker sets scores well on both of its axes."
+      pt: "Tamanho da montagem contra conteúdo GC (ou contiguidade, densidade de codificação, cobertura), colorido por taxonomia ou qualquer coluna de agrupamento. Tamanho de genoma e GC são fortemente conservados dentro de um gênero, então um isolado longe do próprio grupo está mal atribuído, contaminado, ou é genuinamente incomum -- algo que a visão de completude/contaminação não mostra, já que uma quimera de dois organismos com marcadores complementares pontua bem nos dois eixos dela."
+    applies_to: [sigma]
+    input_shape: sigma_genomes
+    script: analyses/sigma_genome_landscape.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Column to colour the genomes by -- SIGMA's own taxonomy/typing columns (gtdbtk_genus, mlst_scheme, ...) work without any metadata file"
+          pt: "Coluna para colorir os genomas -- as colunas de taxonomia/tipagem do próprio SIGMA (gtdbtk_genus, mlst_scheme, ...) funcionam sem nenhum arquivo de metadados"
+      - flag: "--y_metric"
+        type: choice
+        default: "gc"
+        enabled: true
+        choices: [gc, n50, contigs, coding, completeness, coverage]
+        description:
+          en: "What to put on the vertical axis against assembly size. GC is the classic pairing for spotting a misassigned genome; N50 and contigs turn the same layout into a size-vs-contiguity view."
+          pt: "O que colocar no eixo vertical contra o tamanho da montagem. GC é o par clássico para achar um genoma mal atribuído; N50 e contigs transformam o mesmo layout numa visão de tamanho vs. contiguidade."
+      - flag: "--label_genomes"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "Write each genome's name next to its point"
+          pt: "Escrever o nome de cada genoma ao lado do ponto"

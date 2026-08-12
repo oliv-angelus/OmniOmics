@@ -20,6 +20,7 @@ this_script_dir <- function() {
 lib_dir <- file.path(this_script_dir(), "lib")
 source(file.path(lib_dir, "io_helpers.R"))
 source(file.path(lib_dir, "build_sigma_table.R"))
+source(file.path(lib_dir, "build_read_qc_table.R"))
 
 suppressMessages(library(jsonlite))
 
@@ -33,6 +34,16 @@ gene_hits <- build_sigma_gene_hits(args$input)
 log_line("[load_sigma_table] gene hits: %d row(s) across %d genome(s)", nrow(gene_hits), length(unique(gene_hits$sample)))
 
 samples <- genome_summary$sample
+
+# Before/after read cleaning, from the same fastp/NanoPlot output layout MAGMA
+# uses -- shared reader, not a copy (see build_read_qc_table.R). Optional: a
+# run whose QC output was cleaned up, or that started from assemblies, simply
+# has no table here and the read-QC analysis says so instead of failing the
+# whole load.
+qc_table <- build_read_qc_table(args$input, samples)
+log_line("[load_sigma_table] read QC: %s",
+         if (is.null(qc_table)) "no fastp/NanoPlot output found" else
+           sprintf("%d row(s) across %d genome(s)", nrow(qc_table), length(unique(qc_table$sample))))
 
 # Real, always-available "metadata" derived from the genome summary itself
 # -- the categorical columns only (numeric QC stats like completeness/N50
@@ -73,7 +84,7 @@ column_levels <- lapply(columns, function(col) {
 names(column_levels) <- columns
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
-saveRDS(list(genome_summary = genome_summary, gene_hits = gene_hits, coldata = coldata),
+saveRDS(list(genome_summary = genome_summary, gene_hits = gene_hits, qc_table = qc_table, coldata = coldata),
         file.path(args$out_dir, "sigma_table.rds"))
 
 write_json(

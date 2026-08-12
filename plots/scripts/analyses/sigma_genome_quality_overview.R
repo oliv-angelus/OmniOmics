@@ -71,13 +71,34 @@ dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 # quality: >=90% complete, <=5% contamination. Drawn as a reference
 # rectangle, not just described in prose, so it's immediately visible which
 # genomes clear the real bar.
+# GUNC as the point's SHAPE rather than a second figure. This is the whole
+# reason GUNC is worth running next to CheckM2: a chimera of two organisms
+# with complementary marker sets scores well on BOTH axes of this plot, so it
+# lands inside the green high-quality rectangle looking perfect. Marking the
+# failures here puts the contradiction where it is visible instead of in a
+# separate card nobody cross-references.
+has_gunc <- "gunc_pass" %in% colnames(df) && any(!is.na(df$gunc_pass))
+if (has_gunc) {
+  df$GUNC <- ifelse(is.na(df$gunc_pass), "not run", ifelse(df$gunc_pass, "passes GUNC", "FAILS GUNC (chimeric)"))
+  df$GUNC <- factor(df$GUNC, levels = c("passes GUNC", "FAILS GUNC (chimeric)", "not run"))
+  log_line("[sigma_genome_quality_overview] GUNC: %d fail, %d pass",
+           sum(df$GUNC == "FAILS GUNC (chimeric)"), sum(df$GUNC == "passes GUNC"))
+}
+
 p <- ggplot(df, aes(x = checkm2_completeness, y = checkm2_contamination)) +
   annotate("rect", xmin = 90, xmax = Inf, ymin = -Inf, ymax = 5, fill = "#2CA02C", alpha = 0.08) +
-  geom_point(aes(color = Group, size = quast_n50), alpha = 0.85, shape = 21, fill = NA, stroke = 1.3) +
+  (if (has_gunc)
+     geom_point(aes(color = Group, size = quast_n50, shape = GUNC), alpha = 0.85, fill = NA, stroke = 1.3)
+   else
+     geom_point(aes(color = Group, size = quast_n50), alpha = 0.85, shape = 21, fill = NA, stroke = 1.3)) +
   geom_text_repel(aes(label = sample), size = 3.2, family = font_family, color = "black",
                    max.overlaps = 30, box.padding = 0.4, show.legend = FALSE) +
   scale_color_manual(values = palette, name = if (has_group) group_var else NULL) +
   scale_size_continuous(name = "N50 (bp)", range = c(2, 9), labels = function(x) format(x, big.mark = ",", scientific = FALSE)) +
+  # 21 = hollow circle (the original look), 4 = a cross, which reads as
+  # "rejected" without needing the legend; 1 for a genome GUNC never saw.
+  (if (has_gunc) scale_shape_manual(values = c("passes GUNC" = 21, "FAILS GUNC (chimeric)" = 4, "not run" = 1),
+                                    name = "GUNC", drop = FALSE) else NULL) +
   labs(x = "Completeness (%)", y = "Contamination (%)") +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
   theme(legend.position = "right")
@@ -85,7 +106,12 @@ if (!has_group) p <- p + guides(color = "none")
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 n_high_quality <- sum(df$checkm2_completeness >= 90 & df$checkm2_contamination <= 5)
-title <- paste0("Genome Quality Overview  |  ", n_high_quality, "/", nrow(df), " meet MIMAG high-quality (>=90% complete, <=5% contam.)")
+n_gunc_fail <- if (has_gunc) sum(df$GUNC == "FAILS GUNC (chimeric)") else 0
+# Kept short on purpose: the MIMAG thresholds are already drawn as the green
+# rectangle, so spelling them out in the title only made it wrap to five lines
+# and eat a quarter of the figure.
+title <- paste0("Genome Quality Overview  |  ", n_high_quality, "/", nrow(df), " MIMAG high-quality",
+                if (n_gunc_fail > 0) paste0("  |  ", n_gunc_fail, " fail GUNC") else "")
 plot_width <- 11
 # Real bug caught by actually rendering it: this title is
 # genuinely long (dynamic MIMAG-count text appended), and with_title_bar
