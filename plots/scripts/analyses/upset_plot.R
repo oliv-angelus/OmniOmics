@@ -156,10 +156,22 @@ p <- ComplexUpset::upset(
 # size panel) in one shot -- the same trick used for the Venn diagram's plain
 # `theme(...)` call, just via patchwork's operator since this is several
 # ggplot objects, not one.
+# Two deliberate details, both user-reported defects:
+#
+# colour = NA is not optional. element_rect(fill = ...) with no colour does
+# not keep theme_grey's borderless panel -- ComplexUpset's sub-plots have
+# panel.background = element_blank, and an element_rect merged onto a blank
+# inherits its missing properties from the top-level `rect` element, i.e.
+# colour "black". That drew a black box around every sub-plot, which is what
+# made the set-size bars look like they overflowed their panel.
+#
+# And plot.background is deliberately NOT repainted. plot.background covers
+# the plot margin too, while title_bar() only paints its panel -- so the
+# body spanned edge-to-edge and the title band did not, coming out narrower
+# than the figure by exactly one plot margin on each side.
 p <- p & theme(
   text = element_text(family = font_family, color = "black"),
-  panel.background = element_rect(fill = bg),
-  plot.background = element_rect(fill = bg, color = NA)
+  panel.background = element_rect(fill = bg, colour = NA)
 )
 
 title <- paste0("Shared/Unique Taxa (", rank, ", > ", min_abundance * 100, "% mean rel. abundance): ", group_var,

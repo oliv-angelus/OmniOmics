@@ -71,19 +71,30 @@ def param_matrix(analysis, overrides):
     run rather than from the manifest -- the metadata column for --group_var,
     the MAG list for --mags. Without them those analyses stop at their own
     "is required" check and nothing downstream is tested."""
-    choices = [(p["flag"], p["choices"]) for p in analysis.get("parameters", [])
+    params = analysis.get("parameters", [])
+    choices = [(p["flag"], p["choices"]) for p in params
                if p.get("type") == "choice" and p.get("enabled") and p.get("choices")]
-    fixed = []
-    for p in analysis.get("parameters", []):
-        if p.get("type") == "choice":
-            continue
-        if p["flag"] in overrides:
-            fixed += [p["flag"], overrides[p["flag"]]]
-    if not choices:
-        return [fixed]
     flags = [c[0] for c in choices]
-    return [fixed + [a for f, v in zip(flags, combo) for a in (f, str(v))]
-            for combo in itertools.product(*[c[1] for c in choices])]
+    combos = list(itertools.product(*[c[1] for c in choices])) if choices else [()]
+
+    out = []
+    for combo in combos:
+        chosen = dict(zip(flags, combo))
+        # visible_when mirrors the app: a parameter hidden by the current
+        # choice is not sent. Without this the suite would test combinations
+        # the UI cannot produce (e.g. --mags alongside --level sample) and
+        # count the script's own correct refusal of them as a failure.
+        args = []
+        for p in params:
+            if p.get("type") == "choice":
+                continue
+            cond = p.get("visible_when") or {}
+            if any(chosen.get(k) != v for k, v in cond.items()):
+                continue
+            if p["flag"] in overrides:
+                args += [p["flag"], overrides[p["flag"]]]
+        out.append(args + [a for f in flags for a in (f, str(chosen[f]))])
+    return out
 
 
 def main():

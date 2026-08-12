@@ -28,7 +28,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args(defaults = list(level = "sample", annotation_column = "COG_category", top_n = "15"))
+args <- parse_cli_args(defaults = list(level = "sample", mags = "", annotation_column = "COG_category", top_n = "15"))
 level <- args$level
 annotation_col <- args$annotation_column
 top_n_categories <- as.integer(args$top_n)
@@ -50,6 +50,26 @@ if (!(level %in% levels_present)) {
                level, paste(levels_present, collapse = ", ")))
 }
 all_df <- all_df[all_df$level == level, , drop = FALSE]
+
+# --mags picks which of the run's MAGs to draw; empty means every one. Only
+# meaningful at level "mag" (the app hides the field otherwise, see the
+# parameter's visible_when in the manifest), so a value passed alongside
+# level "sample" is refused rather than silently ignored.
+selected_mags <- trimws(strsplit(args$mags %||% "", ",", fixed = TRUE)[[1]])
+selected_mags <- selected_mags[nzchar(selected_mags)]
+if (length(selected_mags) > 0) {
+  if (level != "mag") {
+    stop("--mags only applies with --level mag; at level 'sample' there are no MAGs to choose between.")
+  }
+  unknown <- setdiff(selected_mags, unique(all_df$unit))
+  if (length(unknown) > 0) {
+    stop(sprintf("--mags names %d MAG(s) with no eggNOG output in this run: %s. Available: %s",
+                 length(unknown), paste(unknown, collapse = ", "),
+                 paste(sort(unique(all_df$unit)), collapse = ", ")))
+  }
+  all_df <- all_df[all_df$unit %in% selected_mags, , drop = FALSE]
+  log_line("[magma_functional_composition] restricted to %d of the run's MAGs", length(selected_mags))
+}
 
 available <- sort(unique(all_df$annotation_column))
 if (!(annotation_col %in% available)) {
@@ -108,7 +128,8 @@ saveRDS(list(plot = final_plot, width = plot_width, height = 8),
         file.path(args$out_dir, "plot_final.rds"))
 
 write_json(
-  list(analysis_id = "magma_functional_composition", level = level, annotation_column = annotation_col,
+  list(analysis_id = "magma_functional_composition", level = level,
+       units = sort(unique(as.character(df_agg$unit))), annotation_column = annotation_col,
        available_columns = available, top_categories = top_categories,
        records = lapply(seq_len(nrow(df_agg)), function(i) list(
          unit = as.character(df_agg$unit[i]), category = as.character(df_agg$Category_Plot[i]),

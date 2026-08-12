@@ -23,7 +23,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args()
+args <- parse_cli_args(defaults = list(metric = "all", samples = ""))
 style <- read_style_from_path(args$style_json)
 bg <- style$background %||% "gray90"
 font_family <- style$font_family %||% "serif"
@@ -37,30 +37,75 @@ if (is.null(df) || nrow(df) == 0) {
 }
 log_line("[magma_read_qc] %d row(s) across %d sample(s)", nrow(df), length(unique(df$sample)))
 
+# --samples restricts the figure to a subset. A real run has dozens of
+# samples and the x axis becomes unreadable well before that; the underlying
+# table is unchanged, only what is drawn.
+selected <- trimws(strsplit(args$samples %||% "", ",", fixed = TRUE)[[1]])
+selected <- selected[nzchar(selected)]
+if (length(selected) > 0) {
+  unknown <- setdiff(selected, unique(df$sample))
+  if (length(unknown) > 0) {
+    stop(sprintf("--samples names %d sample(s) this run has no QC output for: %s. Available: %s",
+                 length(unknown), paste(unknown, collapse = ", "), paste(sort(unique(df$sample)), collapse = ", ")))
+  }
+  df <- df[df$sample %in% selected, , drop = FALSE]
+  log_line("[magma_read_qc] restricted to %d of the run's samples", length(selected))
+}
+
 df$stage <- factor(df$stage, levels = c("before", "after"),
                    labels = c("Before cleaning", "After cleaning"))
 palette <- resolve_palette(levels(df$stage), style)
 
-reads_df <- df %>% filter(!is.na(total_reads))
-p_reads <- ggplot(reads_df, aes(x = sample, y = total_reads, fill = stage)) +
-  geom_col(position = "dodge", width = 0.7) +
-  scale_y_continuous(labels = function(x) format(x, big.mark = ",", scientific = FALSE)) +
-  scale_fill_manual(values = palette, name = NULL) +
-  labs(x = NULL, y = "Reads") +
-  base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "top")
+# Every metric build_magma_qc_table.R actually parses, not just the two the
+# first version drew. Which ones have data depends on which QC tool ran for
+# the sample's read type: fastp reports quality and GC, NanoPlot reports read
+# length and read-length N50, both report read and base counts. A metric with
+# no data anywhere in the run is skipped rather than drawn empty.
+#
+# `scale` exists because q30_rate is stored as a fraction and read as a
+# percentage; everything else is plotted as parsed.
+METRICS <- list(
+  reads  = list(col = "total_reads",  label = "Reads",                scale = 1,   comma = TRUE),
+  bases  = list(col = "total_bases",  label = "Bases",                scale = 1,   comma = TRUE),
+  q30    = list(col = "q30_rate",     label = "Q30 rate (%)",         scale = 100, comma = FALSE),
+  gc     = list(col = "gc_content",   label = "GC content (%)",       scale = 100, comma = FALSE),
+  length = list(col = "mean_length",  label = "Mean read length (bp)", scale = 1,  comma = TRUE),
+  n50    = list(col = "n50",          label = "Read length N50 (bp)", scale = 1,   comma = TRUE)
+)
 
-qual_df <- df %>% filter(!is.na(q30_rate))
-panels <- list(p_reads)
-if (nrow(qual_df) > 0) {
-  p_qual <- ggplot(qual_df, aes(x = sample, y = q30_rate * 100, fill = stage)) +
+metric_arg <- args$metric
+if (!(metric_arg %in% c("all", names(METRICS)))) {
+  stop(sprintf("--metric must be 'all' or one of: %s (got '%s')",
+               paste(names(METRICS), collapse = ", "), metric_arg))
+}
+wanted <- if (metric_arg == "all") names(METRICS) else metric_arg
+
+build_panel <- function(spec, show_legend) {
+  sub <- df[!is.na(df[[spec$col]]), , drop = FALSE]
+  if (nrow(sub) == 0) return(NULL)
+  p <- ggplot(sub, aes(x = sample, y = .data[[spec$col]] * spec$scale, fill = stage)) +
     geom_col(position = "dodge", width = 0.7) +
     scale_fill_manual(values = palette, name = NULL) +
-    labs(x = NULL, y = "Q30 rate (%)") +
+    labs(x = NULL, y = spec$label) +
     base_theme(bg = bg, font_family = font_family, font_scale = font_scale) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
-  panels[[length(panels) + 1]] <- p_qual
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = if (show_legend) "top" else "none")
+  if (spec$comma) {
+    p <- p + scale_y_continuous(labels = function(x) format(x, big.mark = ",", scientific = FALSE))
+  }
+  p
 }
+
+panels <- list()
+for (m in wanted) {
+  p <- build_panel(METRICS[[m]], show_legend = length(panels) == 0)
+  if (!is.null(p)) panels[[length(panels) + 1]] <- p
+}
+if (length(panels) == 0) {
+  stop(sprintf("No QC data for metric '%s' in this run -- fastp reports reads/bases/Q30/GC, NanoPlot reports reads/bases/read length/read-length N50, so which metrics exist depends on the read type each sample was run as.",
+               metric_arg))
+}
+log_line("[magma_read_qc] plotting %d metric panel(s): %s", length(panels), paste(wanted, collapse = ", "))
 
 combined <- wrap_plots(panels, ncol = 1)
 n_samples <- length(unique(df$sample))
@@ -69,7 +114,7 @@ final_plot <- with_title_bar(combined, "Read Cleaning: Before vs. After", size =
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 
 write_json(
-  list(analysis_id = "magma_read_qc",
+  list(analysis_id = "magma_read_qc", metric = metric_arg,
        samples = lapply(unique(df$sample), function(s) {
          rows <- df[df$sample == s, , drop = FALSE]
          list(sample = s, tool = rows$tool[1],
