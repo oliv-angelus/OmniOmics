@@ -448,6 +448,50 @@ analyses:
           pt: "Log2 fold change absoluto mínimo para um biomarcador ser reportado"
         min: 0
 
+  - id: differential_abundance_lrt
+    name:
+      en: "Responds to the Gradient (DESeq2 LRT)"
+      pt: "Responde ao Gradiente (LRT do DESeq2)"
+    description:
+      en: "Which taxa respond to the grouping variable AT ALL, via DESeq2's likelihood ratio test (full model vs. intercept-only). A different question from the pairwise comparison: that one asks whether B differs from A and, with three or more groups, ignores the rest. A gradient design is built to ask whether a taxon responds to the gradient at all. The usual workflow is both -- this to find the responders, then the pairwise test to say where the difference sits. The figure shows each responder's pattern across every group, since the effect the LRT measures has no single fold change."
+      pt: "Quais táxons respondem à variável de agrupamento DE ALGUMA FORMA, pelo teste de razão de verossimilhança do DESeq2 (modelo completo vs. só intercepto). Pergunta diferente da comparação par a par: aquela pergunta se B difere de A e, com três ou mais grupos, ignora o resto. Um desenho de gradiente foi montado para perguntar se o táxon responde ao gradiente. O fluxo usual é os dois -- este para achar quem responde, depois o par a par para dizer onde está a diferença. A figura mostra o padrão de cada respondente entre todos os grupos, já que o efeito medido pelo LRT não tem um fold change único."
+    applies_to: [magma, prism]
+    input_shape: phyloseq
+    script: analyses/differential_abundance_lrt.R
+    parameters:
+      - flag: "--group_var"
+        type: column
+        enabled: true
+        description:
+          en: "Metadata column the model is tested against. With only two levels the LRT answers the same question as the pairwise test, which also gives you the fold change -- it is worth using from three levels up."
+          pt: "Coluna de metadados contra a qual o modelo é testado. Com só dois níveis o LRT responde a mesma pergunta do teste par a par, que ainda por cima dá o fold change -- vale a partir de três níveis."
+      - flag: "--rank"
+        type: tax_rank
+        default: "Genus"
+        include_asv: true
+        enabled: true
+        description:
+          en: "Taxonomic rank to aggregate to before testing"
+          pt: "Nível taxonômico para agregar antes de testar"
+      - flag: "--alpha"
+        type: float
+        default: 0.05
+        enabled: true
+        min: 0.001
+        max: 0.2
+        description:
+          en: "Adjusted p-value cutoff (Benjamini-Hochberg)"
+          pt: "Corte de p-valor ajustado (Benjamini-Hochberg)"
+      - flag: "--top_n"
+        type: int
+        default: 30
+        enabled: true
+        min: 5
+        max: 80
+        description:
+          en: "How many of the most significant features to draw, ranked by adjusted p-value"
+          pt: "Quantas features mais significativas desenhar, ordenadas pelo p-valor ajustado"
+
   - id: rda_environmental_drivers
     name:
       en: "RDA — Environmental Drivers"
