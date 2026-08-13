@@ -32,6 +32,7 @@ reproducible.
 - [The five pipelines](#the-five-pipelines)
 - [The plotting environment](#the-plotting-environment)
 - [Design principles](#design-principles)
+- [Requirements](docs/REQUIREMENTS.md)
 - [Installing](#installing)
 - [Using it](#using-it)
 - [Plotting data produced elsewhere](#plotting-data-produced-elsewhere)
@@ -150,8 +151,14 @@ burying it inside a pipeline makes it invisible and unauditable.
 
 ## Installing
 
-Requirements: Linux, and roughly 20 GB free for tool environments plus whatever
-the reference databases you enable need (some are large).
+Linux x86-64, roughly 25 GB free for tool environments, plus whatever the
+reference databases you enable need.
+
+**Check the hardware requirements first** —
+[`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) gives minimum and recommended RAM
+and cores per pipeline, and lists which pipelines need a CPU with **AVX2**
+(MAGMA and SIGMA do; without it CheckM2 aborts with `Illegal instruction`).
+MAGMA's floor is set by GTDB-Tk, which documents a 150 GB requirement.
 
 ```bash
 git clone https://github.com/oliv-angelus/OmniOmics.git
