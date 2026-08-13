@@ -15,10 +15,14 @@ a tool updates. OmniOmics does that assembly once, declaratively, and keeps it
 reproducible.
 
 > **Status: alpha (0.0.1).** The workflows and the plotting environment run end
-> to end and are exercised by an automated suite against synthetic fixtures for
-> all five pipelines. What has *not* happened yet is sustained use on real data
-> by people other than the author. Treat results accordingly, and read
-> [Known limitations](#known-limitations) before relying on any of it.
+> to end and are validated against **synthetic control datasets** built to
+> reproduce each tool's real output format and to exercise every code path,
+> including the edge cases. Validation on **large real datasets is pending for
+> reasons of compute capacity** in our current lab, and is the subject of a
+> benchmark being prepared for the accompanying manuscript. A stable release,
+> together with the pipeline benchmark results, is planned for **December
+> 2026**. See [Validation status](#validation-status) for what that does and
+> does not establish.
 
 ---
 
@@ -32,8 +36,8 @@ reproducible.
 - [Using it](#using-it)
 - [Plotting data produced elsewhere](#plotting-data-produced-elsewhere)
 - [Repository layout](#repository-layout)
-- [Reproducibility and verification](#reproducibility-and-verification)
-- [Known limitations](#known-limitations)
+- [Reproducibility](#reproducibility)
+- [Validation status](#validation-status)
 - [Citing](#citing)
 - [Licence](#licence)
 
@@ -67,13 +71,15 @@ Four things the interface handles that are usually left to the user:
 
 ## The five pipelines
 
-| Pipeline | Question it answers | Rules | Tool environments |
-|---|---|---:|---:|
-| **MAGMA** | What organisms are in this community, and can I recover their genomes? | 62 | 35 |
-| **SIGMA** | I have isolate genomes — what are they, and what do they carry? | 36 | 28 |
-| **DOGMA** | What is this community *doing*? (metatranscriptomics) | 34 | 18 |
-| **DEFINE** | Which genes change between my conditions? | 17 | 9 |
-| **PRISM** | Amplicon (16S/18S/ITS) community profiling | 13 | 6 |
+The names are acronyms, not arbitrary labels:
+
+| Pipeline | Stands for | Question it answers | Rules | Envs |
+|---|---|---|---:|---:|
+| **MAGMA** | **M**etagenome **A**ssisted **G**UI & **M**AG **A**nalyses | What organisms are in this community, and can I recover their genomes? | 62 | 35 |
+| **SIGMA** | **S**ingle **I**solate **G**enome, **M**ulti-platform **A**ssembly | I have isolate genomes — what are they, and what do they carry? | 36 | 28 |
+| **DOGMA** | **D**iversity **O**f **G**ene expression — **M**etatranscriptome **A**nalysis | What is this community *doing*? | 34 | 18 |
+| **DEFINE** | **D**ifferential **E**xpression, **F**unctional **I**nterpretation & **N**etwork **E**nrichment | Which genes change between my conditions? | 17 | 9 |
+| **PRISM** | **P**rofiling **r**RNA **I**nference of **S**pecies via **M**etabarcoding | Amplicon (16S/18S/ITS) community profiling | 13 | 6 |
 
 Each pipeline is a self-contained directory under `pipelines/` holding its
 Snakemake workflow, its per-tool conda environments, and a manifest describing
@@ -211,40 +217,90 @@ notes/        Working notes and decision log kept during development
 
 ---
 
-## Reproducibility and verification
+## Reproducibility
 
 - **Pinned environments.** Every tool is installed from a version-pinned conda
   environment file. Nothing depends on what happens to be on the host.
 - **Checksummed databases.** Reference data is verified after download.
-- **Synthetic fixtures.** `scripts/make_*_test_run.py` generate structurally
-  faithful runs for all five pipelines — real paths, real column layouts, real
-  edge cases (a chimeric genome that passes CheckM2, a genome with no MLST
-  match, an assembly whose contig headers carry descriptions) with generated
-  numbers. They make the whole plotting environment testable without a cluster.
-- **An offline test suite.** `scripts/run_plots_suite.py` exercises every
-  analysis across every parameter combination and distinguishes a real failure
-  from a legitimate refusal and from an empty-but-correct result.
+- **Recorded configuration.** Each run stores the configuration it was launched
+  with, so it can be repeated.
+
+How the application itself is checked is covered under
+[Validation status](#validation-status).
 
 ---
 
-## Known limitations
+## Validation status
 
-Stated plainly, because a reviewer will find them anyway and because they bound
-what the current version should be trusted for.
+What has been validated, what has not, and why — stated plainly, because it
+bounds what this version should be trusted for.
 
-- **Alpha.** Not yet used sustainedly on real data by anyone other than the
-  author.
-- **Linux only.** The application has only been built and tested on Linux.
-- **The fixtures are synthetic.** They reproduce real formats with generated
-  numbers. They prove the code runs and reacts correctly to its inputs; they
-  cannot prove a biological result is right.
+### What OmniOmics adds, and therefore what needs validating
+
+The tools OmniOmics runs were validated by their own authors, and revalidating
+Kraken2 or DESeq2 here would be redundant. But orchestration adds surface of its
+own, and that surface is what these checks target:
+
+- **The readers.** Nothing in Kraken2's validation says *we* parse its output
+  correctly. This is where every expensive bug in the project has been. A wrong
+  parser produces a plausible, wrong figure rather than an error — which is why
+  every reader was written against the code that *writes* the output, with file
+  and line recorded in
+  [`docs/tool_output_samples/VERIFIED_FORMATS.md`](docs/tool_output_samples/VERIFIED_FORMATS.md).
+- **The statistical choices the application makes on the user's behalf.**
+  Falling back to `poscounts` normalisation, constraining CAP by the tested
+  factor, separating the LRT from the Wald contrast: DESeq2 validates that the
+  tests work, not that these are the right tests to apply. Each choice is
+  documented with its citation next to the code.
+- **The composition.** The order tools are chained in, and what is deliberately
+  *not* merged — GUNC reported beside CheckM2 rather than folded into it, for
+  instance — is design, and design can be wrong.
+
+### Done
+
+- **Synthetic control datasets for all five pipelines**
+  (`scripts/make_*_test_run.py`). These are not toy data: every path and column
+  layout reproduces what the real tools write, including the awkward cases —
+  a chimeric genome that passes CheckM2 while failing GUNC, an isolate with no
+  MLST match, contig headers carrying descriptions that break a naive join,
+  a tool that reports the full FASTA header where its neighbour reports the
+  first token. The numbers are generated; the shapes are real.
+- **An automated suite over every analysis and every parameter combination**
+  (`scripts/run_plots_suite.py`), distinguishing a real failure from a
+  legitimate refusal and from an empty-but-correct result.
+- **Format verification against tool source code** for every reader.
+- **End-to-end execution** of all five workflows and all 41 analyses.
+
+### Pending
+
+- **Benchmarking on large real datasets.** Not yet done, for a concrete reason:
+  the compute available in our current laboratory is not sufficient for
+  full-scale metagenomic assembly and binning. This is a capacity constraint,
+  not a design gap. The benchmark is being prepared and its results will be
+  reported in the accompanying manuscript, currently in preparation.
+- **Concordance testing** — running public datasets with known published
+  results through the application and showing that the output agrees with what
+  the same tools produce when run by hand. This is the check that matters for
+  an orchestration layer, and it is part of the same benchmark.
+- **Sustained use by people other than the author.**
+
+### Roadmap
+
+| | |
+|---|---|
+| **December 2026** | Stable release, together with the pipeline benchmark results |
+| **In preparation** | Manuscript describing the application and the large-dataset benchmark |
+
+### Other current limitations
+
+- **Linux only.** Built and tested on Linux; Windows and macOS not attempted.
 - **Fixture coverage is uneven.** DOGMA's fixture exercises 5 of its 15
-  annotation columns. The readers for the other 10 have been audited against
-  their tools' source code, but have not been run against data.
-- **Some steps are optional and untested end to end** on real input, notably
+  annotation columns. The readers for the other 10 were audited against their
+  tools' source code, but have not been run against data.
+- **Some optional steps have not been run end to end on real input**, notably
   the secondary-metabolite (antiSMASH/BiG-SCAPE) and viral blocks.
-- **The genome ring is a static figure**, not an interactive browser. Tracks
-  are toggled by re-running the analysis.
+- **The genome ring is a static figure**, not an interactive browser. Tracks are
+  toggled by re-running the analysis.
 
 ---
 
