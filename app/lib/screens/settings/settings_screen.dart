@@ -90,20 +90,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         alreadyRunning: _installing('snakemake'),
                         onDone: _load,
                       ),
-                      // Bundled into the backend binary in the packaged build,
-                      // where the row could only ever report success.
-                      if (s['python_deps']?['bundled'] != true) ...[
-                        const Divider(height: 32),
-                        InstallRow(
-                          title: ref.t('app_python_deps'),
-                          subtitle: s['python_deps']?['installed'] == true
-                              ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
-                          installed: s['python_deps']?['installed'] == true,
-                          wsPath: '/ws/install/python-deps',
-                          alreadyRunning: _installing('python-deps'),
-                          onDone: _load,
-                        ),
-                      ],
+                      const Divider(height: 32),
+                      InstallRow(
+                        title: ref.t('app_python_deps'),
+                        subtitle: s['python_deps']?['installed'] == true
+                            ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
+                        installed: s['python_deps']?['installed'] == true,
+                        wsPath: '/ws/install/python-deps',
+                        alreadyRunning: _installing('python-deps'),
+                        onDone: _load,
+                      ),
                       const Divider(height: 32),
                       InstallRow(
                         title: ref.t('vibrant_tools_label'),
