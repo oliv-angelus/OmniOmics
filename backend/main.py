@@ -52,6 +52,7 @@ def clean_output(raw: bytes) -> str:
 import pipelines
 from conda_manager import check_conda, install_conda
 from snakemake_manager import check_snakemake, install_snakemake
+import install_jobs
 from system_monitor import get_system_info
 from databases_engine import (
     get_databases_status, get_all_databases_status, detect_databases, detect_all_databases,
@@ -80,7 +81,23 @@ app.add_middleware(
 REQUIRED_PY_PACKAGES = ["fastapi", "uvicorn", "httpx", "aiofiles", "psutil", "yaml"]
 
 def check_python_deps() -> dict:
-    """Check that all required Python packages are importable."""
+    """Check that all required Python packages are importable.
+
+    In the packaged build these are compiled into the backend binary by
+    PyInstaller, so they are importable by construction and there is nothing a
+    user could install or remove. Saying so explicitly lets the interface drop
+    the row entirely rather than showing a dependency check that can only ever
+    report success -- it is a source-checkout concern, not an end-user one.
+    """
+    bundled = getattr(sys, "frozen", False)
+    if bundled:
+        return {
+            "installed": True,
+            "bundled":   True,
+            "missing":   [],
+            "packages":  REQUIRED_PY_PACKAGES,
+        }
+
     import importlib
     missing = []
     for pkg in REQUIRED_PY_PACKAGES:
@@ -90,6 +107,7 @@ def check_python_deps() -> dict:
             missing.append(pkg)
     return {
         "installed": len(missing) == 0,
+        "bundled":   False,
         "missing":   missing,
         "packages":  REQUIRED_PY_PACKAGES,
     }
@@ -114,47 +132,95 @@ def setup_status():
     vibrant_tools = check_vibrant_tools()
     python_deps   = check_python_deps()
     return {"conda": conda, "snakemake": snakemake,
-            "vibrant_tools": vibrant_tools, "python_deps": python_deps}
+            "vibrant_tools": vibrant_tools, "python_deps": python_deps,
+            # So a reopened window can put its spinner back on whatever is still
+            # installing, instead of offering an Install button for work already
+            # in progress.
+            "installs": install_jobs.statuses()}
+
+async def _serve_install(websocket: WebSocket, name: str, group: str, make_runner) -> None:
+    """Attach a socket to an install job, starting it if it is not already running.
+
+    The socket is a *view* of the install, never its owner. Closing it leaves the
+    job running (that is the whole point of install_jobs) and reconnecting
+    replays the log and resumes streaming. Only an explicit {"action": "cancel"}
+    stops the work.
+    """
+    await websocket.accept()
+    try:
+        try:
+            payload = await websocket.receive_json()
+        except Exception:
+            payload = {}
+
+        try:
+            job = install_jobs.start_job(name, group, make_runner(payload))
+        except install_jobs.InstallBusy as busy:
+            await websocket.send_json({"type": "error",
+                "text": f"'{busy.running}' is already being installed. conda locks its "
+                        f"package cache while it works, so this has to wait for that "
+                        f"to finish.\n"})
+            return
+
+        history, queue = job.subscribe()
+        # Reads the socket only to notice a cancel request. Any other outcome --
+        # including the client disappearing -- is ignored on purpose, so a
+        # dropped connection cannot kill an install that is halfway through.
+        async def watch_for_cancel():
+            try:
+                while True:
+                    msg = await websocket.receive_json()
+                    if isinstance(msg, dict) and msg.get("action") == "cancel":
+                        job.cancel()
+                        return
+            except Exception:
+                return
+
+        watcher = asyncio.create_task(watch_for_cancel())
+        try:
+            for event in history:
+                await websocket.send_json(event)
+            # Finished before this socket arrived: the sentinel went to the
+            # queues that existed then, so none is coming to this one.
+            if job.status != "running":
+                return
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+                await websocket.send_json(event)
+        finally:
+            watcher.cancel()
+            job.unsubscribe(queue)
+    except Exception:
+        # The job owns its own lifetime; a failed socket is not its problem.
+        return
+
+
+def _python_deps_runner(payload):
+    async def run(job):
+        deps = check_python_deps()
+        if deps.get("bundled"):
+            job.emit({"type": "log",
+                      "text": "Packaged build: the Python dependencies are compiled into "
+                              "the backend binary, so there is nothing to install.\n"})
+            return
+        if deps["installed"]:
+            job.emit({"type": "log", "text": "All Python dependencies are already present.\n"})
+            return
+        pkgs = deps["missing"]
+        job.emit({"type": "log", "text": f"Installing: {', '.join(pkgs)}\n"})
+        rc = await install_jobs.run_proc(
+            job, ["python3", "-m", "pip", "install", "--upgrade", *pkgs], clean=clean_output)
+        if rc != 0:
+            raise RuntimeError("pip install failed. Try: pip install -r backend/requirements.txt")
+    return run
+
 
 @app.websocket("/ws/install/python-deps")
 async def install_python_deps_ws(websocket: WebSocket):
     """Install missing Python backend packages via pip."""
-    await websocket.accept()
-    proc = None
-    try:
-        deps = check_python_deps()
-        if deps["installed"]:
-            await websocket.send_json({"type": "done", "status": deps})
-            return
-
-        pkgs = deps["missing"]
-        await websocket.send_json({"type": "log",
-            "text": f"Instalando: {', '.join(pkgs)}\n"})
-
-        proc = await asyncio.create_subprocess_exec(
-            "python3", "-m", "pip", "install", "--upgrade", *pkgs,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        async for line in proc.stdout:
-            text = clean_output(line)
-            if text:
-                await websocket.send_json({"type": "log", "text": text})
-        rc = await proc.wait()
-
-        if rc == 0:
-            await websocket.send_json({"type": "done", "status": check_python_deps()})
-        else:
-            await websocket.send_json({"type": "error",
-                "text": "pip install falhou. Tente: pip install -r backend/requirements.txt"})
-    except WebSocketDisconnect:
-        if proc and proc.returncode is None:
-            proc.terminate()
-    except Exception as e:
-        try:
-            await websocket.send_json({"type": "error", "text": str(e)})
-        except Exception:
-            pass
+    await _serve_install(websocket, "python-deps", install_jobs.PIP_GROUP, _python_deps_runner)
 
 @app.post("/api/setup/install-conda")
 async def install_conda_route(path: str = "/home/" + os.environ.get("USER", "user") + "/miniforge3"):
@@ -171,26 +237,35 @@ def conda_distributions(lang: str = "pt"):
     from conda_manager import conda_distribution_list
     return conda_distribution_list(lang)
 
-@app.websocket("/ws/install/conda")
-async def install_conda_ws(websocket: WebSocket):
-    """Download and install the chosen conda distribution, streaming progress."""
-    from conda_manager import CONDA_DISTRIBUTIONS
-    await websocket.accept()
-    proc = None
-    try:
-        msg = await websocket.receive_json()
-        install_path = os.path.expanduser(msg.get("install_path", "~/miniforge3"))
-        distro_id = msg.get("distribution", "miniforge")
+def _conda_runner(payload):
+    async def run(job):
+        from conda_manager import CONDA_DISTRIBUTIONS
+        install_path = os.path.expanduser(payload.get("install_path") or "~/miniforge3")
+        distro_id = payload.get("distribution", "miniforge")
         distro = CONDA_DISTRIBUTIONS.get(distro_id, CONDA_DISTRIBUTIONS["miniforge"])
 
-        await websocket.send_json({"type": "log", "text": f"Destino: {install_path}\n"})
-        await websocket.send_json({"type": "log", "text": f"Baixando {distro['name']}...\n"})
+        # The distribution installers run with -b (batch) and no -u, which makes
+        # them refuse a target that already exists rather than write into it.
+        # Checked here so the answer is a sentence about the directory instead of
+        # the installer's own late, terser complaint.
+        if os.path.isdir(install_path) and os.listdir(install_path):
+            raise RuntimeError(
+                f"{install_path} already exists and is not empty. The installer will not "
+                f"write into an existing directory -- choose another location, or remove "
+                f"that one first.")
 
-        url = distro["url"]
+        parent = os.path.dirname(install_path.rstrip("/")) or "/"
+        if not os.path.isdir(parent):
+            raise RuntimeError(f"{parent} does not exist, so {install_path} cannot be created.")
+        if not os.access(parent, os.W_OK):
+            raise RuntimeError(f"No permission to write in {parent}.")
+
+        job.emit({"type": "log", "text": f"Target: {install_path}\n"})
+        job.emit({"type": "log", "text": f"Downloading {distro['name']}...\n"})
+
         installer = "/tmp/conda_installer.sh"
-
         async with httpx.AsyncClient(follow_redirects=True, timeout=600) as client:
-            async with client.stream("GET", url) as resp:
+            async with client.stream("GET", distro["url"]) as resp:
                 total = int(resp.headers.get("content-length", 0))
                 downloaded = 0
                 with open(installer, "wb") as f:
@@ -201,139 +276,99 @@ async def install_conda_ws(websocket: WebSocket):
                             pct = int(downloaded / total * 100)
                             mb = downloaded // 1024 // 1024
                             total_mb = total // 1024 // 1024
-                            await websocket.send_json({"type": "progress", "pct": pct,
-                                "text": f"Download: {pct}% ({mb}/{total_mb} MB)\n"})
+                            job.emit({"type": "progress", "pct": pct,
+                                      "text": f"Download: {pct}% ({mb}/{total_mb} MB)\n"})
 
-        # A broken/dead download URL often 404s with an HTML error page instead
-        # of raising -- that then hits bash as a "syntax error near unexpected
+        # A dead download URL often 404s with an HTML error page instead of
+        # raising -- that then reaches bash as a "syntax error near unexpected
         # token" a minute later, which is a confusing way to learn the real
-        # problem was upstream. Catch it here with a clear message instead.
+        # problem was upstream. Caught here with a clear message instead.
         with open(installer, "rb") as f:
             head = f.read(64)
         if not head.lstrip().startswith(b"#!"):
-            await websocket.send_json({"type": "error",
-                "text": f"Invalid download: {installer} does not look like a shell installer "
-                        f"(the URL may be down or may have changed). Start of file: {head[:40]!r}\n"})
-            return
+            raise RuntimeError(
+                f"Invalid download: {installer} does not look like a shell installer "
+                f"(the URL may be down or may have changed). Start of file: {head[:40]!r}")
 
         os.chmod(installer, 0o755)
-        await websocket.send_json({"type": "log", "text": f"\nInstalando em {install_path}...\n"})
+        job.emit({"type": "log", "text": f"\nInstalling into {install_path}...\n"})
 
-        proc = await asyncio.create_subprocess_exec(
-            "bash", installer, "-b", "-p", install_path,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        async for line in proc.stdout:
-            text = clean_output(line)
-            if text:
-                await websocket.send_json({"type": "log", "text": text})
-        await proc.wait()
+        rc = await install_jobs.run_proc(
+            job, ["bash", installer, "-b", "-p", install_path], clean=clean_output)
 
         conda_bin = os.path.join(install_path, "bin", "conda")
-        if proc.returncode == 0 and os.path.isfile(conda_bin):
-            await websocket.send_json({"type": "log", "text": "Configurando canais conda (bioconda, conda-forge)...\n"})
-            subprocess.run([conda_bin, "config", "--add", "channels", "bioconda"], check=False)
-            subprocess.run([conda_bin, "config", "--add", "channels", "conda-forge"], check=False)
-            subprocess.run([conda_bin, "config", "--set", "channel_priority", "strict"], check=False)
-            save_settings({"conda_path": conda_bin})
-            await websocket.send_json({"type": "done", "path": conda_bin})
-        else:
-            await websocket.send_json({"type": "error", "text": "Installation failed.\n"})
+        if rc != 0 or not os.path.isfile(conda_bin):
+            raise RuntimeError("Installation failed.")
 
-    except WebSocketDisconnect:
-        if proc and proc.returncode is None:
-            proc.terminate()
-    except Exception as e:
-        try:
-            await websocket.send_json({"type": "error", "text": str(e)})
-        except Exception:
-            pass
+        job.emit({"type": "log", "text": "Configuring conda channels (bioconda, conda-forge)...\n"})
+        subprocess.run([conda_bin, "config", "--add", "channels", "bioconda"], check=False)
+        subprocess.run([conda_bin, "config", "--add", "channels", "conda-forge"], check=False)
+        subprocess.run([conda_bin, "config", "--set", "channel_priority", "strict"], check=False)
+        save_settings({"conda_path": conda_bin})
+        job.emit({"type": "log", "text": f"conda ready at {conda_bin}\n"})
+    return run
+
+
+@app.websocket("/ws/install/conda")
+async def install_conda_ws(websocket: WebSocket):
+    """Download and install the chosen conda distribution, streaming progress."""
+    await _serve_install(websocket, "conda", install_jobs.CONDA_GROUP, _conda_runner)
+
+def _snakemake_runner(payload):
+    async def run(job):
+        from settings_store import load_settings
+        settings = load_settings()
+        conda = settings.get("conda_path") or shutil.which("conda")
+        if not conda or not os.path.isfile(conda):
+            raise RuntimeError("conda was not found. Install conda first.")
+
+        job.emit({"type": "log", "text": f"Using conda: {conda}\n"})
+        job.emit({"type": "log", "text": "Creating the 'snakemake' environment...\n"})
+        # Said up front because the silence that follows is the reason people
+        # conclude the install died and start a second one.
+        job.emit({"type": "log",
+                  "text": "conda's solver can run for several minutes without printing "
+                          "anything. That is normal -- leave it be.\n"})
+
+        rc = await install_jobs.run_proc(
+            job,
+            [conda, "create", "-n", "snakemake", "-c", "conda-forge", "-c", "bioconda",
+             "snakemake", "-y"],
+            clean=clean_output)
+        if rc != 0:
+            raise RuntimeError("Snakemake installation failed.")
+    return run
+
 
 @app.websocket("/ws/install/snakemake")
 async def install_snakemake_ws(websocket: WebSocket):
     """Create the 'snakemake' conda environment, streaming progress."""
-    await websocket.accept()
-    proc = None
-    try:
-        from settings_store import load_settings
-        settings = load_settings()
-        conda = settings.get("conda_path") or shutil.which("conda") or "conda"
+    await _serve_install(websocket, "snakemake", install_jobs.CONDA_GROUP, _snakemake_runner)
 
-        await websocket.send_json({"type": "log", "text": f"Usando conda: {conda}\n"})
-        await websocket.send_json({"type": "log", "text": "Criando ambiente 'snakemake'...\n"})
+def _vibrant_tools_runner(payload):
+    async def run(job):
+        conda = check_conda()
+        if not conda["installed"]:
+            raise RuntimeError("conda was not found. Install conda first.")
 
-        proc = await asyncio.create_subprocess_exec(
-            conda, "create", "-n", "snakemake",
-            "-c", "conda-forge", "-c", "bioconda",
-            "snakemake", "-y",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        async for line in proc.stdout:
-            text = clean_output(line)
-            if text:
-                await websocket.send_json({"type": "log", "text": text})
-        await proc.wait()
+        conda_bin = conda["path"]
+        job.emit({"type": "log",
+                  "text": f"conda: {conda_bin}\n"
+                          f"Installing HMMER3 and wget from conda-forge / bioconda...\n"})
 
-        if proc.returncode == 0:
-            await websocket.send_json({"type": "done"})
-        else:
-            await websocket.send_json({"type": "error", "text": "Snakemake installation failed.\n"})
+        rc = await install_jobs.run_proc(
+            job,
+            [conda_bin, "install", "-y", "-c", "conda-forge", "-c", "bioconda", "hmmer", "wget"],
+            clean=clean_output)
+        if rc != 0:
+            raise RuntimeError("conda install exited with errors.")
+    return run
 
-    except WebSocketDisconnect:
-        if proc and proc.returncode is None:
-            proc.terminate()
-    except Exception as e:
-        try:
-            await websocket.send_json({"type": "error", "text": str(e)})
-        except Exception:
-            pass
 
 @app.websocket("/ws/install/vibrant-tools")
 async def install_vibrant_tools_ws(websocket: WebSocket):
     """Install HMMER3 + wget via conda, streaming output."""
-    await websocket.accept()
-    proc = None
-    try:
-        conda = check_conda()
-        if not conda["installed"]:
-            await websocket.send_json({"type": "error",
-                "text": "Conda not found. Install conda first."})
-            return
-
-        conda_bin = conda["path"]
-        await websocket.send_json({"type": "log",
-            "text": f"Conda: {conda_bin}\n"
-                    f"Instalando HMMER3 e wget via conda-forge / bioconda…\n"})
-
-        proc = await asyncio.create_subprocess_exec(
-            conda_bin, "install", "-y",
-            "-c", "conda-forge", "-c", "bioconda",
-            "hmmer", "wget",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-        )
-        async for line in proc.stdout:
-            text = clean_output(line)
-            if text:
-                await websocket.send_json({"type": "log", "text": text})
-        rc = await proc.wait()
-
-        if rc == 0:
-            status = check_vibrant_tools()
-            await websocket.send_json({"type": "done", "status": status})
-        else:
-            await websocket.send_json({"type": "error",
-                "text": "conda install exited with errors."})
-    except WebSocketDisconnect:
-        if proc and proc.returncode is None:
-            proc.terminate()
-    except Exception as e:
-        try:
-            await websocket.send_json({"type": "error", "text": str(e)})
-        except Exception:
-            pass
+    await _serve_install(websocket, "vibrant-tools", install_jobs.CONDA_GROUP, _vibrant_tools_runner)
 
 # --- Sistema (global) ---
 

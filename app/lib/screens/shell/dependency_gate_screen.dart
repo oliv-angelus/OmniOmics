@@ -42,6 +42,11 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
     }
   }
 
+  /// Whether the backend says this component is mid-install. Survives the
+  /// window being closed and reopened, because the job lives in the backend
+  /// rather than in the socket that started it.
+  bool _installing(String name) => _status?['installs']?[name] == 'running';
+
   void _enter() {
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => widget.next));
   }
@@ -53,7 +58,7 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
     // language was requested -- refetch when the user flips PT/EN so they
     // don't stay stuck in the language that was active on first load.
     ref.listen(localeProvider, (previous, next) {
-      if (previous != next) _load;
+      if (previous != next) _load();
     });
     return Scaffold(
       body: Column(
@@ -109,7 +114,8 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
                 ? '${ref.t('installed_at')} ${s['conda']['path']}': ref.t('not_installed'),
             installed: s['conda']?['installed'] == true,
             wsPath: '/ws/install/conda',
-            initialPayload: const {'install_path': '~/miniforge3'},
+            defaultPath: '~/miniforge3',
+            alreadyRunning: _installing('conda'),
             options: _condaOptions,
             onDone: _load,
           ),
@@ -120,17 +126,24 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
                 ? '${ref.t('installed_at')} (${s['snakemake']['version']})': ref.t('not_installed'),
             installed: s['snakemake']?['installed'] == true,
             wsPath: '/ws/install/snakemake',
+            alreadyRunning: _installing('snakemake'),
             onDone: _load,
           ),
-          const Divider(height: 32),
-          InstallRow(
-            title: ref.t('app_python_deps'),
-            subtitle: s['python_deps']?['installed'] == true
-                ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
-            installed: s['python_deps']?['installed'] == true,
-            wsPath: '/ws/install/python-deps',
-            onDone: _load,
-          ),
+          // In the packaged build these are compiled into the backend binary,
+          // so the row could only ever report success -- it is a source-checkout
+          // concern and showing it to an end user is noise.
+          if (s['python_deps']?['bundled'] != true) ...[
+            const Divider(height: 32),
+            InstallRow(
+              title: ref.t('app_python_deps'),
+              subtitle: s['python_deps']?['installed'] == true
+                  ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
+              installed: s['python_deps']?['installed'] == true,
+              wsPath: '/ws/install/python-deps',
+              alreadyRunning: _installing('python-deps'),
+              onDone: _load,
+            ),
+          ],
           const SizedBox(height: 32),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,

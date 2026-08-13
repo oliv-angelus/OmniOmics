@@ -31,6 +31,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (mounted) setState(() => _status = status);
   }
 
+  /// Whether the backend says this component is mid-install. The job lives in
+  /// the backend, so this stays true across a closed window or a switch between
+  /// this screen and the first-run gate.
+  bool _installing(String name) => _status?['installs']?[name] == 'running';
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
@@ -40,7 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     // Refetch conda distribution descriptions (backend-sourced) when PT/EN changes.
     ref.listen(localeProvider, (previous, next) {
-      if (previous != next) _load;
+      if (previous != next) _load();
     });
 
     return SingleChildScrollView(
@@ -70,7 +75,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ? '${ref.t('installed_at')} ${s['conda']['path']}': ref.t('not_installed'),
                         installed: s['conda']?['installed'] == true,
                         wsPath: '/ws/install/conda',
-                        initialPayload: const {'install_path': '~/miniforge3'},
+                        defaultPath: '~/miniforge3',
+                        alreadyRunning: _installing('conda'),
                         options: _condaOptions,
                         onDone: _load,
                       ),
@@ -81,23 +87,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ? '${ref.t('installed_at')} (${s['snakemake']['version']})': ref.t('not_installed'),
                         installed: s['snakemake']?['installed'] == true,
                         wsPath: '/ws/install/snakemake',
+                        alreadyRunning: _installing('snakemake'),
                         onDone: _load,
                       ),
-                      const Divider(height: 32),
-                      InstallRow(
-                        title: ref.t('app_python_deps'),
-                        subtitle: s['python_deps']?['installed'] == true
-                            ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
-                        installed: s['python_deps']?['installed'] == true,
-                        wsPath: '/ws/install/python-deps',
-                        onDone: _load,
-                      ),
+                      // Bundled into the backend binary in the packaged build,
+                      // where the row could only ever report success.
+                      if (s['python_deps']?['bundled'] != true) ...[
+                        const Divider(height: 32),
+                        InstallRow(
+                          title: ref.t('app_python_deps'),
+                          subtitle: s['python_deps']?['installed'] == true
+                              ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
+                          installed: s['python_deps']?['installed'] == true,
+                          wsPath: '/ws/install/python-deps',
+                          alreadyRunning: _installing('python-deps'),
+                          onDone: _load,
+                        ),
+                      ],
                       const Divider(height: 32),
                       InstallRow(
                         title: ref.t('vibrant_tools_label'),
                         subtitle: s['vibrant_tools']?['installed'] == true ? ref.t('vibrant_installed'): ref.t('vibrant_not_installed'),
                         installed: s['vibrant_tools']?['installed'] == true,
                         wsPath: '/ws/install/vibrant-tools',
+                        alreadyRunning: _installing('vibrant-tools'),
                         onDone: _load,
                       ),
                     ],

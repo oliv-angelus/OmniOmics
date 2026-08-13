@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../models/run_record.dart';
 import '../../services/pipeline_run_provider.dart';
 import '../../widgets/results_file_tree.dart';
+import '../../widgets/import_plot_folder_dialog.dart';
 
 /// Results section (sidebar destination, alongside Pipelines/Resources/About):
 /// a run-history list -- across every pipeline, not just the current session's
@@ -42,6 +43,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   void dispose() {
     _pollTimer?.cancel();
     super.dispose();
+  }
+
+  /// Registers a results folder the app never launched itself. Shares the scan
+  /// dialog with the Plots tab: the same folder, the same detection, one record
+  /// in the run list that both tabs then see.
+  Future<void> _importRun() async {
+    final added = await showDialog<bool>(
+      context: context,
+      builder: (_) => const ImportPlotFolderDialog(),
+    );
+    if (added == true) await _loadRuns();
   }
 
   Future<void> _loadRuns({bool silent = false}) async {
@@ -88,6 +100,18 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         child: Text(ref.t('results_title'),
                             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: colors.textPrimary)),
                       ),
+                      // A run only reaches this list if the app recorded it when
+                      // it was launched. Output produced elsewhere -- on a
+                      // cluster, on another machine, or before a settings reset
+                      // -- is perfectly valid and otherwise invisible here, so
+                      // it can be pointed at directly.
+                      if (_checkedIds.isEmpty)
+                        TextButton.icon(
+                          onPressed: _importRun,
+                          style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                          icon: const Icon(Icons.create_new_folder_outlined, size: 16),
+                          label: Text(ref.t('results_add_existing'), style: const TextStyle(fontSize: 12)),
+                        ),
                       if (_checkedIds.isNotEmpty)
                         TextButton.icon(
                           onPressed: _deleting
