@@ -129,21 +129,16 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
             alreadyRunning: _installing('snakemake'),
             onDone: _load,
           ),
-          // In the packaged build these are compiled into the backend binary,
-          // so the row could only ever report success -- it is a source-checkout
-          // concern and showing it to an end user is noise.
-          if (s['python_deps']?['bundled'] != true) ...[
-            const Divider(height: 32),
-            InstallRow(
-              title: ref.t('app_python_deps'),
-              subtitle: s['python_deps']?['installed'] == true
-                  ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
-              installed: s['python_deps']?['installed'] == true,
-              wsPath: '/ws/install/python-deps',
-              alreadyRunning: _installing('python-deps'),
-              onDone: _load,
-            ),
-          ],
+          const Divider(height: 32),
+          InstallRow(
+            title: ref.t('app_python_deps'),
+            subtitle: s['python_deps']?['installed'] == true
+                ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
+            installed: s['python_deps']?['installed'] == true,
+            wsPath: '/ws/install/python-deps',
+            alreadyRunning: _installing('python-deps'),
+            onDone: _load,
+          ),
           const SizedBox(height: 32),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
