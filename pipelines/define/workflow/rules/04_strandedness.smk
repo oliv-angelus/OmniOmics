@@ -3,7 +3,7 @@ import os
 
 rule bed12_from_gff:
     """Bacterial genes are single-exon, so each filtered CDS feature converts
-    directly to one BED12 block (PIPELINE_SPEC.md [6])."""
+    directly to one BED12 block."""
     input:
         gff="results/00_REFERENCE/bakta/reference_filtered.gff3"
     output:
@@ -39,11 +39,12 @@ rule infer_experiment:
 rule decide_strandedness:
     """Runs on every sample (not just 1-3 "representative" ones -- cheap
     enough, and avoids picking a representative sample) and applies the
-    automatable decision rule from PIPELINE_SPEC.md [6]: one pattern >90% ->
+    automatable decision rule: one pattern >90% ->
     stranded forward/reverse; close to 50/50 -> unstranded. Writes both the
     plain value featureCounts consumes and a per-sample audit trail, so the
-    threshold actually used is never undocumented (the root cause flagged in
-    PIPELINE_SPEC.md [9] for the original DEG-threshold problem)."""
+    threshold actually used is never undocumented -- an undocumented threshold
+    is exactly what makes a differential-expression result impossible to
+    reproduce later."""
     input:
         reports=expand("results/03_STRANDEDNESS/{sample}/infer_experiment.txt", sample=SAMPLES)
     output:

@@ -1,10 +1,9 @@
 """Parses RSeQC's infer_experiment.py output for every sample and picks
 featureCounts' -s value automatically: if one strand pattern dominates
 (>=90%) the library is stranded (forward or reverse, whichever fraction
-wins); if the two patterns are close to 50/50, it's unstranded. See
-PIPELINE_SPEC.md [6] -- this is what makes that "totally automatable" claim
-concrete and auditable (every sample's numbers land in the report, not just
-the final choice).
+wins); if the two patterns are close to 50/50, it's unstranded. Automated deliberately, and auditable: every
+sample's own fractions land in the report, not just the final call, so a
+borderline library can be recognised rather than silently assigned.
 
 Invoked as a plain CLI program by 04_strandedness.smk rather than through
 Snakemake's `script:` directive: that directive injects the Snakemake
