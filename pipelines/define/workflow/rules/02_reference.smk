@@ -9,7 +9,7 @@
 rule bakta_reference:
     """All-in-one reference genome annotation: gene calling, tRNA/tmRNA/rRNA/
     ncRNA/CRISPR detection, functional annotation. Runs once for the whole
-    project, not once per sample (PIPELINE_SPEC.md [4])."""
+    project, not once per sample."""
     input:
         fa=config["databases"]["reference_genome"]
     output:
@@ -33,8 +33,7 @@ rule bakta_reference:
 
 rule filter_rrna:
     """Excludes rRNA/tRNA/tmRNA features before counting -- residual
-    ribosomal/transfer RNA would otherwise distort expression normalization
-    (PIPELINE_SPEC.md [5])."""
+    ribosomal/transfer RNA would otherwise distort expression normalization."""
     input:
         gff="results/00_REFERENCE/bakta/reference.gff3"
     output:
@@ -63,7 +62,7 @@ rule bowtie2_index_reference:
 rule eggnog_reference:
     """Functional annotation of the reference's own proteins (OG, COG, GO,
     EC, KEGG, PFAM) -- merged into the final annotated count table in
-    06_merge.smk (PIPELINE_SPEC.md [10])."""
+    06_merge.smk."""
     input:
         faa="results/00_REFERENCE/bakta/reference.faa"
     output:

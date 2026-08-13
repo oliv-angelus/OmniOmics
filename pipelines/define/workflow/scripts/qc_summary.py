@@ -1,7 +1,12 @@
-"""Consolidates the automatic QC-alert metrics PIPELINE_SPEC.md calls out
-throughout (fastp retention %, Bowtie2 alignment %, featureCounts assigned %,
-detected strandedness) into one row-per-sample TSV, instead of leaving them
-scattered across each tool's own report/log.
+"""Consolidates the QC metrics worth alerting on (fastp retention %, Bowtie2
+alignment %, featureCounts assigned %, detected strandedness) into one
+row-per-sample TSV, instead of leaving them scattered across each tool's own
+report and log.
+
+These four are together the earliest reliable signal that a sample went wrong:
+a library that lost most of its reads in trimming, mapped poorly, or had few
+reads assigned to features will show it here before any downstream result looks
+odd.
 
 Invoked as a plain CLI program by 06_merge.smk rather than through
 Snakemake's `script:` directive -- see decide_strandedness.py's module

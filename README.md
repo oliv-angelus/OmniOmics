@@ -160,24 +160,31 @@ and cores per pipeline, and lists which pipelines need a CPU with **AVX2**
 (MAGMA and SIGMA do; without it CheckM2 aborts with `Illegal instruction`).
 MAGMA's floor is set by GTDB-Tk, which documents a 150 GB requirement.
 
-```bash
-git clone https://github.com/oliv-angelus/OmniOmics.git
-cd OmniOmics
-./run_dev.sh
-```
-
-`run_dev.sh` starts the Python backend and the Flutter application together. On
-first run the application offers to install conda and Snakemake; each pipeline's
-tool environments are then built on first use of that pipeline.
-
-To build a standalone binary instead:
+Download the `.deb` from the
+[Releases page](https://github.com/oliv-angelus/OmniOmics/releases) and install
+it like any other application:
 
 ```bash
-./build.sh
+sudo dpkg -i omniomics_0.0.1_amd64.deb
+omniomics
 ```
 
-Full instructions, including how to build from source and what each dependency
-is for, are in [`docs/INSTALL.md`](docs/INSTALL.md).
+It also appears in the desktop menu under Science.
+
+Nothing else needs to be installed first. On first launch the application
+offers to install conda and Snakemake, and each pipeline's tool environments are
+built the first time that pipeline is used.
+
+Full instructions, including uninstalling and where everything is stored, are in
+[`docs/INSTALL.md`](docs/INSTALL.md).
+
+### Running from source
+
+Only for modifying the pipelines or the analyses — `run_dev.sh` rebuilds and
+launches the app against a local backend, and is a development tool rather than
+a way to install OmniOmics. It needs the Flutter SDK and the build dependencies
+listed in [`docs/INSTALL.md`](docs/INSTALL.md#running-from-source--for-development-only);
+`./build.sh` produces the same `.deb` as the release.
 
 ---
 

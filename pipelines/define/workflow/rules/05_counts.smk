@@ -1,7 +1,7 @@
 rule featurecounts:
     """One matrix over every sample's BAM at once (not one run per sample
-    joined afterward) -- guarantees the same gene rows/order across samples
-    (PIPELINE_SPEC.md [8]). -s is read from decide_strandedness's output at
+    joined afterward) -- guarantees the same gene rows/order across samples.
+    -s is read from decide_strandedness's output at
     shell-execution time, not at DAG-build time (the file doesn't exist yet
     on a fresh run)."""
     input:

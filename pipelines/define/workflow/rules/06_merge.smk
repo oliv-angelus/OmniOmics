@@ -37,7 +37,7 @@ rule merge_annotated_counts:
 rule qc_summary:
     """One row per sample: fastp retention %, Bowtie2 alignment %,
     featureCounts assigned %, detected strandedness -- the automatic
-    QC-alert metrics PIPELINE_SPEC.md calls out throughout, consolidated
+    QC metrics worth alerting on, consolidated
     instead of left scattered across each tool's own report/log."""
     input:
         fastp=expand("results/01_QC/{sample}/{sample}_fastp.json", sample=SAMPLES),

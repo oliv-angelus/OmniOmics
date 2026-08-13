@@ -25,9 +25,10 @@ beforehand. The application installs what it needs, when it needs it.
 
 ---
 
-## Option 1 — the packaged build (recommended)
+## Installing — the packaged build
 
-Download the `.deb` from the repository's Releases page, then:
+This is how OmniOmics is meant to be installed. Download the `.deb` from the
+[Releases page](https://github.com/oliv-angelus/OmniOmics/releases), then:
 
 ```bash
 sudo dpkg -i omniomics_0.0.1_amd64.deb
@@ -48,9 +49,22 @@ folders you chose, and have to be removed by hand if you want the space back.
 
 ---
 
-## Option 2 — running from source
+## Running from source — for development only
 
-Useful if you want to modify the pipelines or the analyses.
+**This is not an installation method.** `run_dev.sh` rebuilds the Flutter app
+and launches it against a backend started from the working tree; it exists for
+modifying the pipelines or the analyses, and for debugging. If you only want to
+use OmniOmics, install the `.deb` above — it needs no Flutter SDK, no Python
+environment and no build toolchain.
+
+Two practical differences from the packaged build, worth knowing if you are
+comparing behaviour between them:
+
+- The backend runs as `python3 main.py` rather than the compiled binary, so path
+  resolution takes a different branch (`__file__` instead of `sys.executable`).
+- `pipelines/` and `plots/` are read from the working tree instead of
+  `/opt/omniomics/`, which means a packaging mistake in either can be invisible
+  here and fatal there.
 
 ### Dependencies
 
@@ -79,6 +93,8 @@ requirements, starts the backend, and launches the Flutter application against
 it. Both stop together when you close the window.
 
 ### Building the package yourself
+
+The same `.deb` the release ships.
 
 ```bash
 ./build.sh

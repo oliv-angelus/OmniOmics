@@ -50,7 +50,7 @@ rule fastqc_trim:
         """
 
 rule multiqc_raw:
-    """One consolidated report over every sample's raw-read FastQC output -- mechanical, no per-sample judgment call (see PIPELINE_SPEC.md [1])."""
+    """One consolidated report over every sample's raw-read FastQC output -- mechanical, no per-sample judgment call."""
     input:
         expand("results/01_QC/{sample}/fastqc_raw", sample=SAMPLES)
     output:
@@ -61,7 +61,7 @@ rule multiqc_raw:
         "multiqc {input} -o {output.outdir} > {log} 2>&1"
 
 rule multiqc_trim:
-    """Same as multiqc_raw but post-trim, plus fastp's own JSON reports -- lets a user compare before/after in one place (PIPELINE_SPEC.md [3])."""
+    """Same as multiqc_raw but post-trim, plus fastp's own JSON reports -- lets a user compare before/after in one place."""
     input:
         fastqc=expand("results/01_QC/{sample}/fastqc_trim", sample=SAMPLES),
         fastp=expand("results/01_QC/{sample}/{sample}_fastp.json", sample=SAMPLES)
