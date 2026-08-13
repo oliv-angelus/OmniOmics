@@ -28,6 +28,15 @@ Merging tables and choosing a model is the analyst's work, and burying it
 inside a pipeline makes it invisible and unauditable. The Plots tab is where
 that work is done, deliberately as a separate, visible step.
 
+A second one: **genes are called once per pipeline, and every downstream tool
+reuses those calls.** Several tools bundle their own gene finder and will
+happily re-predict ORFs from the raw contigs — antiSMASH is the clearest case.
+Letting them do so produces a second, independent set of genes that disagrees
+with the annotation at some loci, so a result's coordinates no longer line up
+with everything else built from the same assembly. Where a tool accepts existing
+annotation, it is given it: SIGMA hands antiSMASH Bakta's GFF3, MAGMA hands it
+Pyrodigal's.
+
 ---
 
 ## MAGMA — metagenomics
