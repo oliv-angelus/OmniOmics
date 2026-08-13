@@ -30,6 +30,7 @@ reproducible.
 
 - [What it does](#what-it-does)
 - [The five pipelines](#the-five-pipelines)
+  - Per-pipeline pages: [MAGMA](docs/pipelines/MAGMA.md), [SIGMA](docs/pipelines/SIGMA.md), [DOGMA](docs/pipelines/DOGMA.md), [DEFINE](docs/pipelines/DEFINE.md), [PRISM](docs/pipelines/PRISM.md)
 - [The plotting environment](#the-plotting-environment)
 - [Design principles](#design-principles)
 - [Requirements](docs/REQUIREMENTS.md)
@@ -87,7 +88,15 @@ Snakemake workflow, its per-tool conda environments, and a manifest describing
 its steps and parameters to the interface. Adding a pipeline does not require
 touching the application: the interface builds itself from the manifest.
 
-Detailed per-pipeline documentation lives in [`docs/pipelines/`](docs/pipelines/).
+Each pipeline has its own page, with the workflow diagram and a stage-by-stage
+description read from its actual rule files:
+
+- [MAGMA](docs/pipelines/MAGMA.md) · [SIGMA](docs/pipelines/SIGMA.md) ·
+  [DOGMA](docs/pipelines/DOGMA.md) · [DEFINE](docs/pipelines/DEFINE.md) ·
+  [PRISM](docs/pipelines/PRISM.md)
+
+DEFINE's and PRISM's pages are still to be written; the summary in
+[`docs/pipelines/`](docs/pipelines/) covers all five in the meantime.
 
 ---
 
