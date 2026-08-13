@@ -3051,22 +3051,6 @@
           ]
         },
         {
-          "flag": "--genefinding-tool",
-          "type": "choice",
-          "default": "prodigal",
-          "enabled": false,
-          "description": {
-            "en": "Gene finding tool when no annotations are provided",
-            "pt": "Ferramenta de predição gênica quando nenhuma anotação é fornecida"
-          },
-          "choices": [
-            "prodigal",
-            "prodigal-m",
-            "glimmerhmm",
-            "none"
-          ]
-        },
-        {
           "flag": "--hm-similarity-metric",
           "type": "choice",
           "default": "jaccard",

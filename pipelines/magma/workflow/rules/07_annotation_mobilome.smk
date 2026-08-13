@@ -171,8 +171,22 @@ rule isescan_sample:
         """
 
 rule antismash_sample:
+    """BGC detection over the prokaryotic contigs, reusing the gene calls from
+    rule prodigal_sample rather than letting antiSMASH predict its own.
+
+    This is a correctness fix, not only a consistency one. antiSMASH's bundled
+    gene finding runs Prodigal in single-genome mode, which is the wrong model
+    for an assembled metagenome; prodigal_sample already calls genes over this
+    exact same FASTA with -p meta. Reusing that GFF means the BGCs are defined on
+    the same ORFs as every other annotation in stage 09, and that they came from
+    the metagenomic model.
+
+    --genefinding-tool error is a failsafe: should the GFF3 ever fail to supply
+    genes, the run stops loudly rather than silently skipping the record, which
+    is what 'none' would do."""
     input:
-        fa="results/02_ASSEMBLY/{sample}/final.contigs_prokaryotic.fa"
+        fa="results/02_ASSEMBLY/{sample}/final.contigs_prokaryotic.fa",
+        gff="results/09_ANNOTATION/{sample}/prodigal/{sample}_coords.gff"
     output:
         outdir=directory("results/09_ANNOTATION/{sample}/antismash")
     params:
@@ -185,7 +199,8 @@ rule antismash_sample:
         """
         mkdir -p {output.outdir}
         antismash {input.fa} --databases {params.db} --output-dir {output.outdir} \
-            --genefinding-tool prodigal --cpus {threads} --logfile {log} {params.extra}
+            --genefinding-gff3 {input.gff} --genefinding-tool error \
+            --cpus {threads} --logfile {log} {params.extra}
         """
 
 rule bigscape_sample:
@@ -415,8 +430,14 @@ rule isescan_mags:
         """
 
 rule antismash_mags:
+    """Per-MAG BGC detection, reusing rule prodigal_mags' gene calls.
+
+    Same reasoning as antismash_sample: the BGCs are defined on the same ORFs as
+    the rest of the per-MAG annotation, instead of on a second, independent set
+    predicted by antiSMASH's own bundled Prodigal."""
     input:
-        mags="results/07_DEREP/drep_out/dereplicated_genomes"
+        mags="results/07_DEREP/drep_out/dereplicated_genomes",
+        prodigal_dir="results/09_ANNOTATION/mags/prodigal"
     output:
         outdir=directory("results/09_ANNOTATION/mags/antismash")
     params:
@@ -432,8 +453,9 @@ rule antismash_mags:
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
             magname=$(basename "$f".fa)
+            gff="{input.prodigal_dir}/$magname/${{magname}}_coords.gff"
             antismash "$f" --databases {params.db} --output-dir {output.outdir}/$magname \
-                --genefinding-tool prodigal --cpus {threads} \
+                --genefinding-gff3 "$gff" --genefinding-tool error --cpus {threads} \
                 --logfile {output.outdir}/$magname/antismash.log \
                 {params.extra} >> {log} 2>&1
         done

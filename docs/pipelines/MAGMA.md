@@ -128,6 +128,20 @@ The two levels answer different questions. Per sample is the community's whole
 gene content; per MAG is what one organism carries. Both are kept, and the
 Plots tab keeps their denominators separate.
 
+**Gene calling happens once, in Pyrodigal, and everything reuses it.** Pyrodigal
+is a Cython binding to Prodigal's own internals — validated to reproduce Prodigal
+v2.6.3 exactly — but it threads properly, so the thread count is a real setting
+rather than a decoration. It runs `-p meta` on the assembly and `-p single` on
+each MAG, which is the distinction that matters: a metagenome and a single genome
+need different models.
+
+> **antiSMASH is given those gene calls instead of predicting its own.** Its
+> bundled gene finding runs Prodigal in single-genome mode, which is the wrong
+> model for an assembled metagenome; both antiSMASH rules now pass Pyrodigal's
+> GFF3 through `--genefinding-gff3`. The BGCs therefore sit on the same ORFs as
+> the rest of stage 07, and came from the metagenomic model where that is what
+> the input is.
+
 ### 08 — Coverage
 
 `coverm_index` · `coverm_map_short` · `coverm_map_long` · `coverm`

@@ -132,6 +132,15 @@ antiSMASH finds biosynthetic gene clusters; BiG-SCAPE groups them into gene
 cluster families, which is what makes "shared across genomes" versus "unique to
 this one" answerable.
 
+> **antiSMASH reads Bakta's gene calls rather than making its own.** Left to
+> itself it runs a bundled Prodigal over the raw FASTA, producing a second,
+> independent set of ORFs for a genome stage 08 has already annotated. The two
+> callers disagree at some loci, so a cluster's member genes would carry
+> coordinates that do not line up with the annotation every other stage — and
+> the genome ring — is drawn from. The rule passes Bakta's GFF3 through
+> `--genefinding-gff3`, which loads those CDS features into the record and
+> suppresses gene finding entirely.
+
 ### 12 — Screening
 
 `kraken2` · `kaiju_classify` · `kaiju_table`
