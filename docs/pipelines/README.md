@@ -1,5 +1,10 @@
 # The five pipelines
 
+Each has its own page with the workflow diagram and a stage-by-stage
+description: **[MAGMA](MAGMA.md)** · **[SIGMA](SIGMA.md)** ·
+**[DOGMA](DOGMA.md)** · **[DEFINE](DEFINE.md)** · **[PRISM](PRISM.md)**.
+DEFINE's and PRISM's are still to be written; this page covers all five.
+
 Each pipeline is a self-contained directory under `pipelines/`:
 
 ```
@@ -12,10 +17,10 @@ pipelines/<name>/
     scripts/               helper scripts the rules call
 ```
 
-The interface builds itself from `manifest.yaml`. Adding a pipeline, or adding
-a tool to one, does not require touching the application code — which is why
-the manifest schema is documented separately in
-[`../../notes/Pipeline Manifest Schema.md`](../../notes/Pipeline%20Manifest%20Schema.md).
+The interface builds itself from `manifest.yaml`: adding a pipeline, or adding
+a tool to one, does not require touching the application code. The schema is the
+manifest files themselves — `pipelines/*/pipeline.yaml` are the working
+examples, and every field they use is read by `backend/pipelines.py`.
 
 A principle that applies to all five: **pipelines stop at raw outputs.** No
 workflow merges, aggregates or statistically summarises on the user's behalf.
