@@ -18,6 +18,9 @@ abstract: >-
   integrated plotting environment that turns each workflow's output into
   publication-ready figures. It is aimed at researchers who need reproducible
   multi-omics analysis without assembling and maintaining the toolchain by hand.
+  This is an alpha release, validated against synthetic control datasets; a
+  stable release and a large-dataset benchmark are planned for December 2026 and
+  will be reported in the accompanying manuscript, currently in preparation.
 keywords:
   - bioinformatics
   - metagenomics
