@@ -10,10 +10,15 @@ Linux; Windows and macOS have not been attempted.
 | | Why |
 |---|---|
 | **Linux, x86-64** | the only platform built and tested |
-| **~20 GB free disk** | tool environments, before any reference database |
+| **~25 GB free disk** | tool environments, before any reference database |
 | **More disk for databases** | varies enormously; GTDB alone is tens of GB |
-| **8 GB RAM minimum** | assembly and binning want considerably more; 32 GB+ for real metagenomes |
+| **8 GB RAM minimum** | enough for the app, PRISM and DEFINE; MAGMA and DOGMA want far more |
+| **A CPU with AVX2** | required by MAGMA and SIGMA (CheckM2, SemiBin2); check with `lscpu \| grep avx2` |
 | **Internet access on first run** | conda, tool environments and databases are fetched on demand |
+
+Per-pipeline figures, including the pipelines that will not run at all without
+AVX2, are in [REQUIREMENTS.md](REQUIREMENTS.md). Read it before a large run:
+MAGMA's memory floor is set by GTDB-Tk's documented 150 GB.
 
 You do **not** need conda, Snakemake, R or any bioinformatics tool installed
 beforehand. The application installs what it needs, when it needs it.
@@ -117,7 +122,7 @@ The application walks through setup, but knowing the order helps:
 
 The settings file is plain JSON and safe to read. Note that the Plots tab lists
 runs from it, not from disk: if it is lost, previous runs stop appearing even
-though their output is intact. **Plots → Importar pasta** brings them back.
+though their output is intact. **Plots → Import folder** brings them back.
 
 ---
 
@@ -134,6 +139,15 @@ rule that failed and the tool it was trying to invoke.
 **The Plots tab says the R environment is missing.** It is built on first use
 and takes several minutes. If it failed, the Plots tab offers to rebuild it and
 shows conda's own error.
+
+**A tool dies with `Illegal instruction (core dumped)`.** The CPU lacks AVX2.
+CheckM2 and SemiBin2 (MAGMA, SIGMA) cannot run without it — see
+[REQUIREMENTS.md](REQUIREMENTS.md) for which pipelines are affected and what
+still works.
+
+**A step dies abruptly with no error of its own.** Usually the operating
+system's OOM killer, which leaves nothing in the run log. Check the pipeline's
+memory requirements; GTDB-Tk alone documents 150 GB.
 
 **An analysis refuses with a message about missing data.** That is by design —
 the message names what is missing and why. Analyses do not draw figures they

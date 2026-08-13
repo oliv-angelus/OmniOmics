@@ -1,3 +1,21 @@
+> **What this document is.** The original requirements specification that
+> DEFINE was built to implement -- a transcriptomics reanalysis worked out step
+> by step before any code existed. It is kept because two DEFINE scripts cite it
+> by name for the reasoning behind their design decisions
+> (`workflow/scripts/qc_summary.py`, `workflow/scripts/decide_strandedness.py`),
+> and because it records why DEFINE's stages are arranged as they are.
+>
+> It is **not** a requirements document in the hardware sense -- for RAM, cores
+> and CPU instruction sets see [`../docs/REQUIREMENTS.md`](../docs/REQUIREMENTS.md).
+> It is also **not** a description of the other four pipelines; those are
+> documented in [`../docs/pipelines/`](../docs/pipelines/).
+>
+> Kept in its original Portuguese: it is a historical source document, and
+> translating it would make it a paraphrase of itself rather than the record it
+> is.
+
+---
+
 # Especificação do pipeline — reanálise transcriptômica Pn16
 
 > Documento de referência para automatizar este pipeline (ex.: Snakemake/Nextflow ou script próprio).
