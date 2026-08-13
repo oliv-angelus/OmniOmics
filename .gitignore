@@ -18,3 +18,7 @@ Currículo Lattes.pdf
 
 # Pacotes gerados pelo build -- vão para a Release, não para o repositório
 dist/
+
+# Working notes -- kept locally. A summarised, English dev-notes will
+# replace them in the repository.
+notes/

@@ -1,8 +1,8 @@
 #!/bin/bash
-# Gera o pacote distribuível do OmniOmics:
-#   dist/omniomics_<version>_amd64.deb  — instalável via dpkg/apt
+# Builds the distributable OmniOmics package:
+#   dist/omniomics_<version>_amd64.deb  -- installable with dpkg/apt
 #
-# Pré-requisitos: python3-venv, flutter (linux desktop enabled), dpkg-deb, fakeroot
+# Requires: python3-venv, flutter (linux desktop enabled), dpkg-deb, fakeroot
 set -euo pipefail
 cd "$(dirname "$(realpath "$0")")"
 
@@ -12,26 +12,26 @@ BIN_NAME="omniomics"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
 info()  { printf "${GREEN}[build]${NC} %s\n" "$*"; }
-error() { printf "${RED}[erro]${NC} %s\n" "$*" >&2; exit 1; }
+error() { printf "${RED}[error]${NC} %s\n" "$*" >&2; exit 1; }
 
-command -v flutter &>/dev/null || error "flutter não encontrado no PATH."
+command -v flutter &>/dev/null || error "flutter not found on PATH."
 
-# ─── Preparar venv Python ─────────────────────────────────────────────────
+# --- Python venv ─────────────────────────────────────────────────
 PYTHON=$(command -v python3 || command -v python || true)
-[ -z "$PYTHON" ] && error "Python 3 não encontrado."
+[ -z "$PYTHON" ] && error "Python 3 not found."
 
 if [ ! -f ".venv/bin/python" ]; then
-    info "Criando ambiente virtual Python..."
+    info "Creating Python virtual environment..."
     "$PYTHON" -m venv .venv
 fi
 source .venv/bin/activate
 pip install -q -r requirements.txt
 
-# ─── 1. Compilar backend com PyInstaller ──────────────────────────────────
-info "Instalando PyInstaller..."
+# --- 1. Compile the backend with PyInstaller ──────────────────────────────────
+info "Installing PyInstaller..."
 pip install -q pyinstaller
 
-info "Compilando backend Python → backend/dist/server..."
+info "Compiling the Python backend -> backend/dist/server..."
 pyinstaller backend/main.py \
     --onefile \
     --name server \
@@ -59,18 +59,18 @@ pyinstaller backend/main.py \
     --noconfirm \
     --log-level WARN
 
-[ -x "backend/dist/server" ] || error "PyInstaller não gerou backend/dist/server."
-info "Backend compilado: $(du -sh backend/dist/server | cut -f1)"
+[ -x "backend/dist/server" ] || error "PyInstaller did not produce backend/dist/server."
+info "Backend compiled: $(du -sh backend/dist/server | cut -f1)"
 
-# ─── 2. Compilar app Flutter (release) ────────────────────────────────────
-info "Compilando app Flutter (linux release)..."
+# --- 2. Build the Flutter app (release) ────────────────────────────────────
+info "Building the Flutter app (linux release)..."
 (cd app && flutter build linux --release)
 
 BUNDLE_DIR="app/build/linux/x64/release/bundle"
-[ -x "$BUNDLE_DIR/omniomics" ] || error "Flutter não gerou $BUNDLE_DIR/omniomics."
+[ -x "$BUNDLE_DIR/omniomics" ] || error "Flutter did not produce $BUNDLE_DIR/omniomics."
 
-# ─── 3. Montar staging (/opt/omniomics) ───────────────────────────────────
-info "Montando árvore do pacote..."
+# --- 3. Stage the package tree (/opt/omniomics) ───────────────────────────────────
+info "Staging the package tree..."
 STAGE="dist/staging"
 rm -rf "$STAGE"
 INSTALL_DIR="$STAGE/opt/$PKG_NAME"
@@ -125,14 +125,14 @@ Description: Integrated desktop environment for multi-omics analysis
  not yet in sustained use on real data beyond the author.
 EOF
 
-# ─── 4. Gerar .deb ─────────────────────────────────────────────────────────
-info "Gerando .deb..."
+# --- 4. Build the .deb ─────────────────────────────────────────────────────────
+info "Building the .deb..."
 mkdir -p dist
 fakeroot dpkg-deb --build "$STAGE" "dist/${PKG_NAME}_${VERSION}_amd64.deb"
 
 echo ""
-info "=== Pacote gerado ==="
+info "=== Package built ==="
 ls -lh dist/*.deb
 echo ""
-info "Para instalar:  sudo dpkg -i dist/${PKG_NAME}_${VERSION}_amd64.deb"
-info "Depois:         $BIN_NAME   (ou pelo menu de aplicativos)"
+info "To install:  sudo dpkg -i dist/${PKG_NAME}_${VERSION}_amd64.deb"
+info "Then:           $BIN_NAME   (or from the applications menu)"

@@ -77,14 +77,14 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   String? _ampliconPreset;
   // Campos reais de primer (aba Entradas), pré-preenchidos pelo preset escolhido
   // mas editáveis: presets como "18S -- informe os primers" e "Personalizado"
-  // deliberadamente não trazem sequência, e mesmo os que trazem podem ser
+  // deliberately carry no sequence, and even the ones that do can be
   // trocados (existem primers diferentes que amplificam a mesma região).
   // Vários primers separados por vírgula -- o kit ONT SQK-MAB114.24 é um mix real
-  // (par universal + pares taxon-específicos), não um par único.
+  // (a universal pair plus taxon-specific ones), not a single pair.
   final _fwdPrimersController = TextEditingController();
   final _revPrimersController = TextEditingController();
   /// Preenche os campos de primer a partir de um preset do manifest, sem
-  /// sobrescrever o que o usuário já digitou à mão (only=true força).
+  /// overwrite what the user typed by hand (only=true forces it).
   void _seedPrimersFromPreset(String? presetId, {bool force = false}) {
     final list = (_manifest?['amplicon_presets'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final p = list.firstWhere((e) => e['id'] == presetId, orElse: () => const <String, dynamic>{});
@@ -287,7 +287,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     final savedPreset = draft['amplicon_preset'] as String?;
     if (savedPreset != null && savedPreset.isNotEmpty) _ampliconPreset = savedPreset;
     if (savedPreset != null && savedPreset.isNotEmpty) _seedPrimersFromPreset(savedPreset, force: true);
-    // Primers digitados à mão vencem o que o preset preencheu.
+    // Hand-typed primers win over whatever the preset filled in.
     final savedFwd = draft['amplicon_fwd_primers'] as String?;
     if (savedFwd != null && savedFwd.isNotEmpty) _fwdPrimersController.text = savedFwd;
     final savedRev = draft['amplicon_rev_primers'] as String?;
@@ -930,8 +930,8 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
             }),
             const SizedBox(height: 12),
             // Campos reais de primer. Existem porque presets como "18S --
-            // informe os primers" e "Personalizado" deliberadamente não trazem
-            // sequência: sem isto o usuário lê "informe os primers" e não tem
+            // enter the primers" and "Custom" deliberately carry no
+            // sequence: without this the user reads "enter the primers" and has
             // onde informar (só digitando -g/-G cru no cutadapt, nada
             // descobrível). Também permite trocar os primers de um preset que
             // JÁ traz sequência -- primers diferentes amplificam a mesma região.

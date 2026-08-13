@@ -212,8 +212,8 @@ async def install_conda_ws(websocket: WebSocket):
             head = f.read(64)
         if not head.lstrip().startswith(b"#!"):
             await websocket.send_json({"type": "error",
-                "text": f"Download inválido: {installer} não parece ser um instalador shell "
-                        f"(a URL pode estar fora do ar ou ter mudado). Início do arquivo: {head[:40]!r}\n"})
+                "text": f"Invalid download: {installer} does not look like a shell installer "
+                        f"(the URL may be down or may have changed). Start of file: {head[:40]!r}\n"})
             return
 
         os.chmod(installer, 0o755)
@@ -239,7 +239,7 @@ async def install_conda_ws(websocket: WebSocket):
             save_settings({"conda_path": conda_bin})
             await websocket.send_json({"type": "done", "path": conda_bin})
         else:
-            await websocket.send_json({"type": "error", "text": "Instalação falhou.\n"})
+            await websocket.send_json({"type": "error", "text": "Installation failed.\n"})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
@@ -279,7 +279,7 @@ async def install_snakemake_ws(websocket: WebSocket):
         if proc.returncode == 0:
             await websocket.send_json({"type": "done"})
         else:
-            await websocket.send_json({"type": "error", "text": "Instalação do Snakemake falhou.\n"})
+            await websocket.send_json({"type": "error", "text": "Snakemake installation failed.\n"})
 
     except WebSocketDisconnect:
         if proc and proc.returncode is None:
@@ -904,7 +904,7 @@ async def _download_all_task(batch_id: str, base_dir: str, chosen_options: dict,
             name = db.get("name", key)
             opts = db.get("download_options", [])
             if not opts:
-                await send({"type": "log", "text": f"⚠ {name}: sem opção de download automática, pulando.\n"})
+                await send({"type": "log", "text": f"⚠ {name}: no automatic download available, skipping.\n"})
                 await send({"type": "db_skipped", "key": key, "name": name})
                 skipped.append(key)
                 continue
@@ -1279,7 +1279,7 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
             pass
         await proc.wait()
         exit_code = proc.returncode
-        await _emit(pid, {"type": "log", "text": f"[erro interno monitorando a execução: {e}]\n"})
+        await _emit(pid, {"type": "log", "text": f"[internal error while monitoring the run: {e}]\n"})
     finally:
         pipeline_finished[pid] = True
         # Don't clobber a status /stop already set to "stopped" -- SIGTERM makes
@@ -1405,7 +1405,7 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         # never gets a 'done' because the run just... starts and keeps going).
         if pipeline_stop_requested.get(pid):
             pipeline_stop_requested.pop(pid, None)
-            await websocket.send_json({"type": "log", "text": "Interrompido antes de iniciar (solicitado pelo usuário).\n"})
+            await websocket.send_json({"type": "log", "text": "Stopped before starting (requested by the user).\n"})
             await websocket.send_json({"type": "done", "code": -15})
             return
 
@@ -1810,7 +1810,7 @@ async def load_plot_data(data: dict):
     settings = load_settings()
     rscript = plots_engine.resolve_rscript(settings.get("conda_path"))
     if not rscript:
-        raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
+        raise HTTPException(status_code=400, detail="The R environment (r-plots) is not installed.")
 
     input_shapes = plots_engine.get_input_shapes_for_pipeline(parent_run["pipeline_id"])
     primary_shape = input_shapes[0]
@@ -1935,7 +1935,7 @@ async def _run_plot_task(run_id: str, cmd: list, cwd: str, plot_run_id: str | No
             pass
         await proc.wait()
         exit_code = proc.returncode
-        await _emit_plot(run_id, {"type": "log", "text": f"[erro interno monitorando a execução: {e}]\n"})
+        await _emit_plot(run_id, {"type": "log", "text": f"[internal error while monitoring the run: {e}]\n"})
     finally:
         plot_finished[run_id] = True
         if plot_run_id:
@@ -1968,7 +1968,7 @@ async def run_plot_analysis(analysis_id: str, data: dict):
     settings = load_settings()
     rscript = plots_engine.resolve_rscript(settings.get("conda_path"))
     if not rscript:
-        raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
+        raise HTTPException(status_code=400, detail="The R environment (r-plots) is not installed.")
 
     data_rds = data.get("data_rds")
     if not data_rds:
@@ -2079,7 +2079,7 @@ async def export_plot(run_id: str, data: dict):
     settings = load_settings()
     rscript = plots_engine.resolve_rscript(settings.get("conda_path"))
     if not rscript:
-        raise HTTPException(status_code=400, detail="Ambiente R (r-plots) não está instalado.")
+        raise HTTPException(status_code=400, detail="The R environment (r-plots) is not installed.")
 
     run_dir = data.get("run_dir")
     if not run_dir or not os.path.isdir(run_dir):
