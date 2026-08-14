@@ -126,19 +126,79 @@ title_bar <- function(label, size = 10, font_family = "serif") {
 }
 
 #' Real rendered width (inches) of `label` at `size`/bold/`font_family` --
-#' measured via grid's own text metrics (a real device-independent text
-#' grob), not a guessed characters-per-inch heuristic (font/weight/size all
-#' change how many characters fit per inch, so a fixed guess is wrong for
-#' some combination of them). `size` here is a ggplot2 "size" unit (as
-#' passed to `annotate("text", size =...)`), converted to points via
-#' ggplot2's own `.pt` constant, matching exactly what title_bar actually
-#' renders.
+#' measured via grid's own text metrics (a real text grob), not a guessed
+#' characters-per-inch heuristic (font/weight/size all change how many
+#' characters fit per inch, so a fixed guess is wrong for some combination of
+#' them). `size` here is a ggplot2 "size" unit (as passed to
+#' `annotate("text", size =...)`), converted to points via ggplot2's own `.pt`
+#' constant, matching exactly what title_bar actually renders.
+#'
+#' Text metrics are NOT device-independent, which is the whole reason the
+#' wrapping used to be wrong. grid measures on whatever device is current, and
+#' under Rscript nothing is open, so measurement fell to the null device --
+#' whose serif metrics are much narrower than the ones ggsave renders with. For
+#' one real title the three disagree badly:
+#'
+#'   null device (what this used to measure on)   7.79 in
+#'   grDevices::png (cairo)                       8.00 in
+#'   ragg::agg_png (what ggsave actually uses)    9.67 in
+#'
+#' A title measured at 7.79in and given 7.8in of room therefore rendered at
+#' 9.67in and ran off both ends of the bar. Callers must measure inside
+#' `on_render_device()` so these numbers refer to the same font as the output.
 title_text_width_in <- function(label, size, font_family) {
   grid::convertWidth(
     grid::grobWidth(grid::textGrob(label, gp = grid::gpar(fontsize = size *.pt, fontface = "bold", fontfamily = font_family))),
     "inches", valueOnly = TRUE
   )
 }
+
+#' Evaluates `expr` with a device open that matches the one ggsave will render
+#' the PNG with, so any text measured inside it uses the font the output will
+#' actually use. See title_text_width_in for what goes wrong without this.
+#' Falls back to evaluating `expr` as-is if ragg is unavailable -- a wrong
+#' measurement is still better than refusing to draw the figure.
+on_render_device <- function(width_in, height_in, expr) {
+  if (requireNamespace("ragg", quietly = TRUE)) {
+    ragg::agg_png(tempfile(fileext = ".png"), width = width_in, height = height_in,
+                  units = "in", res = 150)
+    on.exit(grDevices::dev.off(), add = TRUE)
+  }
+  force(expr)
+}
+
+#' Width in inches of the region a stacked title bar will actually span.
+#'
+#' patchwork aligns the bar to the plot's PANEL, not to the figure, so the
+#' y-axis labels on the left and the legend on the right are subtracted before
+#' the bar sees the width. That was previously approximated as a flat 65% of
+#' the figure, calibrated by eye; it is measurable instead. Everything between
+#' the first and last panel column belongs to the panel region (with facets,
+#' the inter-panel gaps included), so the answer is the figure width minus the
+#' fixed chrome outside them -- no need to resolve the panels' own "null" units.
+#'
+#' Must be called inside on_render_device(): the chrome widths depend on text
+#' metrics too.
+#'
+#' Measures ~0.15in wide against the rendered bar (the panel's own inset), which
+#' TITLE_BAR_PADDING_IN covers. Returns NA when `plot` is not a plain ggplot
+#' (a patchwork, say), leaving the caller to fall back.
+measure_panel_width_in <- function(plot, width_in) {
+  tryCatch({
+    g <- ggplot2::ggplotGrob(plot)
+    fixed <- grid::convertWidth(g$widths, "in", valueOnly = TRUE)  # null units -> 0
+    cols <- g$layout[grepl("^panel", g$layout$name), "l"]
+    if (!length(cols)) return(NA_real_)
+    left <- if (min(cols) > 1) sum(fixed[seq_len(min(cols) - 1)]) else 0
+    right <- if (max(cols) < length(fixed)) sum(fixed[seq(max(cols) + 1, length(fixed))]) else 0
+    width_in - left - right
+  }, error = function(e) NA_real_)
+}
+
+#' Slack left between the title text and the bar's ends: the ~0.15in by which
+#' measure_panel_width_in reads wide, plus enough that a title which only just
+#' fits still looks placed rather than jammed against the edges.
+TITLE_BAR_PADDING_IN <- 0.4
 
 #' Wraps `title` onto as many lines as needed so no line exceeds
 #' `max_width_in` inches when actually rendered. Needed because
@@ -169,22 +229,28 @@ wrap_title_to_width <- function(title, max_width_in, size, font_family) {
 #' silently overflowing it. Optional and backward-compatible: omitting it
 #' (NULL) keeps the exact old one-line-always behavior, for any call site
 #' not yet retrofitted to pass its own width through.
-with_title_bar <- function(plot, title, size = 10, title_height = 0.1, font_family = "serif", plot_width_in = NULL) {
+with_title_bar <- function(plot, title, size = 10, title_height = 0.1, font_family = "serif",
+                           plot_width_in = NULL, plot_height_in = NULL) {
   if (!is.null(plot_width_in)) {
-    # 0.65, not a small margin like 0.94: patchwork aligns the title bar's
-    # panel to the PLOT panel below it, not the full figure width -- a
-    # heatmap's y-axis gene-name labels and its color-scale legend both eat
-    # into that shared width before the title bar ever sees it. Confirmed
-    # empirically: the real measured title-text width for the
-    # bug's own reproduction case (6.4in) still visibly overflowed an 8in-
-    # wide figure, meaning the actual available panel width was well under
-    # 8in despite the figure itself being 8in -- 0.65 was the smallest
-    # factor that consistently stopped clipping across the plots checked
-    # (de_heatmap with a legend + long y-axis labels being the tightest
-    # case). Errs toward wrapping a little more than strictly necessary on
-    # plots with less chrome (e.g. no legend) -- a harmless extra line beats
-    # clipped text.
-    title <- wrap_title_to_width(title, plot_width_in * 0.65, size, font_family)
+    # Both halves of this used to be guesses, and they were wrong in opposite
+    # directions: the title was measured on the null device (~20% narrower than
+    # the font ggsave renders) and then fitted to a flat 65% of the figure width
+    # (narrower than the bar really is). The two errors did not cancel, and
+    # titles ran off both ends of the bar -- scripts/check_title_clipping.py
+    # exists to catch exactly that. Both are now measured: the text against the
+    # rendering device's own font, the bar against the plot's actual panel.
+    height_in <- if (is.null(plot_height_in)) plot_width_in else plot_height_in
+    title <- on_render_device(plot_width_in, height_in, {
+      available <- measure_panel_width_in(plot, plot_width_in)
+      # A patchwork or anything else with no measurable panel keeps the old
+      # conservative fraction: it over-wraps, and an extra line beats clipping.
+      if (!is.finite(available) || available <= TITLE_BAR_PADDING_IN) {
+        available <- plot_width_in * 0.65
+      } else {
+        available <- available - TITLE_BAR_PADDING_IN
+      }
+      wrap_title_to_width(title, available, size, font_family)
+    })
   }
   n_lines <- length(strsplit(title, "\n", fixed = TRUE)[[1]])
   title_height <- title_height * n_lines

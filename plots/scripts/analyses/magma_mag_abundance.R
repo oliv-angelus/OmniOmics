@@ -88,7 +88,12 @@ has_group <- !is.null(group_by_col) && group_by_col != ""
 # genomes sit together and the dominant ones lead -- reading order carries
 # information instead of being alphabetical by accident.
 totals <- ab %>% group_by(mag) %>% summarise(total = sum(rel_abundance, na.rm = TRUE))
-order_tbl <- totals %>% left_join(mag_table[, c("mag", if (has_group) group_by_col)], by = "mag")
+# drop = FALSE matters: with no grouping the selection is a single column, and
+# without it `[` returns a character vector, which left_join then refuses. Only
+# the non-default --group_by "" branch hits this, which is exactly where
+# run_plots_suite.py found it.
+order_tbl <- totals %>%
+  left_join(mag_table[, c("mag", if (has_group) group_by_col), drop = FALSE], by = "mag")
 if (has_group) {
   order_tbl[[group_by_col]][is.na(order_tbl[[group_by_col]])] <- "unassigned"
   order_tbl <- order_tbl %>% arrange(.data[[group_by_col]], desc(total))
@@ -147,19 +152,15 @@ if (has_group) {
 
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
-# Short on purpose. with_title_bar's width allowance does not hold for a plot
-# with a facet strip column -- see the measurements recorded in
-# notes/Known Issues and Next Steps.md -- so a longer title clips at both ends.
-# Both counts are readable off the axes and data.json carries them.
 title <- "MAG Abundance Across Samples"
 plot_width <- max(9, 3 + n_samples * 0.42)
 plot_height <- max(6, 2.4 + n_mags * 0.32)
-# Deliberately smaller than plot_width: with_title_bar's allowance was tuned on
-# plots whose chrome is a y-axis plus a legend, and the facet strip column here
-# eats more before the bar sees it.
-title_width <- plot_width * (if (has_group) 0.7 else 1)
+# The real width and height, not the shrunken stand-in this used to pass:
+# with_title_bar now measures the panel the bar will span, so the facet strip
+# column is subtracted for it rather than guessed at from here.
 final_plot <- with_title_bar(p, title, size = 9, title_height = 0.1,
-                             font_family = font_family, plot_width_in = title_width)
+                             font_family = font_family,
+                             plot_width_in = plot_width, plot_height_in = plot_height)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = plot_height, units = "in", dpi = 150, bg = "white")
 saveRDS(list(plot = final_plot, width = plot_width, height = plot_height),

@@ -33,6 +33,12 @@ sys.path.insert(0, os.path.join(REPO, "backend"))
 import plots_engine  # noqa: E402
 from main import INPUT_SHAPE_INFO  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from check_title_clipping import check as check_title
+except ImportError:  # numpy/PIL absent -- the suite still runs, it just cannot see clipping
+    check_title = None
+
 PLOTS_DIR = os.path.join(REPO, "plots")
 
 
@@ -107,8 +113,10 @@ def main():
     ap.add_argument("--skip_load", action="store_true", help="reuse an existing cache dir")
     ap.add_argument("--conda", default=None, help="path to the conda binary, to use the r-plots env")
     ap.add_argument("--set", action="append", default=[], metavar="FLAG=VALUE",
-                    help="value for a parameter the UI would supply (repeatable), "
-                         "e.g. --set --group_var=condition")
+                    help="value for a parameter the UI would supply (repeatable). "
+                         "Must be written joined -- --set=--group_var=condition -- "
+                         "because a separate argument beginning with '--' is read "
+                         "as another option, not as this one's value.")
     ap.add_argument("--rscript", default=None, help="Rscript binary to use (overrides --conda)")
     args = ap.parse_args()
 
@@ -144,6 +152,7 @@ def main():
     analyses = plots_engine.get_analysis_list(args.pipeline)
     if args.only:
         analyses = [a for a in analyses if a["id"] == args.only]
+    clipped = []
     print(f"Running {len(analyses)} analyses for {args.pipeline}")
 
     failures = []
@@ -168,6 +177,14 @@ def main():
                 status = "FAIL"
             elif has_png:
                 status = "ok  "
+                # A clipped title is invisible to the exit code: the script
+                # succeeds, the PNG is written, and only a human looking at the
+                # figure notices. See check_title_clipping.py.
+                if check_title is not None:
+                    fits, detail = check_title(preview)
+                    if not fits:
+                        status = "CLIP"
+                        clipped.append((label, detail))
             else:
                 status = "----"
                 empty += 1
@@ -175,11 +192,18 @@ def main():
             if status == "FAIL":
                 failures.append((label, out))
 
-    print(f"\n{len(failures)} failure(s), {empty} empty result(s) (ran fine, nothing to plot)")
+    print(f"\n{len(failures)} failure(s), {len(clipped)} clipped title(s), "
+          f"{empty} empty result(s) (ran fine, nothing to plot)")
     for label, out in failures:
         print(f"\n--- {label} ---")
         print("\n".join(out.strip().splitlines()[-12:]))
-    sys.exit(1 if failures else 0)
+    if clipped:
+        print("\nClipped titles:")
+        for label, detail in clipped:
+            print(f"  {label}\n      {detail}")
+    # A clipped title is a real defect in a figure meant for publication, so it
+    # fails the suite rather than being reported and ignored.
+    sys.exit(1 if failures or clipped else 0)
 
 
 if __name__ == "__main__":

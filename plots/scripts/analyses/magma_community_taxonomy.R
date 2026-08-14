@@ -127,7 +127,13 @@ if (classifier == "compare") {
 
   title <- sprintf("Classifier Concordance  |  %d shared, %d Kraken2-only, %d Kaiju-only",
                    n_shared, n_kraken_only, n_kaiju_only)
-  final_plot <- with_title_bar(p, title, size = 10, font_family = font_family)
+  # Set before the title bar, not after, so the bar can be told the size the
+  # figure is really written at. Without that this title never wrapped and ran
+  # off both ends of the bar -- the counts made it far too long for a 9in
+  # figure whose legend takes a third of the width.
+  width <- 9; height <- 7
+  final_plot <- with_title_bar(p, title, size = 10, font_family = font_family,
+                               plot_width_in = width, plot_height_in = height)
 
   write_json(
     list(analysis_id = "magma_community_taxonomy", classifier = "compare",
@@ -139,7 +145,6 @@ if (classifier == "compare") {
                       else if (wide[[kcol]][i] > 0) "kraken_only" else "kaiju_only"))),
     file.path(args$out_dir, "data.json"), auto_unbox = TRUE, pretty = TRUE, na = "null"
   )
-  width <- 9; height <- 7
   effective_style <- default_style_for_groups(as.character(plot_df$Taxon_Plot), legend_position = "right",
                                               show_labels = TRUE, background = bg,
                                               font_family = font_family, palette = palette)
