@@ -6,7 +6,17 @@
 set -euo pipefail
 cd "$(dirname "$(realpath "$0")")"
 
-VERSION="0.0.1"
+# Read from CITATION.cff, which is now the single place the version is written:
+# the About screen serves it from there too (see backend/about.py). It used to
+# live in three places asked to stay in step by a comment, and they had already
+# drifted -- this said 0.0.1 while CITATION.cff and about_screen.dart said
+# 0.0.1-alpha.
+#
+# Debian's version field treats "-" as the upstream/revision separator, so the
+# suffix is dropped for the package name and kept everywhere else.
+VERSION_FULL="$(sed -n 's/^version:[[:space:]]*"\?\([^"]*\)"\?[[:space:]]*$/\1/p' CITATION.cff | head -1)"
+[ -n "$VERSION_FULL" ] || { echo "Could not read version from CITATION.cff" >&2; exit 1; }
+VERSION="${VERSION_FULL%%-*}"
 PKG_NAME="omniomics"
 BIN_NAME="omniomics"
 
