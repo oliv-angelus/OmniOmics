@@ -617,6 +617,7 @@
         {
           "id": "bakta_full",
           "label": "Bakta DB full (31.9 GB) ★",
+          "size_gb": 31.9,
           "description": {
             "en": "Full database -- best annotation coverage, recommended when disk space allows",
             "pt": "Banco completo -- melhor cobertura de anotação, recomendado quando há espaço em disco suficiente"
@@ -627,6 +628,7 @@
         {
           "id": "bakta_light",
           "label": "Bakta DB light (1.3 GB)",
+          "size_gb": 1.3,
           "description": {
             "en": "Lightweight database -- skips some reference sets (e.g. PLSDB plasmids); faster to download, slightly less complete annotation",
             "pt": "Banco leve -- pula alguns conjuntos de referência (ex.: plasmídeos PLSDB); baixa mais rápido, anotação um pouco menos completa"
@@ -664,6 +666,7 @@
         {
           "id": "eggnog_all",
           "label": "eggnog.db + proteins.dmnd (~14 GB compressed) ★",
+          "size_gb": 14.0,
           "description": {
             "en": "Main annotation DB (SQLite) + DIAMOND protein index",
             "pt": "Banco de anotação principal (SQLite) + índice de proteínas DIAMOND"
@@ -679,6 +682,7 @@
         {
           "id": "eggnog_db",
           "label": "eggnog.db only (~3.4 GB compressed)",
+          "size_gb": 3.4,
           "description": {
             "en": "SQLite annotation database only (no DIAMOND search)",
             "pt": "Apenas o banco de anotação SQLite (sem busca DIAMOND)"
@@ -690,6 +694,7 @@
         {
           "id": "eggnog_diamond",
           "label": "eggnog_proteins.dmnd only (~11 GB compressed)",
+          "size_gb": 11.0,
           "description": {
             "en": "DIAMOND protein index only",
             "pt": "Apenas o índice de proteínas DIAMOND"

@@ -7,12 +7,22 @@ class DownloadOption {
   final String? url;
   final bool vibrantSetup;
 
+  /// Disk cost of *this* build, which is not the database's headline size and
+  /// often nowhere near it: Kraken2 declares 16 GB while its options run from
+  /// 5.2 GB to 164 GB. Null when the manifest does not state one, in which case
+  /// callers fall back to [DatabaseDef.sizeGb].
+  ///
+  /// Where a label quotes both a download and an extracted size, this is the
+  /// extracted one -- what actually ends up on the disk.
+  final num? sizeGb;
+
   DownloadOption({
     required this.id,
     required this.label,
     required this.description,
     this.url,
     this.vibrantSetup = false,
+    this.sizeGb,
   });
 
   factory DownloadOption.fromJson(Map<String, dynamic> json, [String lang = 'en']) => DownloadOption(
@@ -21,6 +31,7 @@ class DownloadOption {
         description: localizedManifestText(json['description'], lang),
         url: json['url'] as String?,
         vibrantSetup: json['vibrant_setup'] as bool? ?? false,
+        sizeGb: json['size_gb'] as num?,
       );
 }
 

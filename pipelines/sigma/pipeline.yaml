@@ -2019,6 +2019,7 @@
         {
           "id": "k2_std_8",
           "label": "Standard-8 (5.5 GB)",
+          "size_gb": 5.5,
           "description": {
             "en": "Bacteria, archaea, viruses, plasmid, human — compact",
             "pt": "Bactérias, archaea, vírus, plasmídeo, humano — compacto"
@@ -2029,6 +2030,7 @@
         {
           "id": "k2_std_16",
           "label": "Standard-16 (11 GB)",
+          "size_gb": 11.0,
           "description": {
             "en": "Standard capped at 16 GB",
             "pt": "Padrão limitado a 16 GB"
@@ -2039,6 +2041,7 @@
         {
           "id": "k2_std",
           "label": "Standard Full (75 GB)",
+          "size_gb": 75.0,
           "description": {
             "en": "Full — bacteria, archaea, viruses, plasmid, human",
             "pt": "Completo — bactérias, archaea, vírus, plasmídeo, humano"
@@ -2049,6 +2052,7 @@
         {
           "id": "k2_pf_8",
           "label": "PlusPF-8 (5.5 GB)",
+          "size_gb": 5.5,
           "description": {
             "en": "Standard + protozoa & fungi — 8 GB capped",
             "pt": "Padrão + protozoários e fungos — limitado a 8 GB"
@@ -2059,6 +2063,7 @@
         {
           "id": "k2_pf_16",
           "label": "PlusPF-16 (11 GB) ★ Recommended",
+          "size_gb": 11.0,
           "description": {
             "en": "Standard + protozoa & fungi — best balance size/coverage",
             "pt": "Padrão + protozoários e fungos — melhor equilíbrio entre tamanho e cobertura"
@@ -2069,6 +2074,7 @@
         {
           "id": "k2_pf",
           "label": "PlusPF Full (80 GB)",
+          "size_gb": 80.0,
           "description": {
             "en": "Complete PlusPF — maximum sensitivity",
             "pt": "PlusPF completo — sensibilidade máxima"
@@ -2079,6 +2085,7 @@
         {
           "id": "k2_pfp_8",
           "label": "PlusPFP-8 (5.2 GB)",
+          "size_gb": 5.2,
           "description": {
             "en": "Standard + protozoa, fungi & plants — 8 GB capped",
             "pt": "Padrão + protozoários, fungos e plantas — limitado a 8 GB"
@@ -2089,6 +2096,7 @@
         {
           "id": "k2_pfp_16",
           "label": "PlusPFP-16 (10.5 GB)",
+          "size_gb": 10.5,
           "description": {
             "en": "Standard + protozoa, fungi & plants — 16 GB capped",
             "pt": "Padrão + protozoários, fungos e plantas — limitado a 16 GB"
@@ -2099,6 +2107,7 @@
         {
           "id": "k2_pfp",
           "label": "PlusPFP Full (164 GB)",
+          "size_gb": 164.0,
           "description": {
             "en": "Standard + protozoa, fungi & plants — full index",
             "pt": "Padrão + protozoários, fungos e plantas — índice completo"
@@ -2109,6 +2118,7 @@
         {
           "id": "k2_eupathdb",
           "label": "EuPathDB (~6 GB)",
+          "size_gb": 6.0,
           "description": {
             "en": "Eukaryotic pathogen genomes from VEuPathDB",
             "pt": "Genomas de patógenos eucarióticos do VEuPathDB"
@@ -2149,6 +2159,7 @@
         {
           "id": "kaiju_refseq",
           "label": "RefSeq (37 GB) ★ Recommended",
+          "size_gb": 37.0,
           "description": {
             "en": "Archaea/bacteria complete-genome assemblies + viral sequences",
             "pt": "Montagens de genomas completos de archaea/bactérias + sequências virais"
@@ -2159,6 +2170,7 @@
         {
           "id": "kaiju_refseq_ref",
           "label": "RefSeq representative (34 GB)",
+          "size_gb": 34.0,
           "description": {
             "en": "Archaea/bacteria representative assemblies + viral sequences — smaller, less redundant",
             "pt": "Montagens representativas de archaea/bactérias + sequências virais — menor, menos redundante"
@@ -2169,6 +2181,7 @@
         {
           "id": "kaiju_progenomes",
           "label": "proGenomes (66 GB)",
+          "size_gb": 66.0,
           "description": {
             "en": "Representative proteins from proGenomes v3 + viral sequences",
             "pt": "Proteínas representativas do proGenomes v3 + sequências virais"
@@ -2179,6 +2192,7 @@
         {
           "id": "kaiju_nr",
           "label": "nr — Archaea/bacteria/viruses (81 GB)",
+          "size_gb": 81.0,
           "description": {
             "en": "Subset of NCBI BLAST nr — maximum sensitivity",
             "pt": "Subconjunto do NCBI BLAST nr — sensibilidade máxima"
@@ -2189,6 +2203,7 @@
         {
           "id": "kaiju_fungi",
           "label": "Fungi (4.1 GB)",
+          "size_gb": 4.1,
           "description": {
             "en": "Fungi + virus sequences from NCBI RefSeq",
             "pt": "Sequências de fungos e vírus do NCBI RefSeq"
@@ -2199,6 +2214,7 @@
         {
           "id": "kaiju_viruses",
           "label": "Viruses only (0.27 GB)",
+          "size_gb": 0.27,
           "description": {
             "en": "Viral protein sequences from NCBI RefSeq — tiny, for viral-focused screening",
             "pt": "Sequências de proteínas virais do NCBI RefSeq — pequeno, para triagem focada em vírus"
@@ -2209,6 +2225,7 @@
         {
           "id": "kaiju_plasmids",
           "label": "Plasmids only (1.4 GB)",
+          "size_gb": 1.4,
           "description": {
             "en": "Plasmid protein sequences from NCBI RefSeq",
             "pt": "Sequências de proteínas de plasmídeos do NCBI RefSeq"
@@ -2242,6 +2259,7 @@
         {
           "id": "checkm2_v3",
           "label": "CheckM2 DB v3 (1.7 GB) ★",
+          "size_gb": 1.7,
           "description": {
             "en": "UniRef100 KO DIAMOND database -- DIAMOND v2.1.11 compatible",
             "pt": "Banco DIAMOND UniRef100 KO -- compatível com DIAMOND v2.1.11"
@@ -2281,6 +2299,7 @@
         {
           "id": "gtdbtk_r232",
           "label": "GTDB r232 (~100 GB) ★ Latest",
+          "size_gb": 100.0,
           "description": {
             "en": "Latest GTDB release -- R232 (2026)",
             "pt": "Versão mais recente do GTDB -- R232 (2026)"
@@ -2291,6 +2310,7 @@
         {
           "id": "gtdbtk_r220",
           "label": "GTDB r220 (~85 GB)",
+          "size_gb": 85.0,
           "description": {
             "en": "Previous stable release -- R220",
             "pt": "Versão estável anterior -- R220"
@@ -2366,6 +2386,7 @@
         {
           "id": "bakta_full",
           "label": "Bakta DB full (31.9 GB) ★",
+          "size_gb": 31.9,
           "description": {
             "en": "Full database -- best annotation coverage, recommended when disk space allows",
             "pt": "Banco completo -- melhor cobertura de anotação, recomendado quando há espaço em disco suficiente"
@@ -2376,6 +2397,7 @@
         {
           "id": "bakta_light",
           "label": "Bakta DB light (1.3 GB)",
+          "size_gb": 1.3,
           "description": {
             "en": "Lightweight database -- skips some reference sets (e.g. PLSDB plasmids); faster to download, slightly less complete annotation",
             "pt": "Banco leve -- pula alguns conjuntos de referência (ex.: plasmídeos PLSDB); baixa mais rápido, anotação um pouco menos completa"
@@ -2413,6 +2435,7 @@
         {
           "id": "eggnog_all",
           "label": "eggnog.db + proteins.dmnd (~14 GB compressed) ★",
+          "size_gb": 14.0,
           "description": {
             "en": "Main annotation DB (SQLite) + DIAMOND protein index",
             "pt": "Banco de anotação principal (SQLite) + índice de proteínas DIAMOND"
@@ -2428,6 +2451,7 @@
         {
           "id": "eggnog_db",
           "label": "eggnog.db only (~3.4 GB compressed)",
+          "size_gb": 3.4,
           "description": {
             "en": "SQLite annotation database only (no DIAMOND search)",
             "pt": "Apenas o banco de anotação SQLite (sem busca DIAMOND)"
@@ -2439,6 +2463,7 @@
         {
           "id": "eggnog_diamond",
           "label": "eggnog_proteins.dmnd only (~11 GB compressed)",
+          "size_gb": 11.0,
           "description": {
             "en": "DIAMOND protein index only",
             "pt": "Apenas o índice de proteínas DIAMOND"
@@ -2473,6 +2498,7 @@
         {
           "id": "genomad_v1_9_full",
           "label": "GeNomad DB v1.9 full (~4.3 GB) ★",
+          "size_gb": 4.3,
           "description": {
             "en": "MMseqs2 profiles + HMM models (recommended)",
             "pt": "Perfis MMseqs2 + modelos HMM (recomendado)"
@@ -2486,6 +2512,7 @@
         {
           "id": "genomad_v1_9_light",
           "label": "GeNomad DB v1.9 light (~840 MB)",
+          "size_gb": 0.82,
           "description": {
             "en": "MMseqs2 profiles only -- faster, no HMM step",
             "pt": "Apenas perfis MMseqs2 -- mais rápido, sem etapa de HMM"
@@ -2520,6 +2547,7 @@
         {
           "id": "vs2_db",
           "label": "VirSorter2 DB (1.5 GB) ★",
+          "size_gb": 1.5,
           "description": {
             "en": "Official VirSorter2 database (OSF)",
             "pt": "Banco oficial do VirSorter2 (OSF)"
@@ -2554,6 +2582,7 @@
         {
           "id": "checkv_v1_5",
           "label": "CheckV-DB v1.5 (1.6 GB) ★",
+          "size_gb": 1.6,
           "description": {
             "en": "CheckV reference database -- genome_db + hmm_db",
             "pt": "Banco de referência do CheckV -- genome_db + hmm_db"
@@ -2588,6 +2617,7 @@
         {
           "id": "vibrant_full",
           "label": "VIBRANT databases full setup (~11 GB) ★",
+          "size_gb": 11.0,
           "description": {
             "en": "Downloads VOG, Pfam, KEGG HMMs and runs full setup via VIBRANT_setup.py. Requires wget, hmmfetch, hmmpress.",
             "pt": "Baixa os HMMs de VOG, Pfam e KEGG e executa a configuração completa via VIBRANT_setup.py. Requer wget, hmmfetch e hmmpress."
@@ -2621,6 +2651,7 @@
         {
           "id": "antismash_v7",
           "label": "antiSMASH v7.1.0 databases (4.2 GB) ★",
+          "size_gb": 4.2,
           "description": {
             "en": "All antiSMASH databases -- clusterblast, pfam, resfam, etc. (community mirror)",
             "pt": "Todos os bancos do antiSMASH -- clusterblast, pfam, resfam, etc. (espelho da comunidade)"
@@ -2654,6 +2685,7 @@
         {
           "id": "pfam_current",
           "label": "Pfam current release (~400 MB compressed) ★",
+          "size_gb": 0.391,
           "description": {
             "en": "Pfam-A HMM profiles -- hmmpress is run automatically after download",
             "pt": "Perfis HMM do Pfam-A -- o hmmpress roda automaticamente após o download"

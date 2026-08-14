@@ -470,6 +470,7 @@
         {
           "id": "gtdb_ssu_r220",
           "label": "GTDB r220 SSU, DADA2-formatted (~150 MB) ★ Recommended",
+          "size_gb": 0.146,
           "description": {
             "en": "58,102 bacteria + 3,672 archaea full-length 16S sequences, 7-rank GTDB lineage",
             "pt": "58.102 bactérias + 3.672 archaea, sequências de 16S completo, linhagem GTDB em 7 ranks"
@@ -502,6 +503,7 @@
         {
           "id": "silva_138_2_ssu_nr99",
           "label": "SILVA 138.2 SSURef NR99 (~192 MB download) ★ Recommended",
+          "size_gb": 0.188,
           "description": {
             "en": "Non-redundant (99% identity dereplicated) small subunit set -- SILVA's own recommended default for community-diversity work",
             "pt": "Conjunto de subunidade pequena não redundante (dereplicado a 99% de identidade) -- padrão recomendado pelo próprio SILVA para trabalhos de diversidade de comunidade"
@@ -535,6 +537,7 @@
         {
           "id": "silva_138_2_lsu_nr99",
           "label": "SILVA 138.2 LSURef NR99 (~67 MB download) ★ Recommended",
+          "size_gb": 0.065,
           "description": {
             "en": "Non-redundant (99% identity dereplicated) large subunit set",
             "pt": "Conjunto de subunidade grande não redundante (dereplicado a 99% de identidade)"
@@ -597,6 +600,7 @@
         {
           "id": "grond_gtdb207_nr",
           "label": "GROND GTDB r207, não redundante (~143 MB) ★ Recomendado",
+          "size_gb": 0.14,
           "description": {
             "en": "Non-redundant representative operon set + its matching GTDB r207 taxonomy -- the nr/Rep pairing (not the larger redundant 'full' set), same non-redundant-by-default choice already made for SILVA NR99",
             "pt": "Conjunto não redundante de operons representativos + a taxonomia GTDB r207 correspondente -- o par nr/Rep (não o conjunto 'full' redundante e maior), mesma escolha de não-redundante por padrão já feita para o SILVA NR99"
