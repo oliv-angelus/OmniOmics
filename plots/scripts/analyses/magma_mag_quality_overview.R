@@ -118,7 +118,7 @@ p <- ggplot(df, aes(x = checkm2_completeness, y = checkm2_contamination))
 # The MIMAG thresholds as guides, drawn under the points so they never obscure
 # a MAG sitting exactly on one.
 p <- p +
-  annotate("rect", xmin = MIMAG_HIGH_COMPLETENESS, xmax = 100,
+  annotate("rect", xmin = MIMAG_HIGH_COMPLETENESS, xmax = Inf,
            ymin = -Inf, ymax = MIMAG_HIGH_CONTAMINATION,
            fill = TIER_COLOURS[["High"]], alpha = 0.07) +
   geom_vline(xintercept = c(MIMAG_MED_COMPLETENESS, MIMAG_HIGH_COMPLETENESS),
@@ -143,23 +143,45 @@ if (any(df$chimeric)) {
 }
 
 if (show_labels) {
+  # box.padding/point.padding are not cosmetic here: high-quality MAGs cluster
+  # tightly in the bottom-right corner by construction, and without them the
+  # labels rendered on top of the points they name.
   p <- p + geom_text_repel(aes(label = mag), size = 2.6 * font_scale,
-                           max.overlaps = 20, min.segment.length = 0.2,
-                           family = font_family, colour = "grey25")
+                           max.overlaps = Inf, min.segment.length = 0,
+                           box.padding = 0.7, point.padding = 0.4,
+                           segment.size = 0.3, segment.colour = "grey55",
+                           family = font_family, colour = "grey25", seed = 1)
 }
 
 p <- p +
   scale_colour_manual(name = "MIMAG quality", values = TIER_COLOURS, drop = FALSE) +
-  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 20)) +
-  labs(x = "Completeness (CheckM2, %)", y = "Contamination (CheckM2, %)") +
+  scale_x_continuous(limits = c(0, 102), breaks = seq(0, 100, 20), expand = expansion(mult = c(0.02, 0.02))) +
+  labs(x = "Completeness (CheckM2, %)", y = "Contamination (CheckM2, %)",
+       # Rendering this against the test fixture made a real misreading
+       # obvious: two MAGs sit inside the shaded band and are still coloured
+       # Medium. That is correct -- MIMAG's high tier also requires 23S/16S/5S
+       # rRNA and >=18 tRNA types -- but without saying so the figure looks
+       # wrong. The band is the completeness/contamination criterion only; the
+       # colour is the full verdict, and the gap between them is the point.
+       caption = paste0("Shaded band: MIMAG completeness/contamination criterion only. ",
+                        "The High tier additionally requires 23S/16S/5S rRNA and >=18 tRNA types, ",
+                        "so a MAG can sit in the band and still be Medium.",
+                        if (any(df$chimeric))
+                          paste0("\nRinged: fails GUNC chimerism (", sum(df$chimeric),
+                                 "), a separate check MIMAG does not cover.")
+                        else "")) +
   base_theme(bg = bg, font_family = font_family, font_scale = font_scale, style = style) +
-  theme(legend.position = "right")
+  theme(legend.position = "right",
+        plot.caption = element_text(hjust = 0, size = 7.5 * font_scale, colour = "grey35"))
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 n_high <- sum(df$tier %in% c("High", "High (C/C only)"))
+# Deliberately short. The first version appended the GUNC count too and, once
+# actually rendered, ran past the right edge and wrapped mid-phrase ("... | 2"
+# / "fail GUNC"). The ringed points and their legend entry already say how many
+# fail GUNC, and data.json carries the number for anyone quoting it.
 title <- paste0("MAG Quality  |  ", n_high, "/", nrow(df), " MIMAG high-quality",
-                if (only_derep) "  |  dereplicated only" else "",
-                if (any(df$chimeric)) paste0("  |  ", sum(df$chimeric), " fail GUNC") else "")
+                if (only_derep) "  |  dereplicated" else "")
 plot_width <- 11
 # plot_width_in passed for the same reason sigma_genome_quality_overview.R
 # does: this title grows with the counts, and with_title_bar only wraps when

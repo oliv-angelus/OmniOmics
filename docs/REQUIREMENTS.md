@@ -154,9 +154,13 @@ Independent of which pipeline produced the data.
 
 Two things are heavier than the rest and worth knowing about:
 
-- **Building the R environment** happens once, on first use, and pulls
-  phyloseq, DESeq2, vegan and their dependency trees. It takes several minutes
-  and looks stalled; the log shows conda working.
+- **Building the R environment** happens once and pulls phyloseq, DESeq2,
+  vegan, ape and their dependency trees -- around 700 conda packages. Expect
+  tens of minutes, most of it with nothing printed while conda solves and
+  downloads; the log shows it working. Install it from **Settings →
+  Dependencies → R environment**, or from the banner the Plots tab shows while
+  it is missing. Until 2026-08-14 there was no way to start it from the
+  interface at all, and the spec it builds from did not solve; both are fixed.
 - **The genome ring** (`sigma_genome_ring`) computes GC in windows over the
   whole assembly and renders twice, at preview and publication resolution. It
   takes about half a minute per genome.
