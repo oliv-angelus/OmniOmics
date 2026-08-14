@@ -420,7 +420,11 @@ class _IndexView extends ConsumerWidget {
           else
             for (var i = 0; i < shown.length; i++) ...[
               if (i > 0) Divider(height: 1, color: colors.border),
-              _RefRow(reference: shown[i], index: i + 1),
+              // The canonical number, not the position in the filtered list --
+              // otherwise a filtered view reads [1][2][3] on screen while
+              // "copy the visible list" emits [7][12][30], and the numbers a
+              // user just cited do not match what they paste.
+              _RefRow(reference: shown[i], index: shown[i]['n'] as int? ?? i + 1),
             ],
         ],
       ),
@@ -560,7 +564,7 @@ class _EnvView extends ConsumerWidget {
     final colors = context.colors;
     final setup = ref.watch(setupStatusProvider).value;
     final rEnv = ref.watch(rEnvStatusProvider).value;
-    final system = ref.watch(systemInfoProvider);
+    final system = ref.watch(systemInfoDataProvider);
 
     String yesNo(bool? ok) => ok == true ? ref.t('about_env_ready') : ref.t('about_env_missing');
 

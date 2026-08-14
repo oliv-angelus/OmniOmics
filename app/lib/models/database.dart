@@ -50,6 +50,12 @@ class DatabaseDef {
   /// /api/pipelines/{pid}/databases response, which is scoped to one already).
   final List<String>? usedBy;
 
+  /// Id of the `download_options` entry that actually produced [path], recorded
+  /// by the backend at download time and cleared when a path is set any other
+  /// way. Null when the path was picked or detected manually, or predates the
+  /// tracking -- in which case the real size on disk is genuinely unknown.
+  final String? downloadChoice;
+
   DatabaseDef({
     required this.key,
     required this.name,
@@ -61,6 +67,7 @@ class DatabaseDef {
     required this.path,
     required this.configured,
     this.usedBy,
+    this.downloadChoice,
   });
 
   factory DatabaseDef.fromJson(String key, Map<String, dynamic> json, [String lang = 'en']) => DatabaseDef(
@@ -74,5 +81,6 @@ class DatabaseDef {
         path: json['path'] as String?,
         configured: json['configured'] as bool? ?? false,
         usedBy: (json['used_by'] as List?)?.map((e) => e.toString()).toList(),
+        downloadChoice: json['download_choice'] as String?,
       );
 }

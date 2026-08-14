@@ -42,10 +42,19 @@ def get_all_databases_status() -> list:
             entry = by_setting_key.get(setting_key)
             if entry is None:
                 saved_path = settings.get(setting_key)
+                # Which download_option actually produced the path on disk,
+                # recorded at download time and cleared when a path is set some
+                # other way. Without it the Databases screen has to guess, and
+                # its guess (the ★-recommended option) can be an order of
+                # magnitude out -- a machine holding Kraken2 PlusPFP Full at
+                # 164 GB was being counted as the 11 GB default in the disk
+                # budget the whole screen is organised around.
+                chosen = get_download_choice(setting_key)
                 entry = {
                     **db,
                     "path": saved_path,
                     "configured": bool(saved_path and os.path.exists(saved_path)),
+                    "download_choice": chosen,
                     "source_pipeline_id": pid,
                     "source_key": key,
                     "used_by": [],

@@ -380,7 +380,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: _ViewSwitch(
-              showReport: _showReport,
+              // Not just _showReport: the flag is screen-level and survives
+              // changing the selection, so picking an imported or running run
+              // while it was set left the Report segment lit and disabled over
+              // the file tree.
+              showReport: _showReport && !run.isRunning && !run.isImported,
               // An imported folder has no configuration to report on, and a
               // running one has not written its report yet -- say which,
               // rather than offering a tab that opens onto an explanation.

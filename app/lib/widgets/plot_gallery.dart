@@ -95,22 +95,23 @@ class _GalleryCard extends ConsumerWidget {
     required this.parentOutputDir,
   });
 
-  /// Each analysis writes to `<parent output>/plots/<analysis_id>_<timestamp>/`,
-  /// so the same analysis run twice with different parameters produces two
-  /// folders -- and two gallery entries, which is correct.
+  /// The plot run's own folder.
+  ///
+  /// `add_plot_run` is called with `f"{analysis_id}_{timestamp}"` as the run's
+  /// *name*, and `os.makedirs` creates a directory of exactly that name under
+  /// `<parent output>/plots/` -- so the name is the folder, and no searching is
+  /// needed.
+  ///
+  /// Worth stating because the obvious alternative is wrong: globbing
+  /// `<analysis_id>_*` and taking the newest would give every card for the same
+  /// analysis the same latest folder, so an older card would open the newer
+  /// run's figures. Running one analysis twice with different parameters is
+  /// normal and produces two entries that must resolve separately.
   String? _runDir() {
-    final id = run['analysis_id'] as String?;
-    final started = run['started_at'];
-    if (id == null || started is! num) return null;
-    final dir = Directory('$parentOutputDir/plots');
-    if (!dir.existsSync()) return null;
-    final matches = dir
-        .listSync()
-        .whereType<Directory>()
-        .where((d) => d.path.split('/').last.startsWith('${id}_'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
-    return matches.isEmpty ? null : matches.last.path;
+    final name = run['name'] as String?;
+    if (name == null || name.isEmpty) return null;
+    return '$parentOutputDir${Platform.pathSeparator}plots'
+        '${Platform.pathSeparator}$name';
   }
 
   @override
@@ -123,6 +124,10 @@ class _GalleryCard extends ConsumerWidget {
     final style = shape.shapeTagStyle;
     final brightness = Theme.of(context).brightness;
     final dir = _runDir();
+    // Deliberately no existsSync() here: build runs on every rebuild and on
+    // every scroll of the horizontal list, and stat-ing the disk each time to
+    // decide whether a card is tappable is not worth it. _open reports a
+    // missing folder instead.
 
     return SizedBox(
       width: 200,
@@ -181,6 +186,7 @@ class _GalleryCard extends ConsumerWidget {
     // xdg-open on the folder: the plot itself is a PNG the user will want in
     // whatever viewer or figure editor they already use, and the folder also
     // holds the data.json and the .rds the export step reads.
+    if (!Directory(dir).existsSync()) return;
     try {
       await Process.run('xdg-open', [dir]);
     } on ProcessException {

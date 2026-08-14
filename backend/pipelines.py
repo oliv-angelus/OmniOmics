@@ -39,6 +39,14 @@ def _load_all() -> dict:
 
 def reload_registry():
     """Drop the in-memory cache so the next call re-scans pipelines/ from disk."""
+    # The About screen's citation index is derived from these manifests, so it
+    # has to be dropped too. Imported here rather than at module scope: about
+    # imports this module, and a top-level import would be circular.
+    try:
+        import about
+        about.invalidate_cache()
+    except ImportError:
+        pass
     global _cache
     _cache = None
 

@@ -6,6 +6,7 @@ import '../providers.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/run_record.dart';
+import '../services/pipeline_run_provider.dart';
 import '../screens/hub/hub_screen.dart' show recentRunsProvider;
 
 /// The five newest runs across every pipeline, on the Hub.
@@ -39,12 +40,23 @@ class _HubRecentJobsState extends ConsumerState<HubRecentJobs> {
   }
 
   void _open(RunRecord run) {
-    // A run whose folder is gone opens to nothing; the Results tab is where it
-    // can be inspected and deleted deliberately, so send it there either way.
-    if (run.isRunning) {
+    // The monitor renders whatever pipelineRunProvider holds -- this session's
+    // run -- not the row that was clicked. That provider starts null and never
+    // rehydrates, so after restarting the app while a pipeline carries on in
+    // the backend, sending a click there lands on an empty monitor: a dead end
+    // in exactly the case the backend keeps /api/pipelines/running for.
+    //
+    // So only go to the monitor when it actually has something to show.
+    // Otherwise Results, which at least has the run's folder, status and
+    // report. (Wiring /api/pipelines/running so the monitor can reattach after
+    // a restart is worth doing, and is not this widget's job.)
+    final live = ref.read(pipelineRunProvider);
+    if (run.isRunning && live != null && !live.finished) {
       ref.read(embeddedMonitorProvider.notifier).state = true;
       return;
     }
+    // A run whose folder is gone opens to nothing; the Results tab is where it
+    // can be inspected and deleted deliberately, so send it there either way.
     _seeAll();
   }
 

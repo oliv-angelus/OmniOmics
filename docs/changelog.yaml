@@ -8,7 +8,13 @@
 # use, so localizedManifestText reads it unchanged. Keep the newest version at
 # the top; the panel shows the five most recent entries.
 
+# `unreleased: true` means CITATION.cff has not been bumped to this version yet.
+# The news panel shows "não lançado" instead of a version pill, so the app can
+# never announce a version it does not identify as. Flip it (and bump
+# CITATION.cff, which is the single source the About screen, the generated
+# citation and build.sh all read) when this actually ships.
 - version: "0.0.2"
+  unreleased: true
   date: 2026-08-13
   entries:
     - pt: "**O relatório de run voltou a ser escrito.** Um erro de um caractere impedia que `run_report.txt` fosse gerado — nenhuma run jamais o produziu. Ele traz o parágrafo de Métodos, as versões travadas de cada ferramenta e as referências com DOI."

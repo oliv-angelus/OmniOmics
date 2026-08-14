@@ -50,6 +50,9 @@ def list_entries() -> list:
         date = release.get("date")
         entries.append({
             "version": str(release.get("version", "")),
+            # Not yet reflected in CITATION.cff, so the app must not present it
+            # as its own version -- see the note at the top of changelog.yaml.
+            "unreleased": bool(release.get("unreleased", False)),
             # A YAML date parses to datetime.date, which is not JSON-serialisable.
             "date": date.isoformat() if hasattr(date, "isoformat") else (date or ""),
             "entries": [e for e in (release.get("entries") or []) if isinstance(e, dict)],

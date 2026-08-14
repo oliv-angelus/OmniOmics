@@ -324,7 +324,10 @@ class _Node extends StatelessWidget {
                 Icon(expanded ? Icons.expand_more: Icons.chevron_right, size: 16, color: colors.textMuted),
                 Icon(Icons.folder_outlined, size: 16, color: colors.primaryDark),
                 const SizedBox(width: 8),
-                Flexible(
+                // Expanded, not Flexible+Spacer: a Spacer is Expanded(flex: 1),
+                // so it would take an equal share of the free width and
+                // ellipsize the folder name long before it needed to be.
+                Expanded(
                   child: Text(_name,
                       style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                 ),
@@ -336,7 +339,6 @@ class _Node extends StatelessWidget {
                         overflow: TextOverflow.ellipsis),
                   ),
                 ],
-                const Spacer(),
               ],
             ),
           ),

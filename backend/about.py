@@ -138,6 +138,15 @@ def _references() -> list:
     return out
 
 
+def invalidate_cache() -> None:
+    """Drop the cached index. Called by pipelines.reload_registry(), because the
+    index is derived from the manifests -- without this, adding or editing a
+    pipeline at runtime left /api/about serving the old registry's citations
+    until the backend restarted."""
+    global _cache
+    _cache = None
+
+
 def about_data() -> dict:
     global _cache
     if _cache is not None:

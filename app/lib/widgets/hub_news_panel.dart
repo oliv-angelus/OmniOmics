@@ -55,7 +55,13 @@ class HubNewsPanel extends ConsumerWidget {
                 for (final release in releases) {
                   if (rows.length >= maxEntries) break;
                   final r = release as Map<String, dynamic>;
-                  final version = r['version'] as String? ?? '';
+                  // An entry the app does not yet identify as: CITATION.cff is
+                  // the single source for the version, and announcing a number
+                  // ahead of it would have the news panel contradict the About
+                  // tab, the generated citation and the .deb.
+                  final version = r['unreleased'] == true
+                      ? ref.t('hub_news_unreleased')
+                      : 'v${r['version'] as String? ?? ''}';
                   for (final entry in (r['entries'] as List? ?? const [])) {
                     if (rows.length >= maxEntries) break;
                     final text = localizedManifestText(entry, lang);
@@ -109,7 +115,7 @@ class _Entry extends StatelessWidget {
             borderRadius: BorderRadius.circular(5),
           ),
           child: Text(
-            'v$version',
+            version,
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w600,

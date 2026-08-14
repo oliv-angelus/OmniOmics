@@ -198,7 +198,7 @@ class _RunCard extends ConsumerWidget {
               // from the plot history the backend has always kept and nothing
               // ever read -- it is what answers "which of these was I already
               // working on?" without opening each one.
-              _PlotCount(runId: run.id, steps: pipeline?.steps.length ?? 0),
+              _PlotCount(runId: run.id),
               const Spacer(),
               Row(
                 children: [
@@ -218,12 +218,12 @@ class _RunCard extends ConsumerWidget {
 }
 
 
-/// "8 gráficos gerados" plus how many analyses this pipeline offers, so a run
-/// with nothing plotted yet reads as an invitation rather than an empty card.
+/// "8 gráficos gerados", or "nenhum gráfico ainda", from the plot history the
+/// backend has always kept and nothing ever read. It is what answers "which of
+/// these was I already working on?" without opening each run in turn.
 class _PlotCount extends ConsumerWidget {
   final String runId;
-  final int steps;
-  const _PlotCount({required this.runId, required this.steps});
+  const _PlotCount({required this.runId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -23,7 +23,13 @@ class ResourceStrip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final info = ref.watch(systemInfoProvider);
+    final reading = ref.watch(systemInfoProvider);
+    final info = reading?.data;
+    // "A reading arrived once" is not the same as "the backend is up". Without
+    // this the footer kept a green dot and frozen numbers on every screen after
+    // a backend restart -- and the Databases budget went on validating against
+    // that stale free-space figure.
+    final live = reading?.isFresh ?? false;
 
     return Container(
       height: 46,
@@ -34,7 +40,7 @@ class ResourceStrip extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          _BackendStatus(colors: colors, live: info != null),
+          _BackendStatus(colors: colors, live: live),
           const Spacer(),
           if (info == null)
             // A muted line, not a spinner: this strip is always on screen, and
@@ -45,6 +51,9 @@ class ResourceStrip extends ConsumerWidget {
               style: TextStyle(fontSize: 11.5, color: colors.textMuted),
             )
           else ...[
+            Opacity(
+              opacity: live ? 1 : 0.45,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
             _Stat(
               colors: colors,
               icon: Icons.memory,
@@ -72,6 +81,8 @@ class ResourceStrip extends ConsumerWidget {
               value: '${_fmt(info['disk']['free_gb'])} GB ${ref.t('resources_free')}',
               fraction: _diskFraction(info['disk']),
               trailing: '${_fmt(info['disk']['total_gb'])} GB',
+            ),
+              ]),
             ),
           ],
         ],
@@ -123,7 +134,7 @@ class _BackendStatus extends ConsumerWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          live ? ref.t('strip_backend_ok') : ref.t('strip_waiting'),
+          live ? ref.t('strip_backend_ok') : ref.t('strip_backend_lost'),
           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.textPrimary),
         ),
       ],

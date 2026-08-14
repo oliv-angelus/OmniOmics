@@ -61,7 +61,24 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
   /// figure. The two are frequently far apart -- Kraken2 declares 16 GB while
   /// its options run 5.2 to 164 -- which is the whole reason size_gb exists per
   /// option (see notes/Pipeline Manifest Schema.md).
-  num get _effectiveSizeGb => _selectedOption?.sizeGb ?? widget.database.sizeGb;
+  num get _effectiveSizeGb {
+    // Already on disk: report what was actually downloaded, not what the row
+    // would pick if you started now. The two differ by an order of magnitude
+    // for Kraken2 (11 GB default, 164 GB for PlusPFP Full), and this figure is
+    // what the disk budget sums as "installed".
+    if (widget.database.configured) {
+      final chosen = widget.database.downloadChoice;
+      if (chosen != null) {
+        final option =
+            widget.database.downloadOptions.where((o) => o.id == chosen).firstOrNull;
+        if (option?.sizeGb != null) return option!.sizeGb!;
+      }
+      // Set manually or detected, so the build is unknown -- the database's own
+      // headline figure is the least wrong thing available.
+      return widget.database.sizeGb;
+    }
+    return _selectedOption?.sizeGb ?? widget.database.sizeGb;
+  }
 
   /// The option a maintainer marked with ★ in its label, or the first one.
   ///
@@ -94,6 +111,24 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) widget.onSizeChanged!(_effectiveSizeGb);
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(DatabaseCard old) {
+    super.didUpdateWidget(old);
+    // The screen's _load() rebuilds every DatabaseDef and DownloadOption from
+    // JSON, and DownloadOption declares no ==, so the instance held here stops
+    // matching anything in the new list: RadioListTile's groupValue finds no
+    // equal value and the expanded row renders with nothing selected, while the
+    // collapsed row still shows a size and Baixar stays enabled. Re-resolve by
+    // id, which is stable across rebuilds.
+    if (!identical(old.database, widget.database)) {
+      final id = _selectedOption?.id;
+      _selectedOption = widget.database.downloadOptions
+              .where((o) => o.id == id)
+              .firstOrNull ??
+          _defaultOption;
     }
   }
 

@@ -8,7 +8,7 @@ import 'database_card.dart' show formatDbSize;
 /// Free space on the disk holding the machine's root, or null before the first
 /// /ws/system reading arrives.
 final freeDiskGbProvider = Provider<num?>((ref) {
-  final info = ref.watch(systemInfoProvider);
+  final info = ref.watch(systemInfoDataProvider);
   final free = info?['disk']?['free_gb'];
   return free is num ? free : null;
 });
@@ -55,7 +55,7 @@ class DatabaseBudget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
     final free = ref.watch(freeDiskGbProvider);
-    final total = ref.watch(systemInfoProvider)?['disk']?['total_gb'];
+    final total = ref.watch(systemInfoDataProvider)?['disk']?['total_gb'];
 
     final over = free == null ? 0.0 : (selectedGb - free).clamp(0, double.infinity).toDouble();
     final fits = free == null ? selectedGb : (selectedGb < free ? selectedGb : free);

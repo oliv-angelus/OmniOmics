@@ -35,6 +35,7 @@ const _pt = <String, String>{
   'hub_no_runs': 'Nenhuma análise ainda. Escolha um pipeline acima para começar.',
   'hub_news': 'Notícias e atualizações',
   'hub_no_news': 'Sem novidades registradas.',
+  'hub_news_unreleased': 'não lançado',
   'hub_no_match': 'Nenhum pipeline com esse escopo.',
   'hub_cores': 'núcleos',
 
@@ -80,6 +81,7 @@ const _pt = <String, String>{
   'strip_backend': 'Backend',
   'strip_backend_ok': 'ativo',
   'strip_waiting': 'lendo…',
+  'strip_backend_lost': 'sem conexão',
 
   'plots_run_count': '@n gráficos gerados',
   'plots_run_count_one': '1 gráfico gerado',
@@ -470,6 +472,7 @@ const _en = <String, String>{
   'hub_no_runs': 'No analyses yet. Pick a pipeline above to get started.',
   'hub_news': 'News and updates',
   'hub_no_news': 'No updates recorded.',
+  'hub_news_unreleased': 'unreleased',
   'hub_no_match': 'No pipeline with that scope.',
   'hub_cores': 'cores',
 
@@ -513,6 +516,7 @@ const _en = <String, String>{
   'strip_backend': 'Backend',
   'strip_backend_ok': 'up',
   'strip_waiting': 'reading…',
+  'strip_backend_lost': 'no connection',
 
   'plots_run_count': '@n plots generated',
   'plots_run_count_one': '1 plot generated',

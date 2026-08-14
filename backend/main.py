@@ -114,7 +114,23 @@ def check_python_deps() -> dict:
         "packages":  REQUIRED_PY_PACKAGES,
     }
 
-def _resolve_conda_tool(name: str) -> str | None:
+def _conda_bin_dir() -> str | None:
+    """Directory holding the conda executable, or None if conda is not found.
+
+    Resolved once per caller and passed down, never called per tool:
+    check_conda() shells out to `conda --version` *and* rewrites the settings
+    file (conda_manager.py), so calling it once per lookup turned a single
+    /api/setup/status into four subprocesses and four read-modify-write+fsync
+    rewrites of ~/.omniomics.json -- widening the window for a lost update
+    against any concurrent writer, runs_store.update_run included.
+    """
+    conda = check_conda()
+    if conda["installed"] and conda["path"]:
+        return os.path.dirname(conda["path"])
+    return None
+
+
+def _resolve_conda_tool(name: str, bin_dir: str | None) -> str | None:
     """Absolute path of a tool installed by _vibrant_tools_runner, or None.
 
     Looks inside conda's own bin directory *before* consulting PATH. The install
@@ -125,9 +141,8 @@ def _resolve_conda_tool(name: str) -> str | None:
     just installed successfully, and the VIBRANT database setup then refused to
     run for the same reason.
     """
-    conda = check_conda()
-    if conda["installed"] and conda["path"]:
-        candidate = os.path.join(os.path.dirname(conda["path"]), name)
+    if bin_dir:
+        candidate = os.path.join(bin_dir, name)
         if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
             return candidate
     return shutil.which(name)
@@ -135,9 +150,10 @@ def _resolve_conda_tool(name: str) -> str | None:
 
 def check_vibrant_tools() -> dict:
     """Check if HMMER3 (hmmfetch, hmmpress) and wget are available."""
-    hmmfetch = _resolve_conda_tool("hmmfetch")
-    hmmpress = _resolve_conda_tool("hmmpress")
-    wget     = _resolve_conda_tool("wget")
+    bin_dir  = _conda_bin_dir()
+    hmmfetch = _resolve_conda_tool("hmmfetch", bin_dir)
+    hmmpress = _resolve_conda_tool("hmmpress", bin_dir)
+    wget     = _resolve_conda_tool("wget", bin_dir)
     return {
         "installed": bool(hmmfetch and hmmpress and wget),
         "hmmfetch":  bool(hmmfetch),
@@ -680,18 +696,18 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
         # Check dependencies. Resolved against conda's own bin directory rather
         # than PATH -- see _resolve_conda_tool: launched from the desktop entry
         # the backend inherits a PATH without conda on it, which used to make
-        # this refuse to run for tools that were in fact installed.
+        # this refuse to run for tools that were in fact installed. One lookup
+        # of the bin dir for all three, since finding it is not free.
+        conda_bin = _conda_bin_dir()
         for tool in ("wget", "hmmfetch", "hmmpress"):
-            if not _resolve_conda_tool(tool):
+            if not _resolve_conda_tool(tool, conda_bin):
                 raise RuntimeError(f"'{tool}' not found. Install HMMER3 and wget first (e.g. conda install hmmer wget).")
 
         # VIBRANT_setup.py shells out to wget/hmmfetch/hmmpress by bare name, so
         # resolving them here is not enough -- the child process needs them on
         # its own PATH too.
         vibrant_env = dict(os.environ)
-        conda = check_conda()
-        if conda["installed"] and conda["path"]:
-            conda_bin = os.path.dirname(conda["path"])
+        if conda_bin:
             vibrant_env["PATH"] = conda_bin + os.pathsep + vibrant_env.get("PATH", "")
 
         # (1) Download profile name lists from GitHub
@@ -1375,13 +1391,18 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
         # arrives, so anything emitted afterward would only reach a *future*
         # reconnect via replay, not whoever's watching right now.
         if current:
-            # Measured once, here, and kept on the record. Walking a finished
-            # run's output can take a while on a big metagenome, which is fine
-            # exactly once but not on every listing of the Results tab.
+            # Measured once, here, and kept on the record -- fine exactly once,
+            # not on every listing of the Results tab.
+            #
+            # On a thread, because a MAGMA output tree is hundreds of thousands
+            # of files and os.walk is synchronous: run inline it would freeze
+            # the whole event loop for seconds, taking the monitor's log socket,
+            # /ws/system (so the always-on resource strip flatlines) and any
+            # in-flight database download down with it.
             try:
                 if current.get("output_dir") and os.path.isdir(current["output_dir"]):
-                    runs_store.update_run(run_id,
-                                          output_size_bytes=_dir_size_bytes(current["output_dir"]))
+                    size = await asyncio.to_thread(_dir_size_bytes, current["output_dir"])
+                    runs_store.update_run(run_id, output_size_bytes=size)
             except OSError:
                 pass
             try:

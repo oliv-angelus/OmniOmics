@@ -134,8 +134,15 @@ def check_pipeline(pid: str) -> int:
         if key not in data:
             print(f"  FAIL {pid}: report data is missing {key!r}")
             problems += 1
-    if len(data.get("tools", [])) != len(versioned) + (len(active) - len(versioned)):
-        print(f"  FAIL {pid}: report data lists {len(data['tools'])} tools, expected {len(active)}")
+    # Only tools whose category appears in the manifest's `categories` list
+    # reach the report -- generate_report_data iterates that list. Comparing
+    # against len(active) would false-alarm on a tool with an off-list category,
+    # in the one script meant to gate a release.
+    categorised = [t for t in active
+                   if manifest["tools"][t].get("category") in manifest.get("categories", [])]
+    if len(data.get("tools", [])) != len(categorised):
+        print(f"  FAIL {pid}: report data lists {len(data['tools'])} tools, "
+              f"expected {len(categorised)}")
         problems += 1
     if [r["n"] for r in data.get("references", [])] != list(range(1, len(data.get("references", [])) + 1)):
         print(f"  FAIL {pid}: reference numbering is not 1..n")
