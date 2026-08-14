@@ -178,11 +178,11 @@ title <- paste0("Shared/Unique Taxa (", rank, ", > ", min_abundance * 100, "% me
                  if (n_present_combos > n_intersections_shown) paste0(" -- top ", n_intersections_shown, " of ", n_present_combos, " intersections") else "")
 
 # wrap_elements protects ComplexUpset's own nested patchwork layout from
-# being flattened by with_title_bar's outer `/` -- the exact, previously
-# discovered patchwork bug (taxonomic_composition's multi-panel crash, see
-# notes/Known Issues and Next Steps.md ), which the earlier
-# venn_diagram.R never hit only because ggVennDiagram returns a single plain
-# ggplot, not a nested patchwork the way ComplexUpset does.
+# being flattened by with_title_bar's outer `/`. A nested patchwork loses its
+# own height ratios when a parent layout combines it, which is what crashes
+# taxonomic_composition's multi-panel path without this. venn_diagram.R does
+# not need it: ggVennDiagram returns a single plain ggplot, not a nested
+# patchwork the way ComplexUpset does.
 width <- max(9, n_intersections_shown * 0.35)
 final_plot <- with_title_bar(patchwork::wrap_elements(full = p), title, size = 6, title_height = 0.08, font_family = font_family, plot_width_in = width)
 

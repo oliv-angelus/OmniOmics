@@ -8,14 +8,24 @@ in the registry.
 Written as valid JSON (a strict subset of YAML) to avoid a PyYAML dependency
 for this generation step -- any YAML parser (including PyYAML) loads it correctly.
 
-Run once: python3 scripts/migrate_magma_manifest.py
+Kept for provenance: it records that pipelines/magma/pipeline.yaml was generated
+from the prototype's own definitions rather than transcribed by hand. The
+prototype is not part of this repository, so the script cannot be re-run as-is;
+point MAGMA_PROTOTYPE_BACKEND at a checkout of it to do so.
+
+    MAGMA_PROTOTYPE_BACKEND=/path/to/prototype/backend \
+        python3 scripts/migrate_magma_manifest.py
 """
 import sys
 import os
 import json
 import copy
 
-PROTOTYPE_BACKEND = "/home/angelo/Downloads/MAGMA-ideia-de-app/backend"
+PROTOTYPE_BACKEND = os.environ.get("MAGMA_PROTOTYPE_BACKEND", "")
+if not PROTOTYPE_BACKEND:
+    sys.exit("Set MAGMA_PROTOTYPE_BACKEND to the prototype's backend directory. "
+             "See this script's docstring -- it is kept for provenance and the "
+             "prototype is not distributed with OmniOmics.")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "pipelines", "magma", "pipeline.yaml")
 
 sys.path.insert(0, PROTOTYPE_BACKEND)

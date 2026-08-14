@@ -1,13 +1,13 @@
 # Differential gene-family expression for DOGMA, via DESeq2 -- the piece
-# DOGMA's own pipeline explicitly stops short of (see notes/DOGMA.md:
-# "Differential expression (DESeq2/edgeR) is explicitly out of scope...
-# the user is writing their own R scripts for the Gráficos tab"). This IS
-# that R script. Real design note: DOGMA has no co-assembly (per-sample
+# DOGMA's own pipeline deliberately stops short of: differential expression is
+# out of the pipeline's scope, because a pipeline that models on the analyst's
+# behalf hides the design and the contrast. This is where that modelling
+# happens instead, as a visible step. DOGMA has no co-assembly (per-sample
 # only), so raw transcript/ORF IDs are never comparable across samples --
 # aggregate_dogma_counts (lib/build_dogma_table.R) bridges this by
 # summing Salmon read counts per functional-annotation category per
-# sample instead, the same real, literature-established fix CoMW uses
-# (cited in notes/DOGMA.md) -- and its return shape is deliberately
+# sample instead, the same literature-established approach CoMW uses -- and
+# its return shape is deliberately
 # IDENTICAL to build_count_matrix.R's, so deseq_helpers.R's run_deseq
 # and this analysis's own logic are a direct copy of DEFINE's
 # volcano_plot.R, unchanged, not reimplemented.

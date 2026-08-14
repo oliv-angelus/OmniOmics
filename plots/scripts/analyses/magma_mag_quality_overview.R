@@ -176,10 +176,10 @@ p <- p +
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
 n_high <- sum(df$tier %in% c("High", "High (C/C only)"))
-# Deliberately short. The first version appended the GUNC count too and, once
-# actually rendered, ran past the right edge and wrapped mid-phrase ("... | 2"
-# / "fail GUNC"). The ringed points and their legend entry already say how many
-# fail GUNC, and data.json carries the number for anyone quoting it.
+# Deliberately short: appending the GUNC count too makes the title long enough
+# to wrap mid-phrase at this figure width. The ringed points and their legend
+# entry already say how many fail GUNC, and data.json carries the number for
+# anyone quoting it.
 title <- paste0("MAG Quality  |  ", n_high, "/", nrow(df), " MIMAG high-quality",
                 if (only_derep) "  |  dereplicated" else "")
 plot_width <- 11

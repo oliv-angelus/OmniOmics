@@ -2,9 +2,7 @@
 # eggNOG-mapper, CAZy, NCycDB/SCycDB/MCycDB, CANT-HYD, FeGenie, EUKulele,
 # CAT/BAT, MAGMA Cross-Reference) into one long per-ORF table, per sample x
 # domain, across a whole run. This is DOGMA's own explicit, deliberate
-# design: see notes/DOGMA.md's "DOGMA's final output shape -- deliberately
-# NOT one merged table" section -- the pipeline stops at ~10 separate TSVs
-# on purpose ("a bigger, more careful, purpose-built script written at
+# design: the pipeline stops at ~10 separate TSVs on purpose ("a bigger, more careful, purpose-built script written at
 # analysis time carries less risk than a generic merge baked into the
 # pipeline now"), and the user's own explicit call was to do this merge
 # here, in R, at the Plots-tab load step -- not inside DOGMA itself.
@@ -19,9 +17,9 @@
 # and get broadcast across every ORF that transcript contains.
 #
 # Real column shapes (exact file formats) were confirmed
-# by installing DOGMA's own pinned tool versions and
-# reading their actual source/output -- see the dated Plots-tab entry in
-# notes/Known Issues and Next Steps.md for the full verification trail.
+# by installing DOGMA's own pinned tool versions and reading their actual
+# source/output, with file and line recorded in
+# docs/tool_output_samples/VERIFIED_FORMATS.md.
 suppressMessages({
   library(dplyr)
   library(tidyr)
@@ -189,7 +187,7 @@ build_dogma_table <- function(results_dir) {
   }
   pep_files <- list.files(orf_dir, pattern = "_transdecoder\\.pep$", recursive = TRUE, full.names = TRUE)
   if (length(pep_files) == 0) {
-    stop("No *_transdecoder.pep files found -- this run has no ORFs to build a table from (Phase 2 assembly/ORF-calling never produced real output, or every sample is long-read-only, which DOGMA doesn't assemble -- see notes/DOGMA.md).")
+    stop("No *_transdecoder.pep files found -- this run has no ORFs to build a table from (Phase 2 assembly/ORF-calling never produced real output, or every sample is long-read-only, which DOGMA doesn't assemble).")
   }
   # Path shape is always results/04_ORF_CALLING/{sample}/{domain}/{sample}_transdecoder.pep
   rel <- sub(paste0("^", orf_dir,.Platform$file.sep), "", pep_files)
@@ -206,7 +204,7 @@ build_dogma_table <- function(results_dir) {
   long_table <- bind_rows(tables)
 
   # domain_filter's mode=both keeps prokaryote/eukaryote genuinely separate
-  # by design (see notes/DOGMA.md's domain-wiring section) -- when more than
+  # by design -- when more than
   # one domain exists in this run, fold it into a composite sample identity
   # (sample__domain) so every downstream analysis treats each domain's
   # results as its own comparable unit instead of silently mixing two
@@ -348,10 +346,10 @@ DOGMA_COLUMN_TERM_RULES <- list(
 #' Aggregates the long per-ORF table into a real gene-family x sample count
 #' matrix -- the actual bridge that makes cross-sample comparison possible
 #' at all. Raw ORF/transcript IDs are sample-specific (DOGMA has no
-#' co-assembly, see notes/DOGMA.md's quant.sf scope note) so they can NEVER
+#' co-assembly) so they can NEVER
 #' be compared directly across samples; aggregating by a shared functional-
 #' annotation vocabulary instead is the real, literature-established fix
-#' (CoMW, cited in notes/DOGMA.md, aggregates counts by functional category
+#' (CoMW aggregates counts by functional category
 #' for exactly this reason -- 0.6% false-positive functional calls in
 #' soil-like data vs. up to 15% for read-mapping-only approaches).
 #' Returned shape is deliberately IDENTICAL to build_count_matrix's

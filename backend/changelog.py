@@ -5,10 +5,10 @@ choice: the app has to work on a machine with no internet -- which is most of
 the machines it is meant for -- and nothing about a user's install should leave
 their computer to fetch news.
 
-Lives in docs/ rather than notes/ for one practical reason: build.sh already
-stages docs/, and a data directory that is not staged works perfectly in
-development and is simply absent in the packaged build (see the comment on
-plots/ in build.sh, which is the same trap). Same resolution rule as
+Lives in docs/ for one practical reason: build.sh stages docs/, and a data
+directory that is not staged works perfectly in development and is simply
+absent from the packaged build (see the comment on plots/ in build.sh, which
+is the same trap). Same resolution rule as
 pipelines.py -- relative to sys.executable when frozen.
 """
 import os

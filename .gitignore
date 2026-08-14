@@ -22,3 +22,7 @@ dist/
 # Working notes -- kept locally. A summarised, English dev-notes will
 # replace them in the repository.
 notes/
+
+# Assistant memory and app-settings snapshots: local working state, not project source
+claude-memory/
+backups/

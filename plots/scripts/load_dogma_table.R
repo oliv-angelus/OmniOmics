@@ -2,9 +2,8 @@
 # load_phyloseq.R/load_count_matrix.R's role (build the cached object ONCE,
 # every analysis then reads it instead of re-parsing DOGMA's ~10 separate
 # per-tool tables per run), but DOGMA's own shape needs its own loader:
-# there's no single pre-merged table to just read (see build_dogma_table.R's
-# header for why, and notes/DOGMA.md's "deliberately NOT one merged table"
-# section for the full design reasoning this loader implements).
+# there's no single pre-merged table to just read -- see build_dogma_table.R's
+# header for why the pipeline deliberately stops short of merging.
 this_script_dir <- function() {
   cmd_args <- commandArgs(trailingOnly = FALSE)
   file_arg <- grep("^--file=", cmd_args, value = TRUE)

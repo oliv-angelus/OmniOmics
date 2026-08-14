@@ -133,19 +133,18 @@ title_bar <- function(label, size = 10, font_family = "serif") {
 #' `annotate("text", size =...)`), converted to points via ggplot2's own `.pt`
 #' constant, matching exactly what title_bar actually renders.
 #'
-#' Text metrics are NOT device-independent, which is the whole reason the
-#' wrapping used to be wrong. grid measures on whatever device is current, and
-#' under Rscript nothing is open, so measurement fell to the null device --
-#' whose serif metrics are much narrower than the ones ggsave renders with. For
-#' one real title the three disagree badly:
+#' Text metrics are NOT device-independent. grid measures on whatever device is
+#' current, and under Rscript nothing is open, so an unguarded call resolves
+#' against the null device -- whose serif metrics are much narrower than the ones
+#' ggsave renders with. One title, measured three ways:
 #'
-#'   null device (what this used to measure on)   7.79 in
-#'   grDevices::png (cairo)                       8.00 in
-#'   ragg::agg_png (what ggsave actually uses)    9.67 in
+#'   null device      7.79 in
+#'   grDevices::png   8.00 in   (cairo)
+#'   ragg::agg_png    9.67 in   (what ggsave uses)
 #'
-#' A title measured at 7.79in and given 7.8in of room therefore rendered at
-#' 9.67in and ran off both ends of the bar. Callers must measure inside
-#' `on_render_device()` so these numbers refer to the same font as the output.
+#' A title measured at 7.79in and given 7.8in of room renders at 9.67in and runs
+#' off both ends of its bar. Callers must therefore measure inside
+#' `on_render_device()`, so the number refers to the font the output will use.
 title_text_width_in <- function(label, size, font_family) {
   grid::convertWidth(
     grid::grobWidth(grid::textGrob(label, gp = grid::gpar(fontsize = size *.pt, fontface = "bold", fontfamily = font_family))),
@@ -171,11 +170,10 @@ on_render_device <- function(width_in, height_in, expr) {
 #'
 #' patchwork aligns the bar to the plot's PANEL, not to the figure, so the
 #' y-axis labels on the left and the legend on the right are subtracted before
-#' the bar sees the width. That was previously approximated as a flat 65% of
-#' the figure, calibrated by eye; it is measurable instead. Everything between
-#' the first and last panel column belongs to the panel region (with facets,
-#' the inter-panel gaps included), so the answer is the figure width minus the
-#' fixed chrome outside them -- no need to resolve the panels' own "null" units.
+#' the bar sees the width. Everything between the first and last panel column
+#' belongs to the panel region (with facets, the inter-panel gaps included), so
+#' the answer is the figure width minus the fixed chrome outside them -- no need
+#' to resolve the panels' own "null" units.
 #'
 #' Must be called inside on_render_device(): the chrome widths depend on text
 #' metrics too.
@@ -226,23 +224,20 @@ wrap_title_to_width <- function(title, max_width_in, size, font_family) {
 #' `plot_width_in`, when given, MUST be the same width the caller is about
 #' to pass to `ggsave` -- lets the title auto-wrap (see
 #' wrap_title_to_width) to actually fit that real output width instead of
-#' silently overflowing it. Optional and backward-compatible: omitting it
-#' (NULL) keeps the exact old one-line-always behavior, for any call site
-#' not yet retrofitted to pass its own width through.
+#' silently overflowing it. Omitting it (NULL) leaves the title on one line
+#' whatever its length, so a caller that cannot know its own output width still
+#' gets a bar -- it just gets no wrapping.
 with_title_bar <- function(plot, title, size = 10, title_height = 0.1, font_family = "serif",
                            plot_width_in = NULL, plot_height_in = NULL) {
   if (!is.null(plot_width_in)) {
-    # Both halves of this used to be guesses, and they were wrong in opposite
-    # directions: the title was measured on the null device (~20% narrower than
-    # the font ggsave renders) and then fitted to a flat 65% of the figure width
-    # (narrower than the bar really is). The two errors did not cancel, and
-    # titles ran off both ends of the bar -- scripts/check_title_clipping.py
-    # exists to catch exactly that. Both are now measured: the text against the
-    # rendering device's own font, the bar against the plot's actual panel.
+    # Fitting a title takes two measurements, and both have to be real: the text
+    # against the font ggsave will render it in, and the bar against the panel it
+    # will span. Estimating either one puts the title off the ends of the bar,
+    # which scripts/check_title_clipping.py exists to catch.
     height_in <- if (is.null(plot_height_in)) plot_width_in else plot_height_in
     title <- on_render_device(plot_width_in, height_in, {
       available <- measure_panel_width_in(plot, plot_width_in)
-      # A patchwork or anything else with no measurable panel keeps the old
+      # A patchwork or anything else with no measurable panel falls back to a
       # conservative fraction: it over-wraps, and an extra line beats clipping.
       if (!is.finite(available) || available <= TITLE_BAR_PADDING_IN) {
         available <- plot_width_in * 0.65

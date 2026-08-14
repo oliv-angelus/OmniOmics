@@ -30,21 +30,17 @@ MAGMA_CLASSIFIER_PATTERNS <- list(
 
 ABUNDANCE_FILE_PATTERNS <- list(
   magma = list(pattern = "abundance_table_final_RAW\\.tsv$"),
-  # Real bug caught by a real test: PRISM's own filename
-  # "prism_abundance_table.tsv" isn't unique across a run's results tree --
-  # results/04_DENOISE/dada2/ and results/04_DENOISE/emu/ each write their
-  # OWN copy (one real, one an empty touch-placeholder, depending on which
-  # platform actually ran, see 04_denoise_classify.smk) -- and
-  # list.files(pattern=)'s pattern only ever matches against the file's
-  # BASENAME, never the full path (confirmed directly: a path-containing
-  # pattern like "05_ABUNDANCE_TABLE/prism_abundance_table\\.tsv$" matches
-  # nothing at all, even against a real file at exactly that relative path).
-  # So the fix can't be "make the pattern more specific" -- it has to
-  # disambiguate AFTER listing every hit. `prefer` picks the one whose full
-  # path contains this substring when more than one file matches `pattern`
-  # -- here, the one real, unconditionally-correct location
-  # (select_abundance_table's own output directory) instead of whichever
-  # per-platform branch copy happened to sort first.
+  # "prism_abundance_table.tsv" is not unique within a run's results tree:
+  # results/04_DENOISE/dada2/ and results/04_DENOISE/emu/ each write their own
+  # copy, one real and one an empty touch-placeholder depending on which
+  # platform ran (see 04_denoise_classify.smk). A more specific pattern cannot
+  # resolve that, because list.files(pattern=) matches a file's BASENAME and
+  # never its path -- a path-shaped pattern such as
+  # "05_ABUNDANCE_TABLE/prism_abundance_table\\.tsv$" matches nothing at all,
+  # even against a file sitting at exactly that relative path. Disambiguation
+  # therefore happens after listing: `prefer` selects the hit whose full path
+  # contains this substring -- here select_abundance_table's own output
+  # directory, which is correct whichever platform branch ran.
   prism = list(pattern = "prism_abundance_table\\.tsv$", prefer = "/05_ABUNDANCE_TABLE/")
 )
 this_script_dir <- function() {

@@ -56,15 +56,13 @@ if (length(detected_ids) < 3) {
 }
 
 ref_seqs <- readDNAStringSet(opt$ref_fasta)
-# real bug, caught by a real run against a real `emu
-# build-database` output: species_taxid.fasta headers are NOT the bare
-# tax_id as originally assumed (that's true of build_emu_taxonomy.py's own
-# *input* prep fasta, but `emu build-database` re-writes its own output
-# fasta with its own internal naming) -- the real observed format is
-# "{tax_id}:{db_dir}:{seq_index} ['{accession}']", e.g.
-# ">1:results/04_DENOISE/emu/db_16S:1 ['1']". The tax_id is always the first
-# ':'-delimited field of the FASTA ID, reliably, so parse that instead of
-# assuming the whole ID is the tax_id.
+# species_taxid.fasta headers are not the bare tax_id. That holds for
+# build_emu_taxonomy.py's own *input* prep fasta, but `emu build-database`
+# rewrites its output fasta with its own internal naming, observed as
+# "{tax_id}:{db_dir}:{seq_index} ['{accession}']" -- e.g.
+# ">1:results/04_DENOISE/emu/db_16S:1 ['1']". The tax_id is reliably the first
+# ':'-delimited field of the FASTA ID, so parse that rather than taking the
+# whole ID.
 raw_ids <- sub("\\s.*$", "", names(ref_seqs))  # FASTA ID token only, drop any description
 ref_tax_ids <- sub(":.*$", "", raw_ids)
 matched <- ref_tax_ids %in% detected_ids

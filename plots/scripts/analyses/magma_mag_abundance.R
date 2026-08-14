@@ -90,8 +90,7 @@ has_group <- !is.null(group_by_col) && group_by_col != ""
 totals <- ab %>% group_by(mag) %>% summarise(total = sum(rel_abundance, na.rm = TRUE))
 # drop = FALSE matters: with no grouping the selection is a single column, and
 # without it `[` returns a character vector, which left_join then refuses. Only
-# the non-default --group_by "" branch hits this, which is exactly where
-# run_plots_suite.py found it.
+# the non-default --group_by "" branch reaches this.
 order_tbl <- totals %>%
   left_join(mag_table[, c("mag", if (has_group) group_by_col), drop = FALSE], by = "mag")
 if (has_group) {

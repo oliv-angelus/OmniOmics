@@ -35,9 +35,8 @@ final embeddedMonitorProvider = StateProvider<bool>((ref) => false);
 /// per-run workspace -- picking a finished run opens a dedicated screen
 /// scoped to that one run (metadata -> analyses -> params -> result),
 /// instead of a split sidebar+panel where switching runs could leave a
-/// stale analysis showing for the wrong run (the actual bug that prompted
-/// this: see notes/Known Issues and Next Steps.md). null means "show the
-/// plain run-picker grid" (PlotsScreen) instead.
+/// stale analysis showing for the wrong run. null means "show the plain
+/// run-picker grid" (PlotsScreen) instead.
 final embeddedPlotRunProvider = StateProvider<RunRecord?>((ref) => null);
 
 /// Which nav-rail tab AppShell's body shows (index into its `pages` list).

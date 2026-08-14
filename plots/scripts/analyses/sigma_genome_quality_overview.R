@@ -113,13 +113,10 @@ n_gunc_fail <- if (has_gunc) sum(df$GUNC == "FAILS GUNC (chimeric)") else 0
 title <- paste0("Genome Quality Overview  |  ", n_high_quality, "/", nrow(df), " MIMAG high-quality",
                 if (n_gunc_fail > 0) paste0("  |  ", n_gunc_fail, " fail GUNC") else "")
 plot_width <- 11
-# Real bug caught by actually rendering it: this title is
-# genuinely long (dynamic MIMAG-count text appended), and with_title_bar
-# only auto-wraps when plot_width_in is passed -- without it, the title
-# silently overflowed/clipped past the figure's right edge instead of
-# wrapping to a second line. Every other analysis in this app either has a
-# short enough title to never hit this, or already passes plot_width_in
-# (e.g. dogma_de_heatmap.R) -- this one just needed the same treatment.
+# plot_width_in is required here, not optional: this title grows with the MIMAG
+# counts appended to it, and with_title_bar only wraps when it knows the output
+# width. Without it a long title overflows the figure instead of taking a second
+# line.
 final_plot <- with_title_bar(p, title, size = 9, title_height = 0.1, font_family = font_family, plot_width_in = plot_width)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
        width = plot_width, height = 9, units = "in", dpi = 150, bg = "white")

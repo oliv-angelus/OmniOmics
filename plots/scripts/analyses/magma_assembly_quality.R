@@ -55,7 +55,7 @@ df$variant <- factor(df$variant, levels = c("metaquast", "metaquast_prokaryotic"
 palette <- resolve_palette(levels(df$variant), style)
 
 # Every column build_magma_assembly_table.R parses from MetaQuast's
-# transposed_report.tsv, not just the two the first version drew. N50/L50 are
+# transposed_report.tsv is offered here. N50/L50 are
 # a pair worth reading together: N50 is the contig length at which half the
 # assembly is in contigs at least that long, L50 is HOW MANY contigs that
 # takes -- a high N50 with a high L50 means a few long contigs among many.

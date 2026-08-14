@@ -75,8 +75,8 @@ rule kaiju_table:
         """
 
 # Splits rRNA-depleted reads by taxonomic domain *before* assembly -- the
-# established order for eukaryotic metatranscriptome assembly (see notes/DOGMA.md),
-# not classifying contigs after assembly the way MAGMA's Tiara does. Uses
+# established order for eukaryotic metatranscriptome assembly, not classifying
+# contigs after assembly the way MAGMA's Tiara does. Uses
 # Kraken2's own report/output (not Kaiju's -- its output isn't Kraken-report
 # shaped, so this tool requires Kraken2 specifically). NCBI taxids: 2 = Bacteria,
 # 2157 = Archaea, 2759 = Eukaryota; --include-children pulls in everything

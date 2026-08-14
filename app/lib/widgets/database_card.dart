@@ -60,7 +60,7 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
   /// size where the manifest states one, otherwise the database's headline
   /// figure. The two are frequently far apart -- Kraken2 declares 16 GB while
   /// its options run 5.2 to 164 -- which is the whole reason size_gb exists per
-  /// option (see notes/Pipeline Manifest Schema.md).
+  /// option.
   num get _effectiveSizeGb {
     // Already on disk: report what was actually downloaded, not what the row
     // would pick if you started now. The two differ by an order of magnitude

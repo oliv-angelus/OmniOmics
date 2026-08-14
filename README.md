@@ -238,7 +238,6 @@ pipelines/    One directory per pipeline: Snakemake workflow + conda envs + mani
 plots/        R analysis and export scripts, plus the analysis manifest
 scripts/      Developer tooling: test-fixture generators, the plotting test suite
 docs/         Documentation (this file's companions)
-notes/        Working notes and decision log kept during development
 ```
 
 ---

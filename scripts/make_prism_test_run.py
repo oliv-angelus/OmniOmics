@@ -30,8 +30,14 @@ import shutil
 
 random.seed(20260812)
 
-OUT = "/home/angelo/omniomics_demo_runs/prism_testrun"
-METADATA_DIR = "/home/angelo/Documentos/omniomics_test_metadata"
+# Written under the current user's home by default; set OMNIOMICS_DEMO_RUNS
+# and OMNIOMICS_TEST_METADATA to put them elsewhere.
+OUT = os.path.join(os.environ.get("OMNIOMICS_DEMO_RUNS",
+                                  os.path.expanduser("~/omniomics_demo_runs")),
+                   "prism_testrun")
+METADATA_DIR = os.environ.get(
+    "OMNIOMICS_TEST_METADATA",
+    os.path.expanduser("~/Documentos/omniomics_test_metadata"))
 METADATA_FILE = os.path.join(METADATA_DIR, "metadata_prism_testrun.tsv")
 
 # Four groups of six. Four (not three, as MAGMA has) so venn_diagram is

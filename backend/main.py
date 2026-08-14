@@ -2152,8 +2152,7 @@ async def run_plot_analysis(analysis_id: str, data: dict):
     output. Writes data.json()/default_style.json()/<analysis>.rds under
     <parent_run.output_dir>/plots/<analysis_id>_<timestamp>/ -- lands inside
     the parent run's own folder so it shows up in the Results tab's existing
-    file tree for free (see the Plots-tab architecture note in
-    notes/Known Issues and Next Steps.md)."""
+    file tree for free."""
     try:
         plots_engine.get_analysis(analysis_id)
     except KeyError:

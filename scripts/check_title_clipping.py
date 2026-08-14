@@ -7,19 +7,12 @@ Exits non-zero if any figure is clipped. Used on its own for one figure, and
 folded into run_plots_suite.py so a whole pipeline's analyses are checked as
 they render.
 
-It exists because `with_title_bar` (plots/scripts/lib/plot_theme.R) wraps the
-title to a *guessed* fraction of the figure width -- `plot_width_in * 0.65`,
-calibrated by eye on plots whose chrome is a y-axis plus a legend. The guess
-does not hold once a plot has a facet strip column, and the title then runs past
-the bar at both ends. That has now happened twice, in sigma_genome_quality_
-overview (fixed at the time by passing the width through) and in
-magma_mag_abundance. Nothing catches it: the script exits 0, the PNG is written,
-and only a human looking at the figure notices.
-
-See notes/Known Issues and Next Steps.md for the measurements behind the bug --
-the gtable reports a 7.49in panel where the bar renders 6.68in wide. Fixing
-with_title_bar needs a check that can prove non-regression across many figures,
-which is what this is; the fix itself should come after, not before.
+A title that overflows its bar is invisible to every other check: the analysis
+exits 0, the PNG is written, and only a human looking at the figure notices.
+`with_title_bar` (plots/scripts/lib/plot_theme.R) wraps titles to the width it
+measures for the bar, and that measurement depends on the plot's chrome -- a
+legend, long axis labels or a facet strip column each leave the bar narrower.
+This check is what makes a change to that code provable rather than eyeballed.
 
 ## How it detects the bar, and why not by colour
 
@@ -74,9 +67,9 @@ def _rows_of_bar(gray: np.ndarray) -> tuple[int, int, float] | None:
     That last condition is not decoration. The bar is laid directly on top of
     the plot panel with no white gap between them, and the panel has the same
     left and right edges as the bar, so width alone never says where the bar
-    ends: the walk ran on into the panel, and the plot's own content -- points,
-    legend text, axis labels -- was then read as title text spanning the full
-    width, reporting every such figure as clipped. Shade separates them because
+    ends -- a walk that only tracked width would run on into the panel and read
+    the plot's own content (points, legend text, axis labels) as title text
+    spanning the full width, flagging every such figure. Shade separates them because
     the bar is a solid fill and the panel is a different solid fill; a row's
     median is unmoved by the title glyphs sitting on it, which cover little of
     its width. This stays a structural test rather than a hunt for gray70 --
@@ -112,9 +105,9 @@ def _rows_of_bar(gray: np.ndarray) -> tuple[int, int, float] | None:
 
     # Pass 2: the bar is the solid fill inside that run. Its first row or two
     # are antialiased against the white above -- a shade of their own, belonging
-    # to neither -- so anchoring on the topmost row measured the blend and ended
-    # the bar immediately. Anchor instead on the first shade that persists,
-    # which is the fill itself.
+    # to neither -- so the anchor is the first shade that *persists*, which is
+    # the fill. Anchoring on the topmost row instead would measure the blend and
+    # end the bar on the next row.
     medians = [float(np.median(gray[y][extent[0]:extent[1] + 1])) for y in rows]
     anchor = None
     for i in range(len(medians) - SOLID_ROWS + 1):

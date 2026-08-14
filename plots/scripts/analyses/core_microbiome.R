@@ -105,7 +105,7 @@ write_json(
 
 # No discrete named palette here (fill is a continuous log10-abundance
 # Spectral gradient, not per-group/per-taxon colors) -- only bg/font are
-# user-customizable for this analysis this pass.
+# user-customizable for this analysis.
 effective_style <- list(palette = "Spectral", legend_position = "right", show_labels = FALSE,
                          background = bg, font_family = font_family)
 write_style_json(effective_style, file.path(args$out_dir, "default_style.json"))

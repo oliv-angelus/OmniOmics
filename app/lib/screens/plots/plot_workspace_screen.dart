@@ -28,8 +28,7 @@ import '../../widgets/mag_summary_table.dart';
 /// body (see embeddedPlotRunProvider), same pattern as LaunchScreen for a
 /// pipeline: the sidebar nav rail stays usable, and there's a real "Voltar"
 /// out of this run's workspace instead of a shared pane that could show
-/// stale content for a different run (the bug this screen replaces -- see
-/// notes/Known Issues and Next Steps.md).
+/// stale content for a different run.
 class PlotWorkspaceScreen extends ConsumerStatefulWidget {
   final RunRecord run;
   const PlotWorkspaceScreen({super.key, required this.run});

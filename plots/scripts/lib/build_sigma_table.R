@@ -5,11 +5,11 @@
 # the dense part) plus a separate sparse long "gene hits" table (AMR/
 # virulence gene presence, naturally 0+ hits per genome).
 #
-# Real column shapes (exact file formats) confirmed # against SIGMA's own pinned tool versions' real source code -- see the
-# dated Plots-tab entry in notes/Known Issues and Next Steps.md for the
-# full verification trail. One load-bearing gotcha found this way, driving
-# this whole file's design: QUAST's own "Assembly" column and CoverM's own
-# "Genome" column are BOTH always the literal string "final_polished"
+# Column shapes (exact file formats) confirmed against SIGMA's own pinned tool
+# versions' source code, with file and line recorded in
+# docs/tool_output_samples/VERIFIED_FORMATS.md. One load-bearing gotcha found
+# that way drives this whole file's design: QUAST's own "Assembly" column and
+# CoverM's own "Genome" column are BOTH always the literal "final_polished"
 # (SIGMA never passes --labels/-L, and every sample's fasta is named
 # identically before being handed to these tools) -- so neither can be used
 # as a join key. Every table here is instead keyed by the real {sample}

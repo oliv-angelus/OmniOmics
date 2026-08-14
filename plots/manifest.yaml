@@ -3,28 +3,23 @@
 # existing form-building logic can be reused rather than reinvented.
 #
 # applies_to: which pipelines' outputs this analysis can run against (filters
-#   the analysis list once a run is picked in the app). This whole
-#   community-ecology set (phyloseq-based: alpha/beta diversity, composition,
-#   core microbiome, DESeq2, RDA, network, IndVal, Venn) is MAGMA-only for
-#   now, by explicit user decision -- DOGMA/other omics need their own
-#   analysis sets designed separately later, not just added to this list,
-#   since each omics track has genuinely different questions/shapes.
-# input_shape: "phyloseq" (abundance.tsv with a ';'-separated `tax` lineage
-#   column, e.g. MAGMA's abundance_table_final_RAW.tsv) or "count_matrix"
-#   (gene/feature x sample counts, e.g. DEFINE's contagem_anotada.tsv). Only
-#   phyloseq-shaped analyses are wired for Phase 1; DESeq2's count_matrix path
-#   (DEFINE) is future work -- see notes/Known Issues and Next Steps.md.
-# script: path relative to plots/scripts/, source of the real R computation.
-#   All 9 analyses below are real (built incrementally, one at a time --
-#   see notes/Known Issues and Next Steps.md for the order and how each was
-#   verified against real data). _stub_common.R still exists as the shared
-#   body for any *future* analysis added here before its real statistics
-#   are written.
-# implemented: false marks an analysis as still a stub (no real statistics,
-#   no preview.png) -- the app shows these visibly de-emphasized/"Em breve",
-#   same visual treatment the Hub already uses for not-yet-built pipelines,
-#   so picking one doesn't read as a broken result. Defaults to true when
-#   omitted -- every analysis here currently omits it.
+#   the analysis list once a run is picked in the app). An analysis is listed
+#   for a pipeline only where the question it answers genuinely applies -- each
+#   omics track has different questions and different output shapes, so this is
+#   a deliberate per-analysis judgement rather than a default of "all".
+# input_shape: which representation of a finished run the analysis reads.
+#   Seven exist: "phyloseq" (abundance.tsv with a ';'-separated `tax` lineage
+#   column, e.g. MAGMA's abundance_table_final_RAW.tsv), "count_matrix"
+#   (gene/feature x sample counts, e.g. DEFINE's contagem_anotada.tsv),
+#   "dogma_annotated" (the long per-ORF table), "magma_mags", "magma_qc",
+#   "magma_functional" and "sigma_genomes". Each has a loader under
+#   plots/scripts/ and an entry in backend/main.py's INPUT_SHAPE_INFO.
+# script: path relative to plots/scripts/, source of the R computation.
+# implemented: false marks an analysis as a stub (no statistics, no
+#   preview.png) -- the app shows these visibly de-emphasized/"Em breve", the
+#   same treatment the Hub uses for not-yet-built pipelines, so picking one
+#   doesn't read as a broken result. Defaults to true when omitted, which every
+#   analysis here currently does: the field exists for staging new work.
 #
 # Parameter types beyond the pipeline.yaml-shared int/float/bool/str/choice:
 #   "column": the user picks one of the loaded metadata table's real column
@@ -701,8 +696,7 @@ analyses:
 
   # =========================================================================
   # DEFINE (bacterial isolate RNA-seq): count_matrix-shaped, standard DESeq2
-  # workflow visualizations, real citations logged in notes/Scientific
-  # References.md. Own scripts throughout (plots/scripts/analyses/sample_pca.R
+  # workflow visualizations. Own scripts throughout (plots/scripts/analyses/sample_pca.R
   # etc. + plots/scripts/lib/build_count_matrix.R/deseq_helpers.R) -- never
   # shared with MAGMA's phyloseq-shaped scripts above, by design (separate
   # pipelines get separate scripts).
@@ -1003,8 +997,7 @@ analyses:
   # =========================================================================
   # DOGMA (metatranscriptomics): dogma_annotated-shaped. DOGMA's own pipeline
   # deliberately stops at ~10 separate per-tool tables per sample x domain,
-  # never merged (see notes/DOGMA.md's "deliberately NOT one merged table"
-  # decision) -- these two analyses ARE that merge + the statistics DOGMA's
+  # never merged, deliberately -- these two analyses ARE that merge + the statistics DOGMA's
   # own scope explicitly defers to here. plots/scripts/lib/build_dogma_table.R
   # does the real per-ORF join (TransDecoder spine, LEFT JOIN every
   # annotation table); own scripts throughout, never shared with MAGMA/
@@ -1435,10 +1428,9 @@ analyses:
   # its own real output at all -- ~8 incompatible per-tool-per-genome
   # formats (QUAST, CheckM2, GTDB-Tk, CoverM, MLST, AMRFinderPlus, ABRicate),
   # confirmed by reading each tool's real installed source/output before
-  # writing lib/build_sigma_table.R's merge (see notes/SIGMA.md). A run can
-  # assemble many genomes at once, so the user's own explicit design
-  # requirement applies here: analyses need a real way to pick WHICH genome
-  # to work with -- --genome uses PlotParam's new "sample" type (a real
+  # writing lib/build_sigma_table.R's merge. A run can assemble many genomes
+  # at once, so an analysis needs a way to pick WHICH genome to work with:
+  # --genome uses PlotParam's "sample" type (a real
   # dropdown of this run's actual genome names, not a metadata column the
   # user picked -- see plot_loaded_data.dart's own docstring).
   # =========================================================================

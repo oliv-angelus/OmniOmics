@@ -17,8 +17,7 @@ import '../../widgets/r_env_gate.dart';
 /// of showing analysis state in a shared side panel. Replaces an earlier
 /// split sidebar+panel design where switching the selected run on the left
 /// didn't reset the analysis pane on the right, i.e. two different runs
-/// could appear to share one analysis session -- see notes/Known Issues and
-/// Next Steps.md for the full story.
+/// could appear to share one analysis session.
 class PlotsScreen extends ConsumerStatefulWidget {
   const PlotsScreen({super.key});
 

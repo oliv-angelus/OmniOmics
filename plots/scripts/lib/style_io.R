@@ -93,9 +93,8 @@ normalize_style_colors <- function(x) {
 
 #' Reads a style JSON from an explicit path -- what every analysis script
 #' actually uses (via its optional --style_json arg): each "Replotar" run
-#' gets its own fresh --out_dir (same as any other run, see
-#' notes/Known Issues and Next Steps.md), so there's no fixed run_dir
-#' convention to look a previous style.json up by; the Flutter side is the
+#' gets its own fresh --out_dir, same as any other run, so there is no fixed
+#' run_dir convention to look a previous style.json up by; the Flutter side is the
 #' source of truth for "the current style" across replots within one
 #' workspace session and hands it over explicitly each time. NULL (not an
 #' error) when no path was given, so callers can write
