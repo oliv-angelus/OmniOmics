@@ -1,0 +1,29 @@
+# Release notes shown in the Hub's "Notícias e atualizações" panel.
+#
+# Served by GET /api/changelog, newest first. Deliberately a file in the repo
+# rather than a remote feed: the app must work on a machine with no internet,
+# and nothing about a user's install should leave their computer to fetch news.
+#
+# Each entry's text follows the same {pt, en} convention the pipeline manifests
+# use, so localizedManifestText reads it unchanged. Keep the newest version at
+# the top; the panel shows the five most recent entries.
+
+- version: "0.0.2"
+  date: 2026-08-13
+  entries:
+    - pt: "**O relatório de run voltou a ser escrito.** Um erro de um caractere impedia que `run_report.txt` fosse gerado — nenhuma run jamais o produziu. Ele traz o parágrafo de Métodos, as versões travadas de cada ferramenta e as referências com DOI."
+      en: "**The run report is written again.** A one-character bug meant `run_report.txt` was never produced, for any run. It carries the drafted Methods paragraph, each tool's pinned version and the DOI reference list."
+    - pt: "**Recursos do sistema agora aparecem em todas as telas**, numa barra fixa no rodapé. A aba Recursos foi aposentada — ela não mostrava nada além disso."
+      en: "**System resources now show on every screen**, in a fixed footer strip. The Resources tab is retired — it showed nothing beyond this."
+    - pt: "**HMMER e wget do VIBRANT são encontrados mesmo abrindo o app pelo lançador.** A checagem consultava só o PATH, que não inclui o conda quando o app não é aberto por um terminal."
+      en: "**VIBRANT's HMMER and wget are found when the app is opened from the launcher.** The check consulted only PATH, which does not include conda unless the app is started from a shell."
+    - pt: "As dependências Python agora dizem que estão **incluídas no aplicativo**, em vez de relatarem uma verificação que nunca acontece no build empacotado."
+      en: "The Python dependencies row now says they are **bundled with the application**, instead of reporting a check that never runs in the packaged build."
+    - pt: "O log de instalação **acompanha a última linha** sozinho, e para de acompanhar se você rolar para cima para ler."
+      en: "The install log **follows its latest line** on its own, and stops following if you scroll up to read."
+
+- version: "0.0.1-alpha"
+  date: 2026-08-12
+  entries:
+    - pt: "Primeira versão alpha, com os cinco pipelines — MAGMA, SIGMA, DOGMA, DEFINE e PRISM — e a aba de gráficos com 41 análises."
+      en: "First alpha release, with all five pipelines — MAGMA, SIGMA, DOGMA, DEFINE and PRISM — and the plots tab's 41 analyses."

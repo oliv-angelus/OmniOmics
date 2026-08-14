@@ -66,6 +66,7 @@ import run_report
 import plots_engine
 import plots_detect
 import plot_runs_store
+import changelog
 
 app = FastAPI()
 
@@ -407,6 +408,12 @@ async def system_monitor_ws(websocket: WebSocket):
         pass
 
 # --- Pipeline registry (Hub) ---
+
+@app.get("/api/changelog")
+def api_changelog():
+    """Release notes for the Hub's news panel, newest first."""
+    return changelog.list_entries()
+
 
 @app.get("/api/pipelines")
 def pipelines_list():
