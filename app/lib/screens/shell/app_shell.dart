@@ -13,15 +13,16 @@ import '../databases/databases_screen.dart';
 import '../results/results_screen.dart';
 import '../plots/plots_screen.dart';
 import '../plots/plot_workspace_screen.dart';
-import '../resources/resources_screen.dart';
+import '../../widgets/resource_strip.dart';
 import '../about/about_screen.dart';
 import '../settings/settings_screen.dart';
 import '../monitor/monitor_screen.dart';
 import '../launch/launch_screen.dart';
 
-/// Persistent app frame: sidebar nav (Pipelines / Resources / About) on the
-/// left, a slim top bar with language + theme toggles and the settings gear
-/// on the right -- present no matter which section is showing.
+/// Persistent app frame: sidebar nav (Pipelines / Databases / Results / Plots /
+/// About) on the left, a slim top bar with language + theme toggles and the
+/// settings gear on the right, and the live resource strip along the bottom --
+/// all present no matter which section is showing.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -33,7 +34,11 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final pages = const [HubScreen(), DatabasesScreen(), ResultsScreen(), PlotsScreen(), ResourcesScreen(), AboutScreen()];
+    // Positional -- selectedTabProvider is an index into this list and into the
+    // rail's destinations, which must stay in the same order. Databases is 1
+    // (see the hardcoded jump further down); About moved 5 -> 4 when the
+    // Resources tab was replaced by the always-visible ResourceStrip below.
+    final pages = const [HubScreen(), DatabasesScreen(), ResultsScreen(), PlotsScreen(), AboutScreen()];
     final index = ref.watch(selectedTabProvider);
     final embedded = ref.watch(embeddedPipelineProvider);
     final embeddedMonitor = ref.watch(embeddedMonitorProvider);
@@ -85,11 +90,6 @@ class _AppShellState extends ConsumerState<AppShell> {
                 label: Text(ref.t('nav_plots')),
               ),
               NavigationRailDestination(
-                icon: const Icon(Icons.speed_outlined),
-                selectedIcon: const Icon(Icons.speed),
-                label: Text(ref.t('nav_resources')),
-              ),
-              NavigationRailDestination(
                 icon: const Icon(Icons.info_outline),
                 selectedIcon: const Icon(Icons.info),
                 label: Text(ref.t('nav_about')),
@@ -108,6 +108,12 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ? LaunchScreen(pipelineId: embedded.pipelineId, pipelineName: embedded.pipelineName): embeddedPlotRun != null
                               ? PlotWorkspaceScreen(run: embeddedPlotRun): pages[index],
                 ),
+                // Inside the shell, so it sits under every tab *and* every
+                // embedded screen (launch, monitor, plot workspace) -- those are
+                // exactly the moments when knowing what the machine has left
+                // matters. Deliberately not on DependencyGateScreen, which runs
+                // before any work exists to size.
+                const ResourceStrip(),
               ],
             ),
           ),
@@ -167,7 +173,7 @@ class _TopBar extends ConsumerWidget {
   }
 }
 
-/// Visible from the Hub (or Resources/About) whenever a pipeline is running
+/// Visible from the Hub (or any other tab) whenever a pipeline is running
 /// or just finished -- lets the user get back to the Monitor screen after
 /// having navigated away from it, without restarting anything.
 class _RunningPipelineBanner extends ConsumerWidget {

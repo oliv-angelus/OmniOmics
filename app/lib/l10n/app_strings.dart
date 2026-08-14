@@ -15,7 +15,6 @@ const _pt = <String, String>{
   'nav_pipelines': 'Pipelines',
   'nav_results': 'Resultados',
   'nav_plots': 'Gráficos',
-  'nav_resources': 'Recursos',
   'nav_about': 'Sobre',
   'plots_building': 'Em construção…',
   'settings': 'Configurações',
@@ -42,13 +41,16 @@ const _pt = <String, String>{
   'databases_subtitle':
       'Configure aqui os bancos de referência usados pelos pipelines -- um banco compartilhado (ex.: CheckM2, GTDB-Tk) só precisa ser configurado uma vez.',
 
-  'resources_title': 'Recursos do sistema',
-  'resources_cpu': 'CPU',
-  'resources_ram': 'Memória (RAM)',
-  'resources_disk': 'Armazenamento',
-  'resources_cores': 'núcleos',
-  'resources_used': 'em uso',
   'resources_free': 'disponível',
+  // Short forms for the permanent footer strip, where "Memória (RAM)" and
+  // "Armazenamento" do not fit next to a meter and a percentage.
+  'strip_cpu': 'CPU',
+  'strip_ram': 'RAM',
+  'strip_disk': 'Disco',
+  'strip_threads': 'threads',
+  'strip_backend': 'Backend',
+  'strip_backend_ok': 'ativo',
+  'strip_waiting': 'lendo…',
 
   'plots_pick_items': 'Selecionar...',
   'plots_no_items': 'Nada disponível nesta execução.',
@@ -367,7 +369,6 @@ const _en = <String, String>{
   'nav_pipelines': 'Pipelines',
   'nav_results': 'Results',
   'nav_plots': 'Plots',
-  'nav_resources': 'Resources',
   'nav_about': 'About',
   'plots_building': 'Under construction…',
   'settings': 'Settings',
@@ -394,13 +395,14 @@ const _en = <String, String>{
   'databases_subtitle':
       'Configure the reference databases used by pipelines here -- a shared database (e.g. CheckM2, GTDB-Tk) only needs to be set up once.',
 
-  'resources_title': 'System resources',
-  'resources_cpu': 'CPU',
-  'resources_ram': 'Memory (RAM)',
-  'resources_disk': 'Storage',
-  'resources_cores': 'cores',
-  'resources_used': 'used',
   'resources_free': 'free',
+  'strip_cpu': 'CPU',
+  'strip_ram': 'RAM',
+  'strip_disk': 'Disk',
+  'strip_threads': 'threads',
+  'strip_backend': 'Backend',
+  'strip_backend_ok': 'up',
+  'strip_waiting': 'reading…',
 
   'plots_pick_items': 'Select...',
   'plots_no_items': 'Nothing available in this run.',
