@@ -1461,6 +1461,42 @@ analyses:
           en: "Which MAGs from this run to show, one panel each"
           pt: "Quais MAGs desta execução mostrar, um painel para cada"
 
+  - id: magma_mag_quality_overview
+    name:
+      en: "MAG Quality Overview"
+      pt: "Visão Geral de Qualidade dos MAGs"
+    description:
+      en: "Completeness against contamination for every MAG the run recovered, with the MIMAG thresholds drawn in and each MAG coloured by the tier it reaches (Bowers et al. 2017). Point size is genome size; a ring marks a MAG that fails GUNC's chimerism check, which is a separate standard and can flag a MAG that is otherwise MIMAG-high."
+      pt: "Completude contra contaminação para cada MAG recuperado, com os limiares MIMAG desenhados e cada MAG colorido pelo nível que alcança (Bowers et al. 2017). O tamanho do ponto é o tamanho do genoma; um anel marca o MAG que falha na checagem de quimerismo do GUNC, que é um padrão separado e pode marcar um MAG que de resto é MIMAG alto."
+    applies_to: [magma]
+    input_shape: magma_mags
+    script: analyses/magma_mag_quality_overview.R
+    parameters:
+      - flag: "--only_dereplicated"
+        type: bool
+        default: false
+        enabled: true
+        description:
+          en: "Show only MAGs that survived dRep dereplication, rather than every bin from every sample"
+          pt: "Mostrar apenas os MAGs que sobreviveram à dereplicação do dRep, em vez de todos os bins de todas as amostras"
+      - flag: "--show_labels"
+        type: choice
+        default: auto
+        enabled: true
+        choices: [auto, always, never]
+        description:
+          en: "Label each MAG with its name. 'auto' labels only when few enough MAGs fit without overlapping"
+          pt: "Rotular cada MAG com seu nome. 'auto' rotula só quando há MAGs suficientemente poucos para não sobrepor"
+      - flag: "--label_threshold"
+        type: int
+        default: 30
+        min: 1
+        max: 500
+        enabled: true
+        description:
+          en: "How many MAGs 'auto' still labels"
+          pt: "Até quantos MAGs o modo 'auto' ainda rotula"
+
   - id: sigma_genome_summary
     name:
       en: "Genome Summary"
