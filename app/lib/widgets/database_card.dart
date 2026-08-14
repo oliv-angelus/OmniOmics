@@ -8,11 +8,30 @@ import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import 'extra_tag.dart';
 
+/// Formats a size for the Databases screen, where the values span four orders
+/// of magnitude -- CANT-HYD at 8 MB, CAT/BAT at 123 GB. Showing "0.008 GB" for
+/// the first is technically right and useless.
+String formatDbSize(num gb) {
+  if (gb >= 100) return '${gb.round()} GB';
+  if (gb >= 1) return '${gb.toStringAsFixed(gb == gb.roundToDouble() ? 0 : 1)} GB';
+  return '${(gb * 1024).round()} MB';
+}
+
 class DatabaseCard extends ConsumerStatefulWidget {
   final ApiClient api;
   final String pipelineId;
   final DatabaseDef database;
   final VoidCallback onChanged;
+
+  /// Whether this row is ticked for the batch download. Null [onSelectedChanged]
+  /// hides the checkbox entirely -- the per-pipeline Launch screen reuses this
+  /// widget as a read-only status check, where selecting means nothing.
+  final bool selected;
+  final ValueChanged<bool>? onSelectedChanged;
+
+  /// Reports the size the row is currently counting, so the screen's budget can
+  /// follow a changed download option without re-reading every row.
+  final ValueChanged<num>? onSizeChanged;
 
   const DatabaseCard({
     super.key,
@@ -20,6 +39,9 @@ class DatabaseCard extends ConsumerStatefulWidget {
     required this.pipelineId,
     required this.database,
     required this.onChanged,
+    this.selected = false,
+    this.onSelectedChanged,
+    this.onSizeChanged,
   });
 
   @override
@@ -33,6 +55,25 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
   bool _validating = false;
 
   String get _downloadKey => databaseDownloadKey(widget.pipelineId, widget.database.key);
+
+  /// What this database will actually cost on disk: the selected option's own
+  /// size where the manifest states one, otherwise the database's headline
+  /// figure. The two are frequently far apart -- Kraken2 declares 16 GB while
+  /// its options run 5.2 to 164 -- which is the whole reason size_gb exists per
+  /// option (see notes/Pipeline Manifest Schema.md).
+  num get _effectiveSizeGb => _selectedOption?.sizeGb ?? widget.database.sizeGb;
+
+  /// The option a maintainer marked with ★ in its label, or the first one.
+  ///
+  /// Selecting it up front is what lets the row show a real number and the disk
+  /// budget add up before the user has expanded anything. It also means Baixar
+  /// is enabled as soon as a destination is chosen, instead of silently
+  /// requiring a radio click the interface never asked for.
+  DownloadOption? get _defaultOption {
+    final options = widget.database.downloadOptions;
+    if (options.isEmpty) return null;
+    return options.firstWhere((o) => o.label.contains('★'), orElse: () => options.first);
+  }
 
   @override
   void initState() {
@@ -48,6 +89,17 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
       _destDir = existing.destDir;
       _expanded = true;
     }
+    _selectedOption = _defaultOption;
+    if (widget.onSizeChanged != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onSizeChanged!(_effectiveSizeGb);
+      });
+    }
+  }
+
+  void _selectOption(DownloadOption? option) {
+    setState(() => _selectedOption = option);
+    widget.onSizeChanged?.call(_effectiveSizeGb);
   }
 
   /// Sets the destination for a *fresh* download from inside the expanded
@@ -154,59 +206,135 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
       if (isDone && !wasDone) widget.onChanged();
     });
 
-    return Card(
+    return Container(
+      color: widget.selected ? colors.primary.withValues(alpha: 0.08) : null,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: status.bg(colors), borderRadius: BorderRadius.circular(6)),
-                  child: Text(label, style: TextStyle(color: status.fg(colors), fontSize: 11, fontWeight: FontWeight.w600)),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(db.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                ),
-                Text('~${db.sizeGb} GB', style: TextStyle(color: colors.textMuted, fontSize: 12)),
-                const SizedBox(width: 4),
-                Tooltip(
-                  message: ref.t('choose_db_path_tooltip'),
-                  child: IconButton(
-                    icon: const Icon(Icons.folder_outlined, size: 18),
-                    visualDensity: VisualDensity.compact,
-                    onPressed: _pickPath,
-                  ),
-                ),
-                InkWell(
-                  onTap: () => setState(() => _expanded = !_expanded),
-                  child: Icon(_expanded ? Icons.expand_less: Icons.expand_more, color: colors.textMuted),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(db.description, style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-            if (db.usedBy != null && db.usedBy!.isNotEmpty)...[
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
+            // One row rather than a 400px card: 26 databases share the same
+            // five attributes, and things with the same attributes get
+            // compared, not browsed. Everything below the fold is unchanged --
+            // expanding a row reveals exactly the controls the card had.
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  for (final pid in db.usedBy!) ExtraTag(tag: pid, english: english),
+                  if (widget.onSelectedChanged != null)
+                    SizedBox(
+                      width: 34,
+                      child: Checkbox(
+                        value: widget.selected,
+                        // Nothing to fetch for a database with no automatic
+                        // download, and no point selecting one already on disk.
+                        onChanged: (db.configured || db.downloadOptions.isEmpty)
+                            ? null
+                            : (v) => widget.onSelectedChanged!(v ?? false),
+                      ),
+                    ),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: status.fg(colors), shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 7,
+                          runSpacing: 4,
+                          children: [
+                            Text(db.name,
+                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                            if (db.usedBy != null)
+                              for (final pid in db.usedBy!) ExtraTag(tag: pid, english: english),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          db.description,
+                          style: TextStyle(color: colors.textMuted, fontSize: 11.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (downloading)
+                    SizedBox(
+                      width: 104,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                            value: (dl!.percent > 0) ? dl.percent / 100 : null, minHeight: 5),
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: status.bg(colors), borderRadius: BorderRadius.circular(6)),
+                      child: Text(label,
+                          style: TextStyle(
+                              color: status.fg(colors), fontSize: 10.5, fontWeight: FontWeight.w600)),
+                    ),
+                  const SizedBox(width: 14),
+                  SizedBox(
+                    width: 84,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          formatDbSize(_effectiveSizeGb),
+                          style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: [FontFeature.tabularFigures()]),
+                        ),
+                        if (db.downloadOptions.length > 1)
+                          Text('${db.downloadOptions.length} ${ref.t('db_versions')}',
+                              style: TextStyle(fontSize: 10, color: colors.textMuted)),
+                      ],
+                    ),
+                  ),
+                  Tooltip(
+                    message: ref.t('choose_db_path_tooltip'),
+                    child: IconButton(
+                      icon: const Icon(Icons.folder_outlined, size: 17),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: _pickPath,
+                    ),
+                  ),
+                  Icon(_expanded ? Icons.expand_less : Icons.expand_more, color: colors.textMuted),
                 ],
               ),
-            ],
+            ),
             if (db.configured)...[
-              const SizedBox(height: 8),
-              Text(db.path ?? '', style: TextStyle(fontSize: 12, color: colors.textSecondary), overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Padding(
+                padding: EdgeInsets.only(left: widget.onSelectedChanged != null ? 54 : 20),
+                child: Text(db.path ?? '',
+                    style: TextStyle(fontSize: 11.5, color: colors.textSecondary, fontFamily: 'monospace'),
+                    overflow: TextOverflow.ellipsis),
+              ),
             ] else if (_destDir != null)...[
-              const SizedBox(height: 8),
-              Text('${ref.t('destination_prefix')}: $_destDir',
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary), overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Padding(
+                padding: EdgeInsets.only(left: widget.onSelectedChanged != null ? 54 : 20),
+                child: Text('${ref.t('destination_prefix')}: $_destDir',
+                    style: TextStyle(fontSize: 11.5, color: colors.textSecondary),
+                    overflow: TextOverflow.ellipsis),
+              ),
             ],
             if (_expanded)...[
               const Divider(height: 24),
@@ -225,8 +353,15 @@ class _DatabaseCardState extends ConsumerState<DatabaseCard> {
                     contentPadding: EdgeInsets.zero,
                     value: opt,
                     groupValue: _selectedOption,
-                    onChanged: (v) => setState(() => _selectedOption = v),
+                    onChanged: _selectOption,
                     title: Text(opt.label, style: const TextStyle(fontSize: 13)),
+                    secondary: opt.sizeGb != null
+                        ? Text(formatDbSize(opt.sizeGb!),
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: colors.textSecondary))
+                        : null,
                     subtitle: Text(opt.description, style: const TextStyle(fontSize: 11.5)),
                   )),
               const SizedBox(height: 8),

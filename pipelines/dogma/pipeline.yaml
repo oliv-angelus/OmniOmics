@@ -925,6 +925,7 @@
         {
           "id": "k2_std_8",
           "label": "Standard-8 (5.5 GB)",
+          "size_gb": 5.5,
           "description": {
             "en": "Bacteria, archaea, viruses, plasmid, human — compact",
             "pt": "Bactérias, archaea, vírus, plasmídeo, humano — compacto"
@@ -935,6 +936,7 @@
         {
           "id": "k2_std_16",
           "label": "Standard-16 (11 GB)",
+          "size_gb": 11.0,
           "description": {
             "en": "Standard capped at 16 GB",
             "pt": "Padrão limitado a 16 GB"
@@ -945,6 +947,7 @@
         {
           "id": "k2_std",
           "label": "Standard Full (75 GB)",
+          "size_gb": 75.0,
           "description": {
             "en": "Full — bacteria, archaea, viruses, plasmid, human",
             "pt": "Completo — bactérias, archaea, vírus, plasmídeo, humano"
@@ -955,6 +958,7 @@
         {
           "id": "k2_pf_8",
           "label": "PlusPF-8 (5.5 GB)",
+          "size_gb": 5.5,
           "description": {
             "en": "Standard + protozoa & fungi — 8 GB capped",
             "pt": "Padrão + protozoários e fungos — limitado a 8 GB"
@@ -965,6 +969,7 @@
         {
           "id": "k2_pf_16",
           "label": "PlusPF-16 (11 GB) ★ Recommended",
+          "size_gb": 11.0,
           "description": {
             "en": "Standard + protozoa & fungi — best balance size/coverage",
             "pt": "Padrão + protozoários e fungos — melhor equilíbrio entre tamanho e cobertura"
@@ -975,6 +980,7 @@
         {
           "id": "k2_pf",
           "label": "PlusPF Full (80 GB)",
+          "size_gb": 80.0,
           "description": {
             "en": "Complete PlusPF — maximum sensitivity",
             "pt": "PlusPF completo — sensibilidade máxima"
@@ -985,6 +991,7 @@
         {
           "id": "k2_pfp_8",
           "label": "PlusPFP-8 (5.2 GB)",
+          "size_gb": 5.2,
           "description": {
             "en": "Standard + protozoa, fungi & plants — 8 GB capped",
             "pt": "Padrão + protozoários, fungos e plantas — limitado a 8 GB"
@@ -995,6 +1002,7 @@
         {
           "id": "k2_pfp_16",
           "label": "PlusPFP-16 (10.5 GB)",
+          "size_gb": 10.5,
           "description": {
             "en": "Standard + protozoa, fungi & plants — 16 GB capped",
             "pt": "Padrão + protozoários, fungos e plantas — limitado a 16 GB"
@@ -1005,6 +1013,7 @@
         {
           "id": "k2_pfp",
           "label": "PlusPFP Full (164 GB)",
+          "size_gb": 164.0,
           "description": {
             "en": "Standard + protozoa, fungi & plants — full index",
             "pt": "Padrão + protozoários, fungos e plantas — índice completo"
@@ -1015,6 +1024,7 @@
         {
           "id": "k2_eupathdb",
           "label": "EuPathDB (~6 GB)",
+          "size_gb": 6.0,
           "description": {
             "en": "Eukaryotic pathogen genomes from VEuPathDB",
             "pt": "Genomas de patógenos eucarióticos do VEuPathDB"
@@ -1055,6 +1065,7 @@
         {
           "id": "kaiju_refseq",
           "label": "RefSeq (37 GB) ★ Recommended",
+          "size_gb": 37.0,
           "description": {
             "en": "Archaea/bacteria complete-genome assemblies + viral sequences",
             "pt": "Montagens de genomas completos de archaea/bactérias + sequências virais"
@@ -1065,6 +1076,7 @@
         {
           "id": "kaiju_refseq_ref",
           "label": "RefSeq representative (34 GB)",
+          "size_gb": 34.0,
           "description": {
             "en": "Archaea/bacteria representative assemblies + viral sequences — smaller, less redundant",
             "pt": "Montagens representativas de archaea/bactérias + sequências virais — menor, menos redundante"
@@ -1075,6 +1087,7 @@
         {
           "id": "kaiju_progenomes",
           "label": "proGenomes (66 GB)",
+          "size_gb": 66.0,
           "description": {
             "en": "Representative proteins from proGenomes v3 + viral sequences",
             "pt": "Proteínas representativas do proGenomes v3 + sequências virais"
@@ -1085,6 +1098,7 @@
         {
           "id": "kaiju_nr",
           "label": "nr — Archaea/bacteria/viruses (81 GB)",
+          "size_gb": 81.0,
           "description": {
             "en": "Subset of NCBI BLAST nr — maximum sensitivity",
             "pt": "Subconjunto do NCBI BLAST nr — sensibilidade máxima"
@@ -1095,6 +1109,7 @@
         {
           "id": "kaiju_fungi",
           "label": "Fungi (4.1 GB)",
+          "size_gb": 4.1,
           "description": {
             "en": "Fungi + virus sequences from NCBI RefSeq",
             "pt": "Sequências de fungos e vírus do NCBI RefSeq"
@@ -1105,6 +1120,7 @@
         {
           "id": "kaiju_viruses",
           "label": "Viruses only (0.27 GB)",
+          "size_gb": 0.27,
           "description": {
             "en": "Viral protein sequences from NCBI RefSeq — tiny, for viral-focused screening",
             "pt": "Sequências de proteínas virais do NCBI RefSeq — pequeno, para triagem focada em vírus"
@@ -1115,6 +1131,7 @@
         {
           "id": "kaiju_plasmids",
           "label": "Plasmids only (1.4 GB)",
+          "size_gb": 1.4,
           "description": {
             "en": "Plasmid protein sequences from NCBI RefSeq",
             "pt": "Sequências de proteínas de plasmídeos do NCBI RefSeq"
@@ -1152,6 +1169,7 @@
         {
           "id": "eggnog_all",
           "label": "eggnog.db + proteins.dmnd (~14 GB compressed) ★",
+          "size_gb": 14.0,
           "description": {
             "en": "Main annotation DB (SQLite) + DIAMOND protein index",
             "pt": "Banco de anotação principal (SQLite) + índice de proteínas DIAMOND"
@@ -1167,6 +1185,7 @@
         {
           "id": "eggnog_db",
           "label": "eggnog.db only (~3.4 GB compressed)",
+          "size_gb": 3.4,
           "description": {
             "en": "SQLite annotation database only (no DIAMOND search)",
             "pt": "Apenas o banco de anotação SQLite (sem busca DIAMOND)"
@@ -1178,6 +1197,7 @@
         {
           "id": "eggnog_diamond",
           "label": "eggnog_proteins.dmnd only (~11 GB compressed)",
+          "size_gb": 11.0,
           "description": {
             "en": "DIAMOND protein index only",
             "pt": "Apenas o índice de proteínas DIAMOND"
@@ -1213,6 +1233,7 @@
         {
           "id": "cazy_full",
           "label": "Full (CAZy + dbCAN + dbCAN-sub, ~7.4 GB) ★ Recommended",
+          "size_gb": 7.4,
           "description": {
             "en": "All three CAZyme_annotation methods (DIAMOND + HMM + dbCAN-sub) -- matches the tool's own default --methods",
             "pt": "Os três métodos de CAZyme_annotation (DIAMOND + HMM + dbCAN-sub) -- corresponde ao --methods padrão da própria ferramenta"
@@ -1229,6 +1250,7 @@
         {
           "id": "cazy_diamond_only",
           "label": "DIAMOND only (~2.2 GB)",
+          "size_gb": 2.2,
           "description": {
             "en": "CAZy.dmnd only -- lighter/faster, but the run must then be configured with --methods diamond (dbCAN/dbCAN-sub HMM files won't be present)",
             "pt": "Apenas CAZy.dmnd -- mais leve/rápido, mas a execução precisa ser configurada com --methods diamond (os arquivos HMM dbCAN/dbCAN-sub não estarão presentes)"
@@ -1262,6 +1284,7 @@
         {
           "id": "ncycdb_95",
           "label": "NCyc_95 + id2gene.map (~27 MB) ★ Recommended",
+          "size_gb": 0.026,
           "description": {
             "en": "95%-identity-clustered reference (84,759 seqs, less redundant) + the ID-to-gene-family mapping table",
             "pt": "Referência agrupada a 95% de identidade (84.759 seqs, menos redundante) + a tabela de mapeamento ID-para-família-gênica"
@@ -1299,6 +1322,7 @@
         {
           "id": "scycdb_2020mar",
           "label": "SCycDB 2020Mar + id2gene map (~95 MB download → ~365 MB extracted) ★ Recommended",
+          "size_gb": 0.356,
           "description": {
             "en": "Multi-part zip archive (911,805 curated + homolog sulfur-cycling sequences) + ID-to-gene mapping. Requires p7zip (the 7z command) installed on this machine to extract -- this is a split zip archive that plain unzip/Info-Zip cannot reassemble correctly",
             "pt": "Arquivo zip multi-parte (911.805 sequências curadas + homólogas de ciclagem de enxofre) + mapeamento ID-para-gene. Requer p7zip (comando 7z) instalado nesta máquina para extrair -- é um arquivo zip dividido em partes que o unzip/Info-Zip comum não consegue remontar corretamente"
@@ -1340,6 +1364,7 @@
         {
           "id": "mcycdb_2021",
           "label": "MCycDB 2021 + id2gene map (~118 MB download → ~380 MB extracted) ★ Recommended",
+          "size_gb": 0.371,
           "description": {
             "en": "Multi-part zip archive (923,871 curated + homolog methane-cycling sequences) + ID-to-gene mapping. Requires p7zip (the 7z command) installed on this machine to extract -- this is a split zip archive that plain unzip/Info-Zip cannot reassemble correctly",
             "pt": "Arquivo zip multi-parte (923.871 sequências curadas + homólogas de ciclagem de metano) + mapeamento ID-para-gene. Requer p7zip (comando 7z) instalado nesta máquina para extrair -- é um arquivo zip dividido em partes que o unzip/Info-Zip comum não consegue remontar corretamente"
@@ -1380,6 +1405,7 @@
         {
           "id": "canthyd_concatenated",
           "label": "CANT-HYD.hmm (~8 MB) ★ Recommended",
+          "size_gb": 0.008,
           "description": {
             "en": "37 phylogeny-derived HMMs, concatenated, with curated trusted/noise cutoffs baked in (--cut_tc/--cut_nc at search time, no separate threshold file needed)",
             "pt": "37 HMMs derivados de filogenia, concatenados, com limiares curados de confiança/ruído embutidos (--cut_tc/--cut_nc no momento da busca, sem arquivo de limiar separado)"
