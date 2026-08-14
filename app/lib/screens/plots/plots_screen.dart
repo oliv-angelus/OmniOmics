@@ -8,6 +8,7 @@ import '../../models/run_record.dart';
 import '../../models/pipeline_summary.dart';
 import '../hub/hub_screen.dart' show pipelinesProvider;
 import '../../widgets/import_plot_folder_dialog.dart';
+import '../../services/plot_gallery_provider.dart';
 
 /// Plots tab entry point: a grid of finished-run cards, same visual language
 /// as the Hub's pipeline cards (icon + category tag + subtitle) -- picking
@@ -125,7 +126,7 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
       itemCount: _runs.length,
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 320,
-        mainAxisExtent: 190,
+        mainAxisExtent: 214,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -192,6 +193,12 @@ class _RunCard extends ConsumerWidget {
               Text(run.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
               Text(run.pipelineName, style: TextStyle(fontSize: 12.5, color: colors.textSecondary)),
+              const SizedBox(height: 8),
+              // How much of this run has already been plotted. The count comes
+              // from the plot history the backend has always kept and nothing
+              // ever read -- it is what answers "which of these was I already
+              // working on?" without opening each one.
+              _PlotCount(runId: run.id, steps: pipeline?.steps.length ?? 0),
               const Spacer(),
               Row(
                 children: [
@@ -206,6 +213,45 @@ class _RunCard extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+/// "8 gráficos gerados" plus how many analyses this pipeline offers, so a run
+/// with nothing plotted yet reads as an invitation rather than an empty card.
+class _PlotCount extends ConsumerWidget {
+  final String runId;
+  final int steps;
+  const _PlotCount({required this.runId, required this.steps});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final counts = ref.watch(plotRunCountsProvider);
+    final n = counts.value?[runId] ?? 0;
+
+    return Row(
+      children: [
+        Icon(n > 0 ? Icons.insights : Icons.insights_outlined,
+            size: 14, color: n > 0 ? colors.primaryDark : colors.textMuted),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            n == 0
+                ? ref.t('plots_run_none')
+                : n == 1
+                    ? ref.t('plots_run_count_one')
+                    : ref.t('plots_run_count').replaceAll('@n', '$n'),
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: n > 0 ? FontWeight.w600 : FontWeight.w400,
+              color: n > 0 ? colors.textPrimary : colors.textMuted,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -18,6 +18,8 @@ import '../../widgets/file_picker_field.dart';
 import '../../widgets/metadata_table_editor.dart';
 import '../../widgets/plot_param_form.dart';
 import '../../widgets/plot_style_panel.dart';
+import '../../widgets/plot_gallery.dart';
+import '../../services/plot_gallery_provider.dart';
 import '../../widgets/mag_summary_table.dart';
 
 /// Dedicated workspace for ONE finished run's analyses -- metadata (loaded
@@ -208,6 +210,10 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     });
   }
 
+  /// A finished analysis is a new entry in the run's history, so the gallery
+  /// above the catalogue has to be re-read rather than showing yesterday's set.
+  void _refreshGallery() => ref.invalidate(plotRunsProvider(widget.run.id));
+
   Future<void> _run({String? styleJsonPath}) async {
     final analysis = _selectedAnalysis;
     final params = _paramsState;
@@ -278,6 +284,9 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
   /// Back to the analyses list for this SAME run+metadata -- loading is
   /// per-run, not per-analysis, so there's nothing to redo here.
   void _newAnalysis() {
+    // Whatever just finished is now part of this run's history, so the gallery
+    // on the way back has to be re-read.
+    _refreshGallery();
     ref.read(plotRunProvider.notifier).dismiss();
     setState(() {
       _selectedAnalysis = null;
@@ -521,6 +530,14 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          // What this run has already produced, before the catalogue of what it
+          // could produce. Running an analysis adds to this instead of
+          // replacing the screen.
+          PlotGallery(
+            parentRunId: widget.run.id,
+            parentOutputDir: widget.run.outputDir,
+            analyses: _analyses,
+          ),
           Expanded(
             child: _loadingAnalyses
                 ? const Center(child: CircularProgressIndicator()): _analyses.isEmpty
@@ -796,6 +813,31 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
             ),
             if (_customizeExpanded)...[
               const SizedBox(height: 12),
+              // Styling is baked in at compute time (plots/scripts/lib/style_io.R),
+              // so a palette change means re-running the analysis, not
+              // re-rendering it. Without saying so, Replotar sits next to
+              // Exportar looking equally cheap, and on a phyloseq object over
+              // tens of gigabytes only one of them is.
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: colors.statusRunningBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, size: 15, color: colors.statusRunning),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(ref.t('plots_restyle_recomputes'),
+                          style: TextStyle(fontSize: 11.5, height: 1.45, color: colors.textSecondary)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
               Text(ref.t('plots_params_title'), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: colors.textSecondary)),
               const SizedBox(height: 8),
               PlotParamForm(analysis: analysis, state: params, loadedData: loaded, onChanged: () => setState(() {})),
