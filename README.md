@@ -102,7 +102,7 @@ DEFINE's and PRISM's pages are still to be written; the summary in
 
 ## The plotting environment
 
-41 analyses across the five pipelines, each reading a cached representation of
+42 analyses across the five pipelines, each reading a cached representation of
 a finished run rather than re-parsing its raw output:
 
 - **Community** — composition, alpha and beta diversity (PCoA/NMDS/CAP over
@@ -110,9 +110,12 @@ a finished run rather than re-parsing its raw output:
   microbiome, co-occurrence networks, indicator species, Venn/UpSet.
 - **Differential** — DESeq2 pairwise contrasts and likelihood ratio tests, MA
   and volcano plots, DE heatmaps, functional enrichment.
-- **Genomes** — MIMAG quality tiers, GUNC chimerism, assembly landscape,
-  AMR/virulence heatmaps, mobilome (plasmids, prophages, insertion sequences),
-  biosynthetic gene clusters, and a Proksee-style circular genome map.
+- **Genomes and MAGs** — MIMAG quality tiers, GUNC chimerism, assembly
+  landscape, AMR/virulence heatmaps, mobilome (plasmids, prophages, insertion
+  sequences), biosynthetic gene clusters, and a Proksee-style circular genome
+  map. Completeness against contamination is drawn against the published MIMAG
+  cut-offs rather than chosen thresholds, for both isolate genomes and
+  metagenome-assembled ones.
 - **Quality** — read cleaning before and after, assembly metrics.
 
 Every figure can be restyled (palette, background, fonts, grid, axes) and
@@ -292,7 +295,7 @@ own, and that surface is what these checks target:
   (`scripts/run_plots_suite.py`), distinguishing a real failure from a
   legitimate refusal and from an empty-but-correct result.
 - **Format verification against tool source code** for every reader.
-- **End-to-end execution** of all five workflows and all 41 analyses.
+- **End-to-end execution** of all five workflows and all 42 analyses.
 
 ### Pending
 
