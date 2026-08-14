@@ -147,23 +147,17 @@ if (has_group) {
 
 p <- apply_axis_visibility(p, hide_x_axis, hide_y_axis)
 
-# Short on purpose. The first version appended the MAG and sample counts and,
-# rendered, the title bar came out narrower than the panel and clipped the text
-# at BOTH ends -- the facet strip column on the left shifts the panel, so the
-# width with_title_bar is given no longer matches where the title sits. Both
-# counts are already readable off the axes, and data.json carries them.
-title <- paste0("MAG Abundance Across Samples",
-                if (only_derep) "  |  dereplicated" else "")
+# Short on purpose. with_title_bar's width allowance does not hold for a plot
+# with a facet strip column -- see the measurements recorded in
+# notes/Known Issues and Next Steps.md -- so a longer title clips at both ends.
+# Both counts are readable off the axes and data.json carries them.
+title <- "MAG Abundance Across Samples"
 plot_width <- max(9, 3 + n_samples * 0.42)
 plot_height <- max(6, 2.4 + n_mags * 0.32)
-# with_title_bar's own 0.65 allowance (see plot_theme.R) was calibrated on
-# plots whose chrome is a y-axis plus a legend. Faceting adds a strip column
-# down the left that eats roughly another fifth of the figure before the title
-# bar sees it, and at 0.65 the title still clipped at both ends when rendered.
-# Handing over a smaller width makes it wrap earlier, which is the cheap half
-# of the fix; the proper one is for with_title_bar to measure the panel rather
-# than guess, and that is a change to shared code every analysis depends on.
-title_width <- plot_width * (if (has_group) 0.72 else 1)
+# Deliberately smaller than plot_width: with_title_bar's allowance was tuned on
+# plots whose chrome is a y-axis plus a legend, and the facet strip column here
+# eats more before the bar sees it.
+title_width <- plot_width * (if (has_group) 0.7 else 1)
 final_plot <- with_title_bar(p, title, size = 9, title_height = 0.1,
                              font_family = font_family, plot_width_in = title_width)
 ggsave(file.path(args$out_dir, "preview.png"), plot = final_plot,
