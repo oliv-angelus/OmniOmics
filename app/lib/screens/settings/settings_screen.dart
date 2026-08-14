@@ -103,6 +103,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const Divider(height: 32),
                       InstallRow(
+                        title: ref.t('r_env_label'),
+                        subtitle: s['r_env']?['installed'] == true
+                            ? '${ref.t('r_env_installed')} (${s['r_env']['version'] ?? ''})'
+                            : ref.t('r_env_not_installed'),
+                        installed: s['r_env']?['installed'] == true,
+                        wsPath: '/ws/install/r-env',
+                        alreadyRunning: _installing('r-env'),
+                        onDone: _load,
+                      ),
+                      const Divider(height: 32),
+                      InstallRow(
                         title: ref.t('vibrant_tools_label'),
                         subtitle: s['vibrant_tools']?['installed'] == true ? ref.t('vibrant_installed'): ref.t('vibrant_not_installed'),
                         installed: s['vibrant_tools']?['installed'] == true,

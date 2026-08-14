@@ -211,6 +211,11 @@ const _pt = <String, String>{
   'vibrant_tools_label': 'HMMER3 + wget (opcional — VIBRANT)',
   'vibrant_installed': 'Instalados',
   'vibrant_not_installed': 'Não instalados',
+  'r_env_label': 'Ambiente R (r-plots)',
+  'r_env_installed': 'Instalado',
+  'r_env_not_installed': 'Não instalado — necessário para a aba Gráficos',
+  'r_env_gate_title': 'A aba Gráficos precisa do ambiente R',
+  'r_env_gate_body': 'As análises rodam em R. Instale o ambiente r-plots uma vez e ele serve todos os pipelines. É o maior ambiente que o app instala e pode levar 20 minutos ou mais.',
 
   'db_validated': 'Validado',
   'db_absent': 'Ausente',
@@ -646,6 +651,11 @@ const _en = <String, String>{
   'vibrant_tools_label': 'HMMER3 + wget (optional — VIBRANT)',
   'vibrant_installed': 'Installed',
   'vibrant_not_installed': 'Not installed',
+  'r_env_label': 'R environment (r-plots)',
+  'r_env_installed': 'Installed',
+  'r_env_not_installed': 'Not installed — required by the Plots tab',
+  'r_env_gate_title': 'The Plots tab needs the R environment',
+  'r_env_gate_body': 'The analyses run in R. Install the r-plots environment once and it serves every pipeline. It is the largest environment the app installs and can take 20 minutes or more.',
 
   'db_validated': 'Validated',
   'db_absent': 'Absent',

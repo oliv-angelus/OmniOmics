@@ -168,8 +168,14 @@ def setup_status():
     snakemake     = check_snakemake(conda)
     vibrant_tools = check_vibrant_tools()
     python_deps   = check_python_deps()
+    # The R environment is a shared dependency like the rest, so it belongs in
+    # the same status call. It was reachable only through a plot run failing
+    # with a 400, which told the user what was missing and gave them no way to
+    # fix it -- the install endpoint existed and nothing in the app called it.
+    r_env         = plots_engine.check_r_env(conda.get("path"))
     return {"conda": conda, "snakemake": snakemake,
             "vibrant_tools": vibrant_tools, "python_deps": python_deps,
+            "r_env": r_env,
             # So a reopened window can put its spinner back on whatever is still
             # installing, instead of offering an Install button for work already
             # in progress.
@@ -400,6 +406,49 @@ def _vibrant_tools_runner(payload):
         if rc != 0:
             raise RuntimeError("conda install exited with errors.")
     return run
+
+
+def _r_env_runner(payload):
+    """Build the shared r-plots conda environment, streaming progress.
+
+    Same shape as the conda/snakemake/vibrant runners rather than the plain
+    POST that already existed: `conda env create` on the plotting stack
+    (phyloseq, DESeq2, vegan, ggplot2 and the rest) runs for many minutes, and
+    the old endpoint returned nothing until it finished -- which is
+    indistinguishable from a frozen app. Going through install_jobs also means
+    the build survives the window being closed, and reattaches on reopen.
+    """
+    async def run(job):
+        conda = check_conda()
+        if not conda["installed"]:
+            raise RuntimeError("conda was not found. Install conda first.")
+
+        conda_bin = conda["path"]
+        job.emit({"type": "log",
+                  "text": f"Using conda: {conda_bin}\n"
+                          f"Creating the '{plots_engine.R_ENV_NAME}' environment from "
+                          f"{plots_engine.R_ENV_SPEC}...\n"})
+        # Said up front because the silence that follows is the reason people
+        # conclude the install died and start a second one. The R stack is the
+        # slowest environment this app builds.
+        job.emit({"type": "log",
+                  "text": "This is the largest environment OmniOmics installs and can take "
+                          "20 minutes or more, most of it with nothing printed. That is "
+                          "normal -- leave it be.\n"})
+
+        rc = await install_jobs.run_proc(
+            job,
+            [conda_bin, "env", "create", "-f", plots_engine.R_ENV_SPEC],
+            clean=clean_output)
+        if rc != 0:
+            raise RuntimeError("conda env create exited with errors.")
+    return run
+
+
+@app.websocket("/ws/install/r-env")
+async def install_r_env_ws(websocket: WebSocket):
+    """Build the r-plots environment, streaming output."""
+    await _serve_install(websocket, "r-env", install_jobs.CONDA_GROUP, _r_env_runner)
 
 
 @app.websocket("/ws/install/vibrant-tools")

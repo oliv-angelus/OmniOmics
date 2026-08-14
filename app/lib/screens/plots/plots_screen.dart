@@ -9,6 +9,7 @@ import '../../models/pipeline_summary.dart';
 import '../hub/hub_screen.dart' show pipelinesProvider;
 import '../../widgets/import_plot_folder_dialog.dart';
 import '../../services/plot_gallery_provider.dart';
+import '../../widgets/r_env_gate.dart';
 
 /// Plots tab entry point: a grid of finished-run cards, same visual language
 /// as the Hub's pipeline cards (icon + category tag + subtitle) -- picking
@@ -88,7 +89,11 @@ class _PlotsScreenState extends ConsumerState<PlotsScreen> {
               IconButton(icon: const Icon(Icons.refresh), tooltip: ref.t('review_refresh'), onPressed: _loadRuns),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          // Before the run list, not after a failed plot: this is where someone
+          // discovers the Plots tab needs R, and it used to be a dead end.
+          const REnvGate(),
+          const SizedBox(height: 8),
           Expanded(child: _buildBody(colors, pipelinesAsync)),
         ],
       ),
