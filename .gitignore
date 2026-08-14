@@ -23,6 +23,5 @@ dist/
 # replace them in the repository.
 notes/
 
-# Assistant memory and app-settings snapshots: local working state, not project source
-claude-memory/
+# Snapshots of the application's own settings file, taken while developing
 backups/
