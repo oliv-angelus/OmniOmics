@@ -37,7 +37,7 @@ def _rule_env_map(pipeline_id: str) -> dict:
                 text = f.read()
             # Walk rule blocks in order, pairing each with the first `conda:`
             # directive that appears before the next `rule` keyword.
-            starts = [(m.start, m.group(1)) for m in _RULE_CONDA_RE.finditer(text)]
+            starts = [(m.start(), m.group(1)) for m in _RULE_CONDA_RE.finditer(text)]
             for i, (pos, rule_name) in enumerate(starts):
                 end = starts[i + 1][0] if i + 1 < len(starts) else len(text)
                 block = text[pos:end]

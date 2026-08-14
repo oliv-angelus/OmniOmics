@@ -135,6 +135,7 @@ class _DependencyGateScreenState extends ConsumerState<DependencyGateScreen> {
             subtitle: s['python_deps']?['installed'] == true
                 ? '${ref.t('installed_packages')}: $packages': '${ref.t('missing')}: $missing',
             installed: s['python_deps']?['installed'] == true,
+            bundled: s['python_deps']?['bundled'] == true,
             wsPath: '/ws/install/python-deps',
             alreadyRunning: _installing('python-deps'),
             onDone: _load,
