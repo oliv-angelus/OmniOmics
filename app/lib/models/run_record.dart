@@ -22,6 +22,12 @@ class RunRecord {
   /// that opens to nothing.
   final bool outputExists;
 
+  /// Size of the output folder, measured once when the run reached a terminal
+  /// status. Null on records made before the field existed, and on imported
+  /// folders -- walking a finished metagenome's output is fine exactly once,
+  /// not on every listing.
+  final int? outputSizeBytes;
+
   RunRecord({
     required this.id,
     required this.name,
@@ -35,9 +41,18 @@ class RunRecord {
     required this.status,
     required this.exitCode,
     this.outputExists = true,
+    this.outputSizeBytes,
   });
 
   bool get isRunning => status == 'running';
+
+  /// A run the app never launched: recorded by add_imported_run, which stores
+  /// no config_path because there was no launch to describe.
+  bool get isImported => configPath.isEmpty;
+
+  Duration? get duration => finishedAt == null
+      ? null
+      : Duration(milliseconds: ((finishedAt! - startedAt) * 1000).round());
   bool get isMissing => !outputExists;
 
   DateTime get startedAtDate => DateTime.fromMillisecondsSinceEpoch((startedAt * 1000).round());
@@ -60,5 +75,6 @@ class RunRecord {
         // Absent on records from an older backend: assume present rather than
         // flagging every run as missing.
         outputExists: json['output_exists'] as bool? ?? true,
+        outputSizeBytes: (json['output_size_bytes'] as num?)?.toInt(),
       );
 }

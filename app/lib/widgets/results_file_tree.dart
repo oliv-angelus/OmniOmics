@@ -7,6 +7,37 @@ import '../theme/app_theme.dart';
 /// this is a native desktop app running on the same machine as the pipeline.
 /// Keeps a listing cache keyed by path so refresh can re-read only the
 /// folders the user already has open, without collapsing the tree.
+/// A readable name for a numbered output folder -- `06_MAG_REFINEMENT` reads as
+/// "MAG refinement" beside it, so the tree is legible without expanding
+/// anything.
+///
+/// Derived from the directory name itself, deliberately **not** mapped onto the
+/// manifest's `categories`. That was the obvious idea and it is wrong: checked
+/// against all five pipelines, not one matches in count or order. `00_` prefixes
+/// exist (DEFINE, SIGMA) so the numbering is not 1-indexed; counts differ in
+/// both directions (MAGMA has 10 folders for 11 categories, PRISM 6 for 5); and
+/// DOGMA's rules reference `results/08_MAG_TAXONOMY` and `results/09_ANNOTATION`,
+/// which are folders in a *MAGMA* run's output that its cross-reference step
+/// reads. A positional mapper would label those confidently, and wrongly.
+///
+/// Returns null for anything that is not a numbered stage folder.
+String? stageLabelFor(String dirName) {
+  final match = RegExp(r'^\d{2}_(.+)$').firstMatch(dirName);
+  if (match == null) return null;
+  const abbreviations = {
+    'QC': 'QC', 'ORF': 'ORF', 'MAG': 'MAG', 'BGC': 'BGC',
+    'XREF': 'cross-reference', 'DEREP': 'Dereplication', 'SSU': 'SSU', 'LSU': 'LSU',
+  };
+  final words = match.group(1)!.split('_');
+  return [
+    for (var i = 0; i < words.length; i++)
+      abbreviations[words[i]] ??
+          (i == 0
+              ? words[i][0] + words[i].substring(1).toLowerCase()
+              : words[i].toLowerCase())
+  ].join(' ');
+}
+
 class ResultsFileTree extends StatefulWidget {
   final String rootPath;
   final String missingLabel;
@@ -293,10 +324,19 @@ class _Node extends StatelessWidget {
                 Icon(expanded ? Icons.expand_more: Icons.chevron_right, size: 16, color: colors.textMuted),
                 Icon(Icons.folder_outlined, size: 16, color: colors.primaryDark),
                 const SizedBox(width: 8),
-                Expanded(
+                Flexible(
                   child: Text(_name,
                       style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                 ),
+                if (stageLabelFor(_name) != null) ...[
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(stageLabelFor(_name)!,
+                        style: TextStyle(fontSize: 11, color: colors.textMuted),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+                const Spacer(),
               ],
             ),
           ),

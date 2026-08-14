@@ -8,6 +8,8 @@ import '../../models/run_record.dart';
 import '../../services/pipeline_run_provider.dart';
 import '../../widgets/results_file_tree.dart';
 import '../../widgets/import_plot_folder_dialog.dart';
+import '../../widgets/run_report_panels.dart';
+import '../../widgets/database_card.dart' show formatDbSize;
 
 /// Results section (sidebar destination, alongside Pipelines/Resources/About):
 /// a run-history list -- across every pipeline, not just the current session's
@@ -29,6 +31,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   String? _error;
   Timer? _pollTimer;
   final _treeKey = GlobalKey<ResultsFileTreeState>();
+
+  /// Files is the default: after a run you go and get the outputs for your own
+  /// analysis. The report is periodic-but-high-value, so it belongs one click
+  /// away and visibly labelled, not in front.
+  bool _showReport = false;
+  String _query = '';
+  String? _pipelineFilter;
 
   @override
   void initState() {
@@ -123,6 +132,50 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 34,
+                        child: TextField(
+                          onChanged: (q) => setState(() => _query = q.trim().toLowerCase()),
+                          style: const TextStyle(fontSize: 12.5),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            prefixIcon: Icon(Icons.search, size: 16, color: colors.textMuted),
+                            prefixIconConstraints: const BoxConstraints(minWidth: 32),
+                            hintText: ref.t('res_search'),
+                            hintStyle: TextStyle(fontSize: 12.5, color: colors.textMuted),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                      if (_pipelineCounts().length > 1) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 5,
+                          runSpacing: 5,
+                          children: [
+                            _MiniChip(
+                              label: ref.t('db_filter_all'),
+                              selected: _pipelineFilter == null,
+                              onTap: () => setState(() => _pipelineFilter = null),
+                            ),
+                            for (final e in _pipelineCounts().entries)
+                              _MiniChip(
+                                label: e.key.toUpperCase(),
+                                count: e.value,
+                                selected: _pipelineFilter == e.key,
+                                onTap: () => setState(
+                                    () => _pipelineFilter = _pipelineFilter == e.key ? null : e.key),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
                 if (_runs.any((r) => !r.isRunning))
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -177,10 +230,45 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         ),
       );
     }
+    final shown = _runs.where(_matches).toList();
+    if (shown.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(ref.t('res_no_match'),
+              style: TextStyle(color: colors.textMuted), textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    // Flatten into rows interleaved with their day heading, so one ListView
+    // still does the scrolling for a history that can reach 200 entries.
+    final rows = <Widget>[];
+    String? lastGroup;
+    for (final run in shown) {
+      final group = _dayGroup(run.startedAtDate);
+      if (group != lastGroup) {
+        lastGroup = group;
+        rows.add(Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+          child: Text(group.toUpperCase(),
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                  color: colors.textMuted)),
+        ));
+      }
+      rows.add(_runTile(colors, run));
+    }
+
     return ListView.builder(
-      itemCount: _runs.length,
-      itemBuilder: (context, i) {
-        final run = _runs[i];
+      itemCount: rows.length,
+      itemBuilder: (context, i) => rows[i],
+    );
+  }
+
+  Widget _runTile(AppPalette colors, RunRecord run) {
         final selected = run.id == _selected?.id;
         final checked = _checkedIds.contains(run.id);
         return InkWell(
@@ -236,8 +324,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
           ),
         );
-      },
-    );
   }
 
   Widget _buildDetail(AppPalette colors, RunRecord run) {
@@ -285,7 +371,31 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+          child: _RunTiles(run: run, formatDuration: _formatDuration),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _ViewSwitch(
+              showReport: _showReport,
+              // An imported folder has no configuration to report on, and a
+              // running one has not written its report yet -- say which,
+              // rather than offering a tab that opens onto an explanation.
+              reportEnabled: !run.isRunning && !run.isImported,
+              reportTooltip: run.isRunning
+                  ? ref.t('res_report_unavailable_running')
+                  : ref.t('res_report_unavailable_imported'),
+              onChanged: (v) => setState(() => _showReport = v),
+            ),
+          ),
+        ),
         const Divider(height: 1),
+        if (_showReport && !run.isRunning && !run.isImported)
+          Expanded(child: RunReportPanels(runId: run.id))
+        else
         Expanded(
           child: ResultsFileTree(
             key: _treeKey,
@@ -305,6 +415,40 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         ),
       ],
     );
+  }
+
+  bool _matches(RunRecord r) {
+    if (_pipelineFilter != null && r.pipelineId != _pipelineFilter) return false;
+    if (_query.isEmpty) return true;
+    return '${r.name} ${r.pipelineName}'.toLowerCase().contains(_query);
+  }
+
+  /// A flat list is fine at five runs and unusable at fifty. Grouping by how
+  /// recent something is matches how people actually look for a run -- "the one
+  /// from this morning" -- far better than a date column does.
+  String _dayGroup(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(day).inDays;
+    if (diff <= 0) return ref.t('res_group_today');
+    if (diff == 1) return ref.t('res_group_yesterday');
+    if (diff < 7) return ref.t('res_group_week');
+    return ref.t('res_group_older');
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.inHours > 0) return '${d.inHours} h ${d.inMinutes.remainder(60).toString().padLeft(2, '0')} min';
+    if (d.inMinutes > 0) return '${d.inMinutes} min';
+    return '${d.inSeconds} s';
+  }
+
+  Map<String, int> _pipelineCounts() {
+    final counts = <String, int>{};
+    for (final r in _runs) {
+      counts[r.pipelineId] = (counts[r.pipelineId] ?? 0) + 1;
+    }
+    return Map.fromEntries(counts.entries.toList()..sort((a, b) => a.key.compareTo(b.key)));
   }
 
   String _formatWhen(DateTime dt) {
@@ -494,6 +638,166 @@ class _StatusBadge extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
       child: Text(_label(ref), style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: color)),
+    );
+  }
+}
+
+/// Compact filter chip for the 320px run list, where the Databases screen's
+/// chip would not fit next to three others.
+class _MiniChip extends StatelessWidget {
+  final String label;
+  final int? count;
+  final bool selected;
+  final VoidCallback onTap;
+  const _MiniChip({required this.label, this.count, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final onSelected = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF0B1416)
+        : Colors.white;
+    return Material(
+      color: selected ? colors.primary : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: selected ? colors.primary : colors.border),
+          ),
+          child: Text(
+            count == null ? label : '$label $count',
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: selected ? onSelected : colors.textMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Duration, cores, output size and reference count for the selected run.
+///
+/// Everything but the size comes from the run record and its config; the size
+/// is measured once when the run finishes and kept on the record, because
+/// walking a finished metagenome's output on every listing would not be free.
+class _RunTiles extends ConsumerWidget {
+  final RunRecord run;
+  final String Function(Duration) formatDuration;
+  const _RunTiles({required this.run, required this.formatDuration});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final tiles = <(String, String)>[
+      (ref.t('res_tile_duration'),
+          run.duration != null ? formatDuration(run.duration!) : '—'),
+      (ref.t('res_tile_cores'), run.cores > 0 ? '${run.cores}' : '—'),
+      (
+        ref.t('res_tile_size'),
+        run.outputSizeBytes != null ? formatDbSize(run.outputSizeBytes! / (1024 * 1024 * 1024)) : '—'
+      ),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) Container(width: 1, height: 40, color: colors.border),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(tiles[i].$1.toUpperCase(),
+                        style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: colors.textMuted)),
+                    const SizedBox(height: 2),
+                    Text(tiles[i].$2,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: [FontFeature.tabularFigures()])),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewSwitch extends ConsumerWidget {
+  final bool showReport;
+  final bool reportEnabled;
+  final String reportTooltip;
+  final ValueChanged<bool> onChanged;
+  const _ViewSwitch({
+    required this.showReport,
+    required this.reportEnabled,
+    required this.reportTooltip,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    Widget seg(String label, bool active, VoidCallback? onTap) => InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+            color: active ? colors.primarySoft : Colors.transparent,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: onTap == null
+                    ? colors.textMuted.withValues(alpha: 0.5)
+                    : (active ? colors.primaryDark : colors.textSecondary),
+              ),
+            ),
+          ),
+        );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: colors.border),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            seg(ref.t('res_view_files'), !showReport, () => onChanged(false)),
+            Container(width: 1, height: 34, color: colors.border),
+            Tooltip(
+              message: reportEnabled ? '' : reportTooltip,
+              child: seg(ref.t('res_view_report'), showReport,
+                  reportEnabled ? () => onChanged(true) : null),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

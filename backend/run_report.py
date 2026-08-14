@@ -46,7 +46,15 @@ def _join_natural(items: list) -> str:
     return ", ".join(items[:-1]) + ", and " + items[-1]
 
 
-def generate_report(pid: str, run: dict, config_path: str) -> str:
+def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
+    """Everything the report says, as data.
+
+    Split out from generate_report so the same figures can be rendered as the
+    run_report.txt on disk *and* served to the Results tab, which shows them as
+    copyable panels. The alternative was having the interface re-parse
+    space-aligned columns out of the text file, which would break the first time
+    a tool name got longer than the column it sized itself to.
+    """
     manifest = get_pipeline(pid)
     tools = manifest.get("tools", {})
     categories_order = manifest.get("categories", [])
@@ -156,26 +164,80 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
             _seen_refs.add(dedup_key)
             reference_entries.append(citation)
 
+    return {
+        "pipeline_id": pid,
+        "pipeline": manifest.get("name", pid),
+        "run": {
+            "name": run.get("name", "-"),
+            "id": run.get("id", "-"),
+            "started": _fmt_time(run.get("started_at")),
+            "finished": _fmt_time(run.get("finished_at") or time.time()),
+            "status": run.get("status", "-"),
+            "exit_code": run.get("exit_code"),
+            "cores": run.get("cores"),
+            "output_dir": run.get("output_dir", "-"),
+        },
+        "config_path": config_path,
+        "methods": methods_paragraphs,
+        "tools": [
+            {"name": name, "version": version, "category": category, "parameters": flags}
+            for name, version, category, flags in detail_rows
+        ],
+        "references": [
+            {"n": i, "text": ref["text"], "doi": ref.get("doi")}
+            for i, ref in enumerate(reference_entries, start=1)
+        ],
+        "databases": [
+            {
+                "name": name,
+                "path": path,
+                "fingerprint": checksum_str,
+                "version": option_label,
+                "version_known": version_known,
+                "citations": citations,
+            }
+            for name, path, checksum_str, option_label, version_known, citations in db_rows
+        ],
+    }
+
+
+def generate_report(pid: str, run: dict, config_path: str) -> str:
+    """The same report as text, for run_report.txt in the run's output folder.
+
+    Always written in English regardless of the app's UI language, since that is
+    what a manuscript Methods section needs almost universally.
+    """
+    data = generate_report_data(pid, run, config_path)
+    manifest_name = data["pipeline"]
+    r = data["run"]
+    methods_paragraphs = data["methods"]
+    detail_rows = [(t["name"], t["version"], t["category"], t["parameters"]) for t in data["tools"]]
+    reference_entries = data["references"]
+    db_rows = [
+        (d["name"], d["path"], d["fingerprint"], d["version"], d["version_known"], d["citations"])
+        for d in data["databases"]
+    ]
+
     # ---- Assemble ----------------------------------------------------------
     lines = []
     lines.append("=" * 80)
     lines.append("OmniOmics -- Run Report")
     lines.append("=" * 80)
-    lines.append(f"Pipeline:          {manifest.get('name', pid)}")
-    lines.append(f"Run name:          {run.get('name', '-')}")
-    lines.append(f"Run id:            {run.get('id', '-')}")
-    lines.append(f"Started:           {_fmt_time(run.get('started_at'))}")
-    lines.append(f"Finished:          {_fmt_time(run.get('finished_at') or time.time())}")
-    lines.append(f"Status:            {run.get('status', '-')}  (exit code {run.get('exit_code')})")
-    lines.append(f"Cores:             {run.get('cores', '-')}")
-    lines.append(f"Output directory:  {run.get('output_dir', '-')}")
-    lines.append(f"Config file:       {config_path}")
+    lines.append(f"Pipeline:          {manifest_name}")
+    lines.append(f"Run name:          {r['name']}")
+    lines.append(f"Run id:            {r['id']}")
+    lines.append(f"Started:           {r['started']}")
+    lines.append(f"Finished:          {r['finished']}")
+    lines.append(f"Status:            {r['status']}  (exit code {r['exit_code']})")
+    lines.append(f"Cores:             {r['cores'] if r['cores'] is not None else '-'}")
+    lines.append(f"Output directory:  {r['output_dir']}")
+    lines.append(f"Config file:       {data['config_path']}")
     lines.append("")
     lines.append(_RULE)
     lines.append("METHODS (auto-drafted -- review and edit before submission)")
     lines.append(_RULE)
     lines.append(
-        f"Data were processed with the {manifest.get('name', pid)} pipeline, implemented in "
+        f"Data were processed with the {manifest_name} pipeline, implemented in "
         "OmniOmics and orchestrated with Snakemake (Molder et al. 2021, "
         "https://doi.org/10.12688/f1000research.29032.2)."
     )
@@ -214,10 +276,10 @@ def generate_report(pid: str, run: dict, config_path: str) -> str:
         "is the same as its tool's)."
     )
     lines.append("")
-    for i, ref in enumerate(reference_entries, start=1):
+    for ref in reference_entries:
         doi = ref.get("doi")
         suffix = f" https://doi.org/{doi}" if doi else ""
-        lines.append(f"[{i}] {ref['text']}{suffix}")
+        lines.append(f"[{ref['n']}] {ref['text']}{suffix}")
     lines.append("")
 
     lines.append(_RULE)

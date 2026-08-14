@@ -30,10 +30,14 @@ For each of the five pipelines, with a handful of its own tools marked active:
    nothing useful.
 3. **The sections are present.** METHODS, TOOLS & PARAMETERS and REFERENCES all
    appear, and REFERENCES has at least the Snakemake entry `[1]`.
+4. **The structured form holds up.** generate_report_data -- what
+   /api/runs/{id}/report serves and the Results tab renders -- returns every
+   expected key, is JSON-serialisable, and numbers its references 1..n.
 
 What it cannot check: whether the drafted Methods prose reads well, or whether
 a citation is the right paper for the tool. Those are editorial, not mechanical.
 """
+import json
 import os
 import sys
 import tempfile
@@ -112,6 +116,29 @@ def check_pipeline(pid: str) -> int:
             problems += 1
     if "[1] " not in text:
         print(f"  FAIL {pid}: REFERENCES has no numbered entries")
+        problems += 1
+
+    # 4. The structured form -- what /api/runs/{id}/report serves and the
+    #    Results tab renders -- agrees with the text and is JSON-serialisable.
+    config_path, _ = build_config(pid)
+    try:
+        data = run_report.generate_report_data(pid, run, config_path)
+        json.dumps(data)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  FAIL {pid}: generate_report_data raised {type(exc).__name__}: {exc}")
+        return problems + 1
+    finally:
+        os.unlink(config_path)
+
+    for key in ("pipeline", "run", "methods", "tools", "references", "databases"):
+        if key not in data:
+            print(f"  FAIL {pid}: report data is missing {key!r}")
+            problems += 1
+    if len(data.get("tools", [])) != len(versioned) + (len(active) - len(versioned)):
+        print(f"  FAIL {pid}: report data lists {len(data['tools'])} tools, expected {len(active)}")
+        problems += 1
+    if [r["n"] for r in data.get("references", [])] != list(range(1, len(data.get("references", [])) + 1)):
+        print(f"  FAIL {pid}: reference numbering is not 1..n")
         problems += 1
 
     if not problems:

@@ -1362,6 +1362,15 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
         # arrives, so anything emitted afterward would only reach a *future*
         # reconnect via replay, not whoever's watching right now.
         if current:
+            # Measured once, here, and kept on the record. Walking a finished
+            # run's output can take a while on a big metagenome, which is fine
+            # exactly once but not on every listing of the Results tab.
+            try:
+                if current.get("output_dir") and os.path.isdir(current["output_dir"]):
+                    runs_store.update_run(run_id,
+                                          output_size_bytes=_dir_size_bytes(current["output_dir"]))
+            except OSError:
+                pass
             try:
                 report_path = run_report.write_report(pid, current, current["config_path"], current["output_dir"])
                 if report_path:
@@ -1587,6 +1596,48 @@ def _safe_to_delete(path: str) -> bool:
     if len([p for p in resolved.split(os.sep) if p]) < 2:
         return False
     return True
+
+
+@app.get("/api/runs/{run_id}/report")
+def api_run_report(run_id: str):
+    """The run's provenance report as data, for the Results tab's panels.
+
+    Not available for every run, and the two reasons are different:
+    an imported folder has no config_path at all (add_imported_run records
+    None -- there was no launch, so there is no configuration to report on),
+    and a running one has not reached the point where the report is written.
+    Both are reported as `available: false` with a reason rather than an error,
+    so the interface can disable the panel and say why.
+    """
+    run = next((r for r in runs_store.list_runs() if r["id"] == run_id), None)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found.")
+
+    if run.get("status") == "running":
+        return {"available": False, "reason": "running"}
+    if not run.get("config_path"):
+        return {"available": False, "reason": "imported"}
+
+    try:
+        data = run_report.generate_report_data(run["pipeline_id"], run, run["config_path"])
+    except Exception as exc:  # noqa: BLE001 -- surfaced, not swallowed
+        # Deliberately not silent: swallowing this exact call is what hid a
+        # broken report generator for the whole life of the project.
+        raise HTTPException(status_code=500, detail=f"Could not build the report: {exc}")
+
+    data["available"] = True
+    return data
+
+
+def _dir_size_bytes(path: str) -> int:
+    total = 0
+    for root, _dirs, files in os.walk(path):
+        for name in files:
+            try:
+                total += os.lstat(os.path.join(root, name)).st_size
+            except OSError:
+                continue
+    return total
 
 
 @app.post("/api/runs/delete")
