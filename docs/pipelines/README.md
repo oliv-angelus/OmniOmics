@@ -51,7 +51,7 @@ genomes?
 | `01_qc_tax` | read cleaning (fastp / filtlong+NanoPlot by read type), taxonomic profiling with Kraken2+Bracken and, independently, Kaiju |
 | `02_assembly` | MEGAHIT or SPAdes (short), Flye (long); Tiara splits prokaryotic from eukaryotic contigs |
 | `03_mapping` | reads back to the assembly, for the coverage signal binning needs |
-| `04_binning` | MetaBAT2, MaxBin2 and SemiBin2 in parallel |
+| `04_binning` | MetaBAT2, SemiBin2, VAMB and MaxBin2 in parallel (at least two required) |
 | `05_mag_refine` | Binette consolidates the three bin sets; CheckM2 and GUNC assess the result |
 | `06_dereplication_tax` | dRep removes redundancy; GTDB-Tk classifies the surviving MAGs |
 | `07_annotation_mobilome` | gene calling, eggNOG-mapper, rRNA/tRNA/CRISPR, AMR and virulence, plasmids, prophages, insertion sequences, BGCs |

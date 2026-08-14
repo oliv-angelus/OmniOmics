@@ -47,6 +47,8 @@ configuration records which ones actually ran.
 |---|---|---|---|
 | MEGAHIT | 1.2.9 | MAGMA, DOGMA | Li D, *et al.* (2015) *Bioinformatics* 31:1674. doi:10.1093/bioinformatics/btv033 |
 | SPAdes | 3.15.5 / 4.3.0 | MAGMA, DOGMA | Prjibelski A, *et al.* (2020) *Curr Protoc Bioinformatics* 70:e102. doi:10.1002/cpbi.102 |
+| metaSPAdes | 3.15.5 | MAGMA | Nurk S, *et al.* (2017) *Genome Res* 27:824. doi:10.1101/gr.213959.116 — cite this for the hybrid metagenomic mode |
+| rnaSPAdes | 3.15.5 | DOGMA | Bushmanova E, *et al.* (2019) *GigaScience* 8:giz100. doi:10.1093/gigascience/giz100 — cite this for the transcriptome mode |
 | Flye | 2.9.5 | MAGMA, SIGMA | Kolmogorov M, *et al.* (2019) *Nat Biotechnol* 37:540. doi:10.1038/s41587-019-0072-8 |
 | Unicycler | 0.5.0 | SIGMA | Wick RR, *et al.* (2017) *PLoS Comput Biol* 13:e1005595. doi:10.1371/journal.pcbi.1005595 |
 | Racon | 1.5.0 | SIGMA | Vaser R, *et al.* (2017) *Genome Res* 27:737. doi:10.1101/gr.214270.116 |
@@ -87,6 +89,7 @@ configuration records which ones actually ran.
 | MetaBAT 2 | 2.18 | MAGMA | Kang DD, *et al.* (2019) *PeerJ* 7:e7359. doi:10.7717/peerj.7359 |
 | MaxBin 2 | 2.2.7 | MAGMA | Wu YW, *et al.* (2016) *Bioinformatics* 32:605. doi:10.1093/bioinformatics/btv638 |
 | SemiBin2 | 2.3.0 | MAGMA | Pan S, *et al.* (2023) *Bioinformatics* 39:i21. doi:10.1093/bioinformatics/btad209 |
+| VAMB | 5.0.2 | MAGMA | Nissen JN, *et al.* (2021) *Nat Biotechnol* 39:555. doi:10.1038/s41587-020-00777-4 |
 | Binette | 1.2.1 | MAGMA | Mainguy J, Hoede C. github.com/genotoul-bioinfo/Binette |
 | dRep | 3.4.0 | MAGMA | Olm MR, *et al.* (2017) *ISME J* 11:2864. doi:10.1038/ismej.2017.126 |
 | CheckM2 | 1.1.0 | MAGMA, SIGMA | Chklovski A, *et al.* (2023) *Nat Methods* 20:1203. doi:10.1038/s41592-023-01940-w |

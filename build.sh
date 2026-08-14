@@ -90,12 +90,37 @@ mkdir -p "$INSTALL_DIR" "$STAGE/DEBIAN" "$STAGE/usr/bin" \
 cp -r "$BUNDLE_DIR"/. "$INSTALL_DIR/"
 mkdir -p "$INSTALL_DIR/backend"
 cp backend/dist/server "$INSTALL_DIR/backend/server"
-cp -r pipelines "$INSTALL_DIR/pipelines"
+
+# Stage a source directory without the things that only exist because this is a
+# development checkout. `cp -r` copies the working tree, not what git tracks, so
+# ignored files ship anyway unless they are excluded here -- and some of them
+# leak: .snakemake/log holds Snakemake logs from this machine's own runs, with
+# its absolute paths in them. Anything added to .gitignore that lands inside
+# pipelines/ or plots/ needs a matching rule below.
+#
+# pipelines/*/config is excluded because it is a development convenience for
+# running a workflow by hand from its own directory. A real run never reads it:
+# the app generates config.yaml and samples.tsv into the run's OWN output
+# directory (see main.py's /api/pipelines/{pid}/config/generate), which is also
+# the working directory Snakemake resolves `configfile:` against.
+stage_dir() {
+  tar -C . \
+      --exclude='.snakemake' \
+      --exclude='__pycache__' \
+      --exclude='*.pyc' \
+      --exclude='.ipynb_checkpoints' \
+      --exclude='tests' \
+      --exclude='pipelines/*/config' \
+      -cf - "$1" | tar -C "$INSTALL_DIR" -xf -
+}
+
+stage_dir pipelines
 # plots/ is NOT optional: plots_engine resolves PLOTS_DIR as <binary>/../plots,
 # so without it the whole Plots tab fails at run time in the packaged build
 # while working perfectly in development. It holds the analysis manifest, the R
-# scripts and the r-plots conda spec.
-cp -r plots "$INSTALL_DIR/plots"
+# scripts and the r-plots conda spec -- but not plots/scripts/tests, which
+# exercises the shared plotting library and has no purpose on a user's machine.
+stage_dir plots
 # Shipped so the licence travels with the binary, which the MIT terms require.
 cp LICENSE "$INSTALL_DIR/LICENSE"
 cp README.md "$INSTALL_DIR/README.md"
