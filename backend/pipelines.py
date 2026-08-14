@@ -53,6 +53,10 @@ def list_pipelines() -> list:
             "category": m.get("category", ""),
             "icon": m.get("icon", ""),
             "tags": m.get("tags", []),
+            # The ordered stage list, so the Hub card can show how deep a
+            # pipeline is (5 stages for DEFINE, 14 for SIGMA) without fetching
+            # each manifest in full. Same list the Launch screen groups tools by.
+            "categories": m.get("categories", []),
         }
         for pid, m in _load_all().items()
     ]
