@@ -12,7 +12,16 @@ dependencies:
   - r-base>=4.3
   - bioconductor-phyloseq
   - bioconductor-deseq2
-  - bioconductor-ape
+  # ape is CRAN, not Bioconductor, so the package is r-ape. It was listed here
+  # as `bioconductor-ape`, which does not exist in bioconda -- almost certainly
+  # confused with `bioconductor-apeglm` further down, which is a different
+  # package (DESeq2's shrinkage estimator, used by ma_plot.R) and is correct.
+  # The mistake made `conda env create -f` fail outright with
+  # PackagesNotFoundInChannelsError, so r-plots could not be built from this
+  # file at all and the whole Plots tab was unreachable on a fresh machine.
+  # Required by load_phyloseq.R, build_phyloseq.R, build_dogma_table.R and
+  # beta_diversity.R (ape::pcoa).
+  - r-ape
   - r-vegan
   - r-permute
   - r-patchwork
