@@ -11,25 +11,26 @@ import 'ws_client.dart';
 /// reconnect it on each rebuild, and the strip would blink back to "no reading
 /// yet" every time the user changed tabs.
 ///
-/// Deliberately not autoDispose: there is no moment inside the shell where
-/// nobody is watching, and reconnecting costs a round trip plus up to the two
-/// seconds until the backend's next tick.
-class SystemInfoNotifier extends StateNotifier<Map<String, dynamic>?> {
-  final Ref _ref;
+/// State is the latest reading, or null before the first one arrives.
+class SystemInfoNotifier extends Notifier<Map<String, dynamic>?> {
   WsClient? _ws;
 
-  SystemInfoNotifier(this._ref) : super(null) {
+  @override
+  Map<String, dynamic>? build() {
     _connect();
+    // Never actually fires -- the provider is read from AppShell, which lives
+    // as long as the app does -- but leaving the socket unclosed on teardown
+    // would leak it in tests and on hot restart.
+    ref.onDispose(() => _ws?.close());
+    return null;
   }
 
   void _connect() {
-    final api = _ref.read(apiClientProvider);
+    final api = ref.read(apiClientProvider);
     final ws = WsClient.connect(api.wsUrl('/ws/system'));
     _ws = ws;
     ws.events.listen(
-      (event) {
-        if (mounted) state = event;
-      },
+      (event) => state = event,
       // The backend sends a fresh reading every two seconds, so a dropped
       // socket means no further updates ever. Keep the last reading on screen
       // rather than blanking the strip -- it is stale by seconds, not wrong --
@@ -38,16 +39,7 @@ class SystemInfoNotifier extends StateNotifier<Map<String, dynamic>?> {
       onDone: () {},
     );
   }
-
-  @override
-  void dispose() {
-    _ws?.close();
-    super.dispose();
-  }
 }
 
-/// Latest system reading, or null before the first one arrives.
 final systemInfoProvider =
-    StateNotifierProvider<SystemInfoNotifier, Map<String, dynamic>?>(
-  (ref) => SystemInfoNotifier(ref),
-);
+    NotifierProvider<SystemInfoNotifier, Map<String, dynamic>?>(SystemInfoNotifier.new);
