@@ -1497,6 +1497,50 @@ analyses:
           en: "How many MAGs 'auto' still labels"
           pt: "Até quantos MAGs o modo 'auto' ainda rotula"
 
+  - id: magma_mag_abundance
+    name:
+      en: "MAG Abundance Across Samples"
+      pt: "Abundância dos MAGs entre Amostras"
+    description:
+      en: "Relative abundance of every recovered MAG in every sample, from CoverM's cross-sample mapping against the dereplicated set. A MAG assembled from one sample carries a real, measured abundance in all the others, which is what separates 'recovered here' from 'present here'. Rows group by GTDB lineage, MIMAG tier or dereplication status."
+      pt: "Abundância relativa de cada MAG recuperado em cada amostra, a partir do mapeamento entre amostras do CoverM contra o conjunto dereplicado. Um MAG montado a partir de uma amostra tem abundância real e medida em todas as outras, que é o que separa 'recuperado aqui' de 'presente aqui'. As linhas se agrupam por linhagem GTDB, nível MIMAG ou status de dereplicação."
+    applies_to: [magma]
+    input_shape: magma_mags
+    script: analyses/magma_mag_abundance.R
+    parameters:
+      - flag: "--group_by"
+        type: choice
+        default: gtdbtk_phylum
+        enabled: true
+        choices: ["", gtdbtk_phylum, gtdbtk_class, gtdbtk_order, gtdbtk_family, gtdbtk_genus, mimag_quality, dereplicated]
+        description:
+          en: "Group the MAG rows by this column. Empty means no grouping. Samples cannot be grouped: the cached object carries metadata per MAG, not per sample"
+          pt: "Agrupar as linhas de MAGs por esta coluna. Vazio significa sem agrupamento. As amostras não podem ser agrupadas: o objeto em cache carrega metadados por MAG, não por amostra"
+      - flag: "--only_dereplicated"
+        type: bool
+        default: true
+        enabled: true
+        description:
+          en: "Show only MAGs that survived dRep, which is the set CoverM mapped against"
+          pt: "Mostrar apenas os MAGs que sobreviveram ao dRep, que é o conjunto contra o qual o CoverM mapeou"
+      - flag: "--transform"
+        type: choice
+        default: sqrt
+        enabled: true
+        choices: [sqrt, log10, none]
+        description:
+          en: "Colour scale. A few dominant MAGs otherwise flatten the rest; sqrt is the default because abundance is legitimately zero in some samples and log10 has to fudge those"
+          pt: "Escala de cor. Alguns MAGs dominantes achatam o resto; sqrt é o padrão porque a abundância é legitimamente zero em algumas amostras e o log10 precisa contorná-las"
+      - flag: "--min_abundance"
+        type: float
+        default: 0
+        min: 0
+        max: 100
+        enabled: true
+        description:
+          en: "Drop MAGs that never reach this percentage in any sample. Filters whole MAGs, not individual cells"
+          pt: "Descartar MAGs que nunca atingem esta porcentagem em nenhuma amostra. Filtra MAGs inteiros, não células individuais"
+
   - id: sigma_genome_summary
     name:
       en: "Genome Summary"

@@ -102,7 +102,7 @@ DEFINE's and PRISM's pages are still to be written; the summary in
 
 ## The plotting environment
 
-42 analyses across the five pipelines, each reading a cached representation of
+43 analyses across the five pipelines, each reading a cached representation of
 a finished run rather than re-parsing its raw output:
 
 - **Community** — composition, alpha and beta diversity (PCoA/NMDS/CAP over
@@ -295,7 +295,7 @@ own, and that surface is what these checks target:
   (`scripts/run_plots_suite.py`), distinguishing a real failure from a
   legitimate refusal and from an empty-but-correct result.
 - **Format verification against tool source code** for every reader.
-- **End-to-end execution** of all five workflows and all 42 analyses.
+- **End-to-end execution** of all five workflows and all 43 analyses.
 
 ### Pending
 
