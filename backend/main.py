@@ -67,6 +67,7 @@ import plots_engine
 import plots_detect
 import plot_runs_store
 import changelog
+import about
 
 app = FastAPI()
 
@@ -408,6 +409,18 @@ async def system_monitor_ws(websocket: WebSocket):
         pass
 
 # --- Pipeline registry (Hub) ---
+
+@app.get("/api/about")
+def api_about():
+    """App identity, its own citation in three formats, and the citation index.
+
+    The index is every reference the app can require across all installed
+    pipelines -- not what one run used, which is what run_report.txt is for and
+    is always the better source for a methods section, because it names the
+    pinned version of each tool and the exact database build.
+    """
+    return about.about_data()
+
 
 @app.get("/api/changelog")
 def api_changelog():

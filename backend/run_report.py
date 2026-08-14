@@ -46,6 +46,46 @@ def _join_natural(items: list) -> str:
     return ", ".join(items[:-1]) + ", and " + items[-1]
 
 
+class ReferenceCollector:
+    """Accumulates citations in encounter order, deduped.
+
+    Two tools can share a paper (jgi_summarize and metabat2 both cite MetaBAT2),
+    and a database's citation is sometimes its tool's, so the same entry would
+    otherwise appear several times in one numbered list. Deduping on the DOI --
+    falling back to the text where a citation has none, e.g. a GitHub-only tool
+    -- keeps one entry per real reference.
+
+    Shared with /api/about, which builds the same index across every pipeline
+    rather than one run's active tools, so the two cannot disagree about what
+    counts as the same reference.
+    """
+
+    def __init__(self, seed: list | None = None):
+        self.entries: list = []
+        self._seen: set = set()
+        for citation in seed or []:
+            self.add(citation)
+
+    def add(self, citation: dict) -> bool:
+        key = citation.get("doi") or citation.get("text")
+        if not key or key in self._seen:
+            return False
+        self._seen.add(key)
+        self.entries.append(citation)
+        return True
+
+    def add_all(self, citations) -> None:
+        for citation in citations or []:
+            self.add(citation)
+
+
+SNAKEMAKE_CITATION = {
+    "text": "Mölder F, Jablonski KP, Letcher B, et al. Sustainable data analysis with "
+            "Snakemake. F1000Research. 2021;10:33.",
+    "doi": "10.12688/f1000research.29032.2",
+}
+
+
 def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
     """Everything the report says, as data.
 
@@ -81,11 +121,7 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
     # Citations for every active tool that has one, deduped and in the same
     # category/tool order as detail_rows -- e.g. jgi_summarize and metabat2
     # cite the same MetaBAT2 paper, and would otherwise show up twice.
-    reference_entries = [
-        {"text": "Mölder F, Jablonski KP, Letcher B, et al. Sustainable data analysis with "
-                  "Snakemake. F1000Research. 2021;10:33.", "doi": "10.12688/f1000research.29032.2"},
-    ]
-    _seen_refs = {"10.12688/f1000research.29032.2"}
+    refs = ReferenceCollector([SNAKEMAKE_CITATION])
     for cat in categories_order:
         tids = by_category.get(cat)
         if not tids:
@@ -103,12 +139,7 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
                 phrase += f" ({flags})"
             phrases.append(phrase)
             detail_rows.append((name, version or "-", cat, flags or "-"))
-            for citation in tool.get("citation", []):
-                dedup_key = citation.get("doi") or citation.get("text")
-                if dedup_key in _seen_refs:
-                    continue
-                _seen_refs.add(dedup_key)
-                reference_entries.append(citation)
+            refs.add_all(tool.get("citation", []))
         methods_paragraphs.append(f"For {cat.lower()}, we used {_join_natural(phrases)}.")
 
     if not active_tools:
@@ -157,12 +188,7 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
             citations = info.get("citation", [])
 
         db_rows.append((info.get("name", key), path, checksum_str, option_label, version_known, citations))
-        for citation in citations:
-            dedup_key = citation.get("doi") or citation.get("text")
-            if dedup_key in _seen_refs:
-                continue
-            _seen_refs.add(dedup_key)
-            reference_entries.append(citation)
+        refs.add_all(citations)
 
     return {
         "pipeline_id": pid,
@@ -185,7 +211,7 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
         ],
         "references": [
             {"n": i, "text": ref["text"], "doi": ref.get("doi")}
-            for i, ref in enumerate(reference_entries, start=1)
+            for i, ref in enumerate(refs.entries, start=1)
         ],
         "databases": [
             {
