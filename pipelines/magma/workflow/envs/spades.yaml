@@ -3,5 +3,21 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - spades=3.15.5
-  - python=3.10
+  # SPAdes 4.x, replacing a `spades=3.15.5` + `python=3.10` pair.
+  #
+  # The 3.15.5 pin was flagged as a pre-publication blocker on the grounds that
+  # its Python scripts import `distutils`, removed in Python 3.12. Checked
+  # 2026-08-14 before changing it, and the blocker was overstated for MAGMA:
+  # the `python=3.10` pin beside it still solves today, and 3.10 still ships
+  # distutils, so MAGMA was most likely not broken. What broke was DOGMA, whose
+  # env pinned 3.15.5 with no interpreter pin and therefore resolved a modern
+  # Python; it was bumped to 4.3.0 and verified end-to-end on 2026-07-25, and
+  # the note assumed MAGMA would "hit this too" without noticing the pin.
+  #
+  # Bumped anyway, because the reason to leave it was never good: 3.15.5 +
+  # python 3.10 is a 2021-era stack held together by an interpreter pin that
+  # only works for as long as bioconda keeps a compatible build solvable, and
+  # the pin is what would fail -- silently, at env-build time, on a user's
+  # machine. 4.3.0 is distutils-free, brings its own Python (3.14 as resolved
+  # here), needs no interpreter pin, and is the same version DOGMA already runs.
+  - spades=4.3.0
