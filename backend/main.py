@@ -112,11 +112,30 @@ def check_python_deps() -> dict:
         "packages":  REQUIRED_PY_PACKAGES,
     }
 
+def _resolve_conda_tool(name: str) -> str | None:
+    """Absolute path of a tool installed by _vibrant_tools_runner, or None.
+
+    Looks inside conda's own bin directory *before* consulting PATH. The install
+    runs `conda install` into the base env, so the binaries land next to the
+    conda executable itself -- but that directory is only on PATH for a shell
+    that ran `conda init`. Launched from the desktop entry the app inherits no
+    such PATH, so a PATH-only check reported "not installed" for tools conda had
+    just installed successfully, and the VIBRANT database setup then refused to
+    run for the same reason.
+    """
+    conda = check_conda()
+    if conda["installed"] and conda["path"]:
+        candidate = os.path.join(os.path.dirname(conda["path"]), name)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return shutil.which(name)
+
+
 def check_vibrant_tools() -> dict:
     """Check if HMMER3 (hmmfetch, hmmpress) and wget are available."""
-    hmmfetch = shutil.which("hmmfetch")
-    hmmpress = shutil.which("hmmpress")
-    wget     = shutil.which("wget")
+    hmmfetch = _resolve_conda_tool("hmmfetch")
+    hmmpress = _resolve_conda_tool("hmmpress")
+    wget     = _resolve_conda_tool("wget")
     return {
         "installed": bool(hmmfetch and hmmpress and wget),
         "hmmfetch":  bool(hmmfetch),
@@ -621,10 +640,10 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
 
         return path
 
-    async def run_cmd(cmd: str, cwd: str = None):
+    async def run_cmd(cmd: str, cwd: str = None, env: dict = None):
         """Run a shell command, streaming cleaned output through `send`."""
         proc = await asyncio.create_subprocess_shell(
-            cmd, cwd=cwd,
+            cmd, cwd=cwd, env=env,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )
@@ -638,18 +657,22 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
     if opt.get("vibrant_setup"):
         await send({"type": "log", "text": "Starting VIBRANT database setup…\n"})
 
-        # Check dependencies (silently)
-        async def tool_exists(name: str) -> bool:
-            proc = await asyncio.create_subprocess_shell(
-                f"which {name}",
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-            return (await proc.wait()) == 0
-
+        # Check dependencies. Resolved against conda's own bin directory rather
+        # than PATH -- see _resolve_conda_tool: launched from the desktop entry
+        # the backend inherits a PATH without conda on it, which used to make
+        # this refuse to run for tools that were in fact installed.
         for tool in ("wget", "hmmfetch", "hmmpress"):
-            if not await tool_exists(tool):
+            if not _resolve_conda_tool(tool):
                 raise RuntimeError(f"'{tool}' not found. Install HMMER3 and wget first (e.g. conda install hmmer wget).")
+
+        # VIBRANT_setup.py shells out to wget/hmmfetch/hmmpress by bare name, so
+        # resolving them here is not enough -- the child process needs them on
+        # its own PATH too.
+        vibrant_env = dict(os.environ)
+        conda = check_conda()
+        if conda["installed"] and conda["path"]:
+            conda_bin = os.path.dirname(conda["path"])
+            vibrant_env["PATH"] = conda_bin + os.pathsep + vibrant_env.get("PATH", "")
 
         # (1) Download profile name lists from GitHub
         pn_dir = os.path.join(dest_dir, "profile_names")
@@ -678,7 +701,7 @@ async def _download_database(pid: str, db_key: str, opt_id: str, dest_dir: str, 
         # (3) Run the setup script (it handles all downloads via wget internally)
         await send({"type": "log",
             "text": f"Running VIBRANT_setup.py in {dest_dir} — this may take a long time…\n"})
-        rc = await run_cmd("python3 VIBRANT_setup.py", cwd=dest_dir)
+        rc = await run_cmd("python3 VIBRANT_setup.py", cwd=dest_dir, env=vibrant_env)
         if rc != 0:
             raise RuntimeError("VIBRANT_setup.py exited with errors. Check the log above.")
 

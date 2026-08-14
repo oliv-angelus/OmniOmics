@@ -89,6 +89,15 @@ cp -r plots "$INSTALL_DIR/plots"
 # Shipped so the licence travels with the binary, which the MIT terms require.
 cp LICENSE "$INSTALL_DIR/LICENSE"
 cp README.md "$INSTALL_DIR/README.md"
+# The About screen tells the user to cite the app "using CITATION.cff" and to
+# consult docs/CITATIONS.md for the tools. Both were repository-only until now,
+# so anyone who installed the .deb without cloning was pointed at files that
+# were not on their machine. The screen also carries the citation index itself
+# (see /api/about), but these stay shipped for whoever wants the raw files --
+# and CITATION.cff is what /api/about reads the version and citation from, so
+# it is no longer optional.
+cp CITATION.cff "$INSTALL_DIR/CITATION.cff"
+cp -r docs "$INSTALL_DIR/docs"
 
 ln -sf "/opt/$PKG_NAME/$BIN_NAME" "$STAGE/usr/bin/$BIN_NAME"
 cp build/app_icon.png "$STAGE/usr/share/pixmaps/$PKG_NAME.png"
