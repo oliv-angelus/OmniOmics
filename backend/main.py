@@ -4,6 +4,7 @@ import json
 import os
 import re
 import gzip
+import secrets
 import shutil
 import signal
 import sys
@@ -51,7 +52,7 @@ def clean_output(raw: bytes) -> str:
 
 import pipelines
 from conda_manager import check_conda, install_conda
-from snakemake_manager import check_snakemake, install_snakemake
+from snakemake_manager import check_snakemake, install_snakemake, check_dart_logger_plugin
 import install_jobs
 from system_monitor import get_system_info
 from databases_engine import (
@@ -1120,6 +1121,8 @@ pipeline_subscribers: dict = {}  # pid -> list[asyncio.Queue] of currently-attac
 pipeline_finished: dict = {}     # pid -> bool
 pipeline_stop_requested: dict = {}  # pid -> True if /stop landed before a process existed to kill
 pipeline_current_run: dict = {}  # pid -> runs_store run id, for /stop and the Results page
+pipeline_dart_tokens: dict = {}  # pid -> Bearer token the current run's --logger dart must present
+                                  # on /ws/pipelines/{pid}/dart-bridge (see snakemake-dart's SPEC.md)
 
 
 def _kill_process_group(proc):
@@ -1262,7 +1265,7 @@ async def _emit(pid: str, event: dict):
         q.put_nowait(event)
 
 
-async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: str):
+async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: str, extra_env: dict | None = None):
     """Owns the subprocess for a run's whole lifetime, independent of any
     websocket. Keeps draining stdout (so the child never blocks on a full pipe)
     and broadcasting events even while zero viewers are attached.
@@ -1273,13 +1276,21 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
     "results/..." and "logs/..." actually land is controlled separately, via
     `--directory=<output_dir>` in cmd (see pipeline_ws) -- Snakemake's own flag
     for "resolve relative output paths against this instead of cwd".
+
+    extra_env: additional vars merged onto _subprocess_env()'s result for just
+    this run -- currently only the dart logger plugin's address/token (see
+    pipeline_ws), kept as a param rather than a global so a run launched
+    without the plugin detected never carries them.
     """
+    env = _subprocess_env()  # keep the backend's own venv out of the rules' PATH
+    if extra_env:
+        env.update(extra_env)
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
         cwd=pipeline_root,
-        env=_subprocess_env(),  # keep the backend's own venv out of the rules' PATH
+        env=env,
         start_new_session=True,  # own process group -> stop/shutdown can kill the whole tree
         limit=1024 * 1024 * 16,  # conda/mamba progress bars redraw via \r with no \n for a
                                   # long time during downloads/extraction -- asyncio treats
@@ -1345,6 +1356,7 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
         pipeline_processes.pop(pid, None)
         pipeline_tasks.pop(pid, None)
         pipeline_current_run.pop(pid, None)
+        pipeline_dart_tokens.pop(pid, None)
 
 
 @app.websocket("/ws/pipelines/{pid}/run")
@@ -1412,6 +1424,26 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         if omit_from:
             cmd += ["--omit-from", *omit_from]
 
+        # Dart live-monitoring bridge (github.com/karlaycosta/snakemake-dart):
+        # an official Snakemake logger plugin streaming structured JSON events
+        # (job details, resources, and a live rulegraph/DAG) over websocket,
+        # instead of us regex-scraping stdout text below (_parse_snk_line).
+        # Strictly additive/opt-in -- check_dart_logger_plugin() is what keeps
+        # an environment without the plugin installed running exactly as
+        # before; an unconditional `--logger dart` would make Snakemake
+        # itself refuse to start for anyone missing it ("unrecognized
+        # logger"). See notes/Snakemake Dart Integration Plan.md.
+        dart_extra_env = None
+        if check_dart_logger_plugin(check_conda()).get("available"):
+            dart_token = secrets.token_urlsafe(32)
+            pipeline_dart_tokens[pid] = dart_token
+            omniomics_port = int(os.environ.get("OMNIOMICS_PORT", "8765"))
+            cmd += ["--logger", "dart"]
+            dart_extra_env = {
+                "SNAKEMAKE_LOGGER_DART_ADDRESS": f"ws://127.0.0.1:{omniomics_port}/ws/pipelines/{pid}/dart-bridge",
+                "SNAKEMAKE_LOGGER_DART_TOKEN": dart_token,
+            }
+
         # A run interrupted before Snakemake could clean up after itself (via
         # /stop, a crash, or the app closing mid-run) leaves a stale lock in
         # <output_dir>/.snakemake/locks/, which fails the *next* run with
@@ -1463,7 +1495,9 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         # corresponds to, so e.g. deleting it from the Results page can clear
         # the "last run" banner instead of leaving it pointing at nothing.
         await _emit(pid, {"type": "run_id", "id": run["id"]})
-        pipeline_tasks[pid] = asyncio.create_task(_run_pipeline_task(pid, cmd, pipeline_root, run["id"]))
+        pipeline_tasks[pid] = asyncio.create_task(
+            _run_pipeline_task(pid, cmd, pipeline_root, run["id"], extra_env=dart_extra_env)
+        )
 
     # Attach as a viewer: replay everything so far from this run's on-disk
     # event log, then stream live events until the run finishes or this
@@ -1499,6 +1533,133 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         pass
     finally:
         pipeline_subscribers.get(pid, []).remove(q)
+
+
+@app.websocket("/ws/pipelines/{pid}/dart-bridge")
+async def pipeline_dart_bridge_ws(websocket: WebSocket, pid: str):
+    """Server side of the snakemake-dart protocol (SPEC.md at
+    github.com/karlaycosta/snakemake-dart): the Snakemake subprocess's own
+    `--logger dart` plugin is the *client* here, dialing back into this
+    backend instead of us scraping its stdout text (see _parse_snk_line,
+    still the fallback when the plugin isn't installed -- see
+    check_dart_logger_plugin and pipeline_ws).
+
+    Each structured event is translated into the *same* _emit() calls the
+    text-parsing path already makes, so replay-on-reconnect and broadcasting
+    to the Flutter side (pipeline_ws's viewer loop above) needs no changes at
+    all -- this route only ever changes where those events come from.
+    """
+    expected_token = pipeline_dart_tokens.get(pid)
+    auth = websocket.headers.get("authorization", "")
+    presented = auth[len("Bearer "):] if auth.lower().startswith("bearer ") else None
+    if not expected_token or not presented or not secrets.compare_digest(presented, expected_token):
+        # No real WS-handshake-level 401 in the ASGI spec; 1008 (policy
+        # violation) is the closest standard close code for "not welcome
+        # here" without accepting the connection first.
+        await websocket.close(code=1008)
+        return
+
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                frame = await websocket.receive_json()
+            except WebSocketDisconnect:
+                return
+            except Exception:
+                # SPEC: "both must tolerate malformed frames silently" --
+                # one bad frame must not tear down the whole run's monitoring.
+                continue
+
+            ftype = frame.get("type")
+            payload = frame.get("payload") or {}
+
+            if ftype == "hello":
+                # Recommended by SPEC. This backend doesn't persist a
+                # per-run last-seen `seq` across its own restarts, so
+                # since_seq=0 ("send everything you have") is always correct
+                # here -- a fresh connection has nothing to have missed yet.
+                await websocket.send_json({"type": "command", "cmd": "replay", "since_seq": 0})
+            elif ftype == "job_started":
+                # Confirmed against a real run before assuming: this carries
+                # a *batch* `job_ids` list with zero other detail (no rule,
+                # no wildcards) -- SPEC's own warning that job_started arrives
+                # before the matching job_info is real, not hypothetical.
+                # Nothing to translate yet; job_info (below) is what actually
+                # carries what the old job_start UI event needs, and it
+                # follows immediately after for every id in this batch.
+                pass
+            elif ftype == "job_info":
+                # This -- not job_started -- is the equivalent of the old
+                # text-parser's "job_start": the first point a job's rule
+                # name + jobid + wildcards are all known together.
+                wildcards = payload.get("wildcards") or {}
+                await _emit(pid, {
+                    "type": "job_start", "jobid": payload.get("job_id"),
+                    "rule": payload.get("rule_name"), "sample": wildcards.get("sample"),
+                })
+                # Richer detail Flutter doesn't consume yet (Phase 2 territory)
+                # -- forwarded regardless so it's on the on-disk event log
+                # already once a UI exists for it.
+                await _emit(pid, {
+                    "type": "job_info",
+                    "jobid": payload.get("job_id"),
+                    "rule": payload.get("rule_name"),
+                    "sample": wildcards.get("sample"),
+                    "input": payload.get("input"),
+                    "output": payload.get("output"),
+                    "shellcmd": payload.get("shellcmd"),
+                    "threads": payload.get("threads"),
+                    "resources": payload.get("resources"),
+                })
+            elif ftype == "job_finished":
+                await _emit(pid, {"type": "job_done", "jobid": payload.get("job_id")})
+            elif ftype == "job_error":
+                wildcards = payload.get("wildcards") or {}
+                await _emit(pid, {
+                    "type": "job_error", "jobid": payload.get("job_id"),
+                    "rule": payload.get("rule_name"), "sample": wildcards.get("sample"),
+                })
+            elif ftype == "progress":
+                await _emit(pid, {
+                    "type": "progress", "done": payload.get("done"),
+                    "total": payload.get("total"), "pct": payload.get("pct"),
+                })
+            elif ftype == "rulegraph":
+                # Not rendered anywhere yet (Phase 2 of the integration plan
+                # -- the live DAG) -- stored/forwarded now regardless, so the
+                # on-disk event log already has it once that UI exists,
+                # rather than needing every run re-done to backfill it.
+                await _emit(pid, {"type": "rulegraph", "graph": payload})
+            elif ftype == "log":
+                # Confirmed against a real run: payload is {"level", "message"},
+                # not {"text"} -- Snakemake's own internal log records, not a
+                # pre-formatted line.
+                message = payload.get("message") or ""
+                if message:
+                    level = payload.get("level")
+                    prefix = f"[{level}] " if level and level != "info" else ""
+                    await _emit(pid, {"type": "log", "text": f"{prefix}{message}\n"})
+            elif ftype == "shellcmd":
+                text = payload.get("shellcmd") or ""
+                if text:
+                    await _emit(pid, {"type": "log", "text": text if text.endswith("\n") else text + "\n"})
+            elif ftype == "error":
+                await _emit(pid, {"type": "log", "text": f"[dart logger] {payload}\n"})
+            elif ftype in ("bye", "pong"):
+                pass
+            # resources_info/group_info/group_error: real events per SPEC,
+            # deliberately not surfaced yet -- see the integration plan's
+            # "open items" rather than silently guessing a UI shape for them.
+    except WebSocketDisconnect:
+        pass
+    # No token cleanup here on purpose: the plugin reconnects with backoff
+    # per its own SPEC on a dropped connection (network blip, this route
+    # erroring, etc.), and a token popped on disconnect would lock that retry
+    # out with a false 1008. _run_pipeline_task's finally block is the one
+    # true end-of-run signal and is what actually clears
+    # pipeline_dart_tokens.
+
 
 @app.post("/api/pipelines/{pid}/stop")
 async def stop_pipeline(pid: str):
