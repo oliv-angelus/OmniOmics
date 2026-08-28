@@ -585,13 +585,4 @@ rule final_mag_catalog:
         tsv="results/07_DEREP/final_mag_catalog.tsv"
     log: "logs/annotation/final_mag_catalog.log"
     shell:
-        # Not a bare relative path: Snakemake's own --directory=<output_dir>
-        # flag (what the app always launches with, and what a manual HPC
-        # `snakemake --directory runs/test1` invocation does too) changes the
-        # cwd rules execute *in*, but a relative shell path is resolved
-        # against that cwd, not against where this workflow's own source
-        # actually lives. {workflow.basedir} is the one reference that stays
-        # correct regardless -- confirmed for real (a live HPC run hit
-        # exactly this: "can't open file '<output_dir>/workflow/scripts/
-        # final_mag_catalog.py'" before this fix).
-        "python3 {workflow.basedir}/workflow/scripts/final_mag_catalog.py --results-dir results --out {output.tsv} > {log} 2>&1"
+        "python3 workflow/scripts/final_mag_catalog.py --results-dir results --out {output.tsv} > {log} 2>&1"
