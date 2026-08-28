@@ -298,7 +298,7 @@ rule prodigal_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             mkdir -p {output.outdir}/$magname
             pyrodigal -i "$f" -a {output.outdir}/$magname/${{magname}}_proteins.faa \
                       -o {output.outdir}/$magname/${{magname}}_coords.gff \
@@ -348,7 +348,7 @@ rule abricate_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             mkdir -p {output.outdir}/$magname
             abricate --db ncbi --threads {threads} {params.extra} "$f" > {output.outdir}/$magname/ncbi_results.tab 2>> {log}
             abricate --db card --threads {threads} {params.extra} "$f" > {output.outdir}/$magname/card_results.tab 2>> {log}
@@ -373,7 +373,7 @@ rule amrfinder_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             faa="{input.prodigal_dir}/$magname/${{magname}}_proteins.faa"
             gff="{input.prodigal_dir}/$magname/${{magname}}_coords.gff"
             [ -e "$faa" ] && [ -e "$gff" ] || continue
@@ -400,7 +400,7 @@ rule minced_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             mkdir -p {output.outdir}/$magname
             minced -minNR 2 {params.extra} "$f" {output.outdir}/$magname/${{magname}}.crisprs {output.outdir}/$magname/${{magname}}.gff >> {log} 2>&1
         done
@@ -422,7 +422,7 @@ rule isescan_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             isescan.py --seqfile "$f" --output {output.outdir}/$magname --nthread {threads} {params.extra} >> {log} 2>&1
             parent=$(basename "$(dirname "$f")")
             rm -f "${{parent}}_$(basename "$f").list"
@@ -452,7 +452,7 @@ rule antismash_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             gff="{input.prodigal_dir}/$magname/${{magname}}_coords.gff"
             antismash "$f" --databases {params.db} --output-dir {output.outdir}/$magname \
                 --genefinding-gff3 "$gff" --genefinding-tool error --cpus {threads} \
@@ -499,7 +499,7 @@ rule vfdb_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             abricate --db vfdb --threads {threads} {params.extra} "$f" > {output.outdir}/${{magname}}_vfdb_results.tab 2>> {log}
         done
         """
@@ -520,7 +520,7 @@ rule barrnap_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             barrnap {params.extra} --threads {threads} --outseq {output.outdir}/${{magname}}_rrna.fa \
                 "$f" > {output.outdir}/${{magname}}_rrna.gff 2>> {log}
         done
@@ -542,9 +542,56 @@ rule trnascan_mags:
         > {log}
         for f in {input.mags}/*.fa; do
             [ -e "$f" ] || continue
-            magname=$(basename "$f".fa)
+            magname=$(basename "$f" .fa)
             tRNAscan-SE {params.extra} --thread {threads} \
                 -o {output.outdir}/${{magname}}_trna.out -f {output.outdir}/${{magname}}_trna.struct \
                 "$f" >> {log} 2>&1
         done
         """
+
+def _gtdbtk_dir_if_active(wildcards):
+    # GTDB-Tk is the one input here a user can genuinely disable (its
+    # database is tens of GB) without wanting to lose the whole catalog for
+    # it. Snakemake has no visibility into --omit-from from inside a rule --
+    # confirmed by testing directly: `--omit-from gtdbtk` silently drops
+    # final_mag_catalog (and therefore `rule all`) from the DAG entirely,
+    # no error, when gtdbtk_dir was a flat required input, since this rule
+    # sits downstream of it. config["active_tools"] (written by
+    # config_engine.generate_config, independent of --omit-from) is what
+    # actually reflects the user's real choice, so branch on that instead --
+    # final_mag_catalog.py already reads GTDB-Tk's output opportunistically
+    # from --results-dir and writes "NA" when it's absent, so this only
+    # needs to preserve real run-ordering when GTDB-Tk *is* active, not
+    # invent new handling in the script itself.
+    return "results/08_MAG_TAXONOMY/gtdbtk" if "gtdbtk" in config.get("active_tools", []) else []
+
+rule final_mag_catalog:
+    """One row per final, dereplicated MAG: CheckM2 completeness/contamination,
+    GTDB-Tk taxonomy, GUNC chimerism, barrnap rRNA + tRNAscan-SE tRNA counts,
+    and the resulting MIMAG/MISAG quality tier (Bowers et al. 2017,
+    doi:10.1038/nbt.3893) -- all in one TSV artifact, instead of only being
+    computable on demand from plots/scripts/lib/build_magma_mag_table.R
+    inside the app's Plots tab. Useful on its own (a single reviewable table
+    of the run's real output) and essential for a headless/HPC deployment,
+    which has no Plots tab to compute it interactively."""
+    input:
+        dereplicated_dir="results/07_DEREP/drep_out/dereplicated_genomes",
+        checkm2_reports=expand("results/06_MAG_REFINEMENT/{sample}/checkm2/quality_report.tsv", sample=samples.index),
+        gunc_dirs=expand("results/06_MAG_REFINEMENT/{sample}/gunc", sample=samples.index),
+        gtdbtk_dir=_gtdbtk_dir_if_active,
+        barrnap_dir="results/09_ANNOTATION/mags/barrnap",
+        trnascan_dir="results/09_ANNOTATION/mags/trnascan"
+    output:
+        tsv="results/07_DEREP/final_mag_catalog.tsv"
+    log: "logs/annotation/final_mag_catalog.log"
+    shell:
+        # Not a bare relative path: Snakemake's own --directory=<output_dir>
+        # flag (what the app always launches with, and what a manual HPC
+        # `snakemake --directory runs/test1` invocation does too) changes the
+        # cwd rules execute *in*, but a relative shell path is resolved
+        # against that cwd, not against where this workflow's own source
+        # actually lives. {workflow.basedir} is the one reference that stays
+        # correct regardless -- confirmed for real (a live HPC run hit
+        # exactly this: "can't open file '<output_dir>/workflow/scripts/
+        # final_mag_catalog.py'" before this fix).
+        "python3 {workflow.basedir}/workflow/scripts/final_mag_catalog.py --results-dir results --out {output.tsv} > {log} 2>&1"

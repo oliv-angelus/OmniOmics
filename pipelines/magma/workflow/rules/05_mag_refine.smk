@@ -68,6 +68,7 @@ rule gunc:
     output:
         outdir=directory("results/06_MAG_REFINEMENT/{sample}/gunc")
     params:
+        db=config["databases"]["gunc"],
         extra=config["params"]["gunc"]
     threads: config["threads"]["gunc"]
     conda: "../envs/gunc.yaml"
@@ -75,5 +76,19 @@ rule gunc:
     shell:
         """
         rm -rf {output.outdir}
-        gunc run --input_dir {input.bins} --file_suffix .fa --out_dir {output.outdir} --threads {threads} {params.extra} > {log} 2>&1
+        mkdir -p {output.outdir}
+        # gunc run needs -d pointing at the actual .dmnd file, not just the
+        # database folder -- its filename varies by database version
+        # (progenomes2.1.dmnd, gtdb_95.dmnd, ...), so it's resolved here
+        # instead of hardcoded. Fails loudly (not silently skipped) if the
+        # folder has no .dmnd, since a missing GUNC DB previously meant this
+        # rule ran with no -d at all and relied on gunc's own default search
+        # path, which is not guaranteed to be populated.
+        db_file=$(find {params.db} -maxdepth 1 -name "*.dmnd" | head -1)
+        if [ -z "$db_file" ]; then
+            echo "ERRO: nenhum arquivo .dmnd encontrado em {params.db} (databases.gunc no config.yaml)" > {log}
+            exit 1
+        fi
+        gunc run --input_dir {input.bins} --file_suffix .fa --out_dir {output.outdir} \
+            -d "$db_file" --threads {threads} {params.extra} > {log} 2>&1
         """

@@ -2,8 +2,10 @@ samples: "config/samples.tsv"
 
 databases:
   kraken2:        "/data/databases/kraken2_db_pluspfp"
+  kaiju:          "/data/databases/kaiju_db"
   checkm2:        "/data/databases/checkm2_db/uniref100.KO.1.dmnd"
   gtdbtk:         "/data/databases/gtdbtk_db"
+  gunc:           "/data/databases/gunc_db"
   eggnog:         "/data/databases/eggnog_db"
   amrfinderplus:  "/data/databases/AMRfinder_db/latest"
   checkv:         "/data/databases/checkv_db_v1.5"

@@ -4077,7 +4077,7 @@
           "gunzip": true
         }
       ],
-      "config_key": null
+      "config_key": "gunc"
     }
   },
   "special_overrides": {

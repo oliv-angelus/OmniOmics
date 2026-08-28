@@ -157,16 +157,16 @@ suppressMessages({
 }
 
 #' Every 09_ANNOTATION/mags/* rule computes its own per-MAG file/directory
-#' prefix as `magname=$(basename "$f".fa)` (confirmed by reading the real
-#' shell in every one of vfdb_mags/barrnap_mags/trnascan_mags/amrfinder_mags/
-#' prodigal_mags, and by literally running that line: with $f ending in
-#' ".../{mag}.fa", `"$f".fa` concatenates a second, unintended ".fa" before
-#' basename strips the path -- so on disk it is genuinely `{mag}.fa.fa`, not
-#' `{mag}` or `{mag}.fa`. A real, pre-existing MAGMA bug (self-consistent
-#' across rules, so the pipeline still runs; only the file naming is
-#' affected) -- reproduced here rather than assumed away, since these readers
-#' have to find what the pipeline actually writes.
-.mag_shell_name <- function(mag) paste0(mag, ".fa.fa")
+#' prefix from `magname=$(basename "$f" .fa)` -- until 2026-08-27 this read
+#' `magname=$(basename "$f".fa)` instead (confirmed by reading the real shell
+#' in every one of vfdb_mags/barrnap_mags/trnascan_mags/amrfinder_mags/
+#' prodigal_mags), which concatenates an unintended second ".fa" onto $f
+#' *before* basename strips the path, so on disk the prefix used to be
+#' genuinely `{mag}.fa.fa`, not `{mag}`. Fixed at the source
+#' (07_annotation_mobilome.smk); kept here as the identity function (rather
+#' than deleted outright) so every call site below stays self-documenting
+#' about exactly what on-disk name it expects.
+.mag_shell_name <- function(mag) mag
 
 #' Barrnap writes standard GFF3; the rRNA gene name is in the attributes
 #' column as `Name=16S_rRNA`. Counting distinct 5S/16S/23S names gives the

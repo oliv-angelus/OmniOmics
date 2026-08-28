@@ -2,6 +2,23 @@ import pandas as pd
 
 configfile: "config/config.yaml"
 
+# Where results/, logs/ and .snakemake/ (including --use-conda's own built
+# environments, unless --conda-prefix points them elsewhere) land for THIS
+# invocation. Optional and non-breaking: the app itself never hits this --
+# it always launches Snakemake with its own `--directory=<output_dir>` CLI
+# flag (backend/main.py), and a CLI --directory always wins over this
+# directive. This only takes effect for a direct/manual `snakemake` call
+# with no --directory of its own (e.g. MAGMA-HPC on a cluster), giving a
+# config.yaml-driven way to point separate runs at separate output folders
+# instead of everything colliding into a single relative "results/".
+workdir: config.get("output_root", ".")
+
+# config["samples"] must be an ABSOLUTE path -- this line (and its copies at
+# the top of every workflow/rules/*.smk file, which each independently
+# re-read the same sample sheet) runs as plain Python during Snakefile
+# parsing, so whether it resolves before or after the workdir switch above
+# takes effect isn't something to rely on. A relative path here is
+# ambiguous; an absolute one is correct either way.
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
 SAMPLES = samples.index.tolist()
 LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]
@@ -51,7 +68,10 @@ rule all:
         "results/09_ANNOTATION/mags/trnascan",
 
         # MAG coverage across samples (CoverM)
-        "results/10_MAG_COVERAGE/coverm_coverage.tsv"
+        "results/10_MAG_COVERAGE/coverm_coverage.tsv",
+
+        # Final MAG catalog -- one row per dereplicated MAG, quality + taxonomy + MIMAG tier
+        "results/07_DEREP/final_mag_catalog.tsv"
 
 
 include: "workflow/rules/01_qc_tax.smk"

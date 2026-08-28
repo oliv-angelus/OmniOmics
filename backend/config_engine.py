@@ -304,7 +304,10 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
     for key, info in db_status.items():
         config_key = info.get("config_key")
         if not config_key:
-            continue  # e.g. gunc: downloadable, but no pipeline rule consumes a config path for it
+            continue  # a database with no config_key: downloadable/detectable via the
+            # Databases tab, but no Snakemake rule reads its path from config.yaml
+            # (gunc used to be the only example of this, until its own `gunc run`
+            # rule started taking -d explicitly -- see 05_mag_refine.smk)
         setting_key = info["setting_key"]
         databases_block[config_key] = data.get(setting_key) or info.get("path") or ""
 
