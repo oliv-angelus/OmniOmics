@@ -1563,6 +1563,13 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
             f"--cores={cores}",
             f"--configfile={config_path}",
             f"--directory={output_dir}",
+            # A job failing (a missing/misconfigured database, a tool crashing
+            # on one sample) must not stop every *independent* branch of the
+            # DAG -- only Snakemake's default behavior does that. This is
+            # shared across all pipelines (MAGMA/SIGMA/DOGMA/DEFINE/PRISM all
+            # launch through this same code path), so one flag here covers
+            # every pipeline, not just MAGMA.
+            "--keep-going",
         ]
         # Disabled tools: skip their rule(s) and everything downstream of them
         # in Snakemake's own DAG, rather than us reimplementing the cascade.
