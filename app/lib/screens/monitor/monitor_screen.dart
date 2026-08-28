@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../providers.dart';
 import '../../models/job_entry.dart';
 import '../../services/pipeline_run_provider.dart';
+import '../../widgets/rule_graph_view.dart';
 
 /// Watches the app-wide [pipelineRunProvider] instead of owning its own
 /// WebSocket -- so leaving this screen (back button, switching to another
@@ -20,6 +21,12 @@ class MonitorScreen extends ConsumerStatefulWidget {
 
 class _MonitorScreenState extends ConsumerState<MonitorScreen> {
   final _logScroll = ScrollController();
+  // Defaults to the familiar list, not the graph: an environment without the
+  // dart logger plugin installed (see check_dart_logger_plugin on the
+  // backend) never gets a rulegraph event at all, and opening straight into
+  // a permanently-empty Graph tab would be a downgrade for that case. Users
+  // with the plugin just switch once and it stays their pick for the run.
+  bool _showGraph = false;
 
   @override
   void dispose() {
@@ -127,7 +134,26 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 2, child: _StepTracker(jobs: jobs)),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                            child: _ViewToggle(
+                              showGraph: _showGraph,
+                              onChanged: (v) => setState(() => _showGraph = v),
+                            ),
+                          ),
+                          Expanded(
+                            child: _showGraph
+                                ? RuleGraphView(ruleGraph: run.ruleGraph, jobs: jobs)
+                                : _StepTracker(jobs: jobs),
+                          ),
+                        ],
+                      ),
+                    ),
                     const VerticalDivider(width: 1),
                     Expanded(flex: 3, child: _LogConsole(log: run.log, scrollController: _logScroll)),
                   ],
@@ -165,6 +191,28 @@ class _MonitorHeader extends ConsumerWidget {
           Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),...actions,
         ],
       ),
+    );
+  }
+}
+
+/// Lista/Grafo switch above the job panel. A plain two-segment toggle rather
+/// than a full tab bar -- this is a view of the same underlying job data,
+/// not a separate section of the screen.
+class _ViewToggle extends ConsumerWidget {
+  final bool showGraph;
+  final ValueChanged<bool> onChanged;
+  const _ViewToggle({required this.showGraph, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SegmentedButton<bool>(
+      segments: [
+        ButtonSegment(value: false, label: Text(ref.t('monitor_view_list')), icon: const Icon(Icons.list_alt, size: 16)),
+        ButtonSegment(value: true, label: Text(ref.t('monitor_view_graph')), icon: const Icon(Icons.account_tree_outlined, size: 16)),
+      ],
+      selected: {showGraph},
+      showSelectedIcon: false,
+      onSelectionChanged: (s) => onChanged(s.first),
     );
   }
 }

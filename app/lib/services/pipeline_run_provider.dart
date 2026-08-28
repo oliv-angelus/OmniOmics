@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 import '../l10n/app_strings.dart';
 import '../models/job_entry.dart';
+import '../models/rule_graph.dart';
 import '../theme/app_theme.dart';
 import 'ws_client.dart';
 
@@ -23,6 +24,11 @@ class PipelineRunState {
   final int stepsTotal;
   final bool finished;
   final int? exitCode;
+  /// Null until (and unless) the dart logger plugin is installed and sends
+  /// its one `rulegraph` event for this run -- an environment without the
+  /// plugin (see check_dart_logger_plugin on the backend) never gets one,
+  /// which is exactly the signal the graph view uses to fall back cleanly.
+  final RuleGraph? ruleGraph;
   /// True once the user has pressed Parar for this run -- set optimistically
   /// by stop, before the backend even confirms. Snakemake exits with a
   /// negative code (SIGTERM = -15) when killed this way, which is otherwise
@@ -41,6 +47,7 @@ class PipelineRunState {
     required this.finished,
     required this.exitCode,
     this.stopped = false,
+    this.ruleGraph,
   });
 
   PipelineRunState copyWith({
@@ -52,6 +59,7 @@ class PipelineRunState {
     bool? finished,
     int? exitCode,
     bool? stopped,
+    RuleGraph? ruleGraph,
   }) {
     return PipelineRunState(
       pipelineId: pipelineId,
@@ -64,6 +72,7 @@ class PipelineRunState {
       finished: finished ?? this.finished,
       exitCode: exitCode ?? this.exitCode,
       stopped: stopped ?? this.stopped,
+      ruleGraph: ruleGraph ?? this.ruleGraph,
     );
   }
 }
@@ -156,6 +165,9 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
           break;
         case 'progress':
           state = current.copyWith(stepsDone: event['done'] as int, stepsTotal: event['total'] as int);
+          break;
+        case 'rulegraph':
+          state = current.copyWith(ruleGraph: RuleGraph.fromJson(event['graph'] as Map<String, dynamic>));
           break;
         case 'done':
           // Snakemake gets SIGTERM'd across its whole process group at once
