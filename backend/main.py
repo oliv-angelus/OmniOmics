@@ -1515,11 +1515,16 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         # left the actual Snakemake run orphaned and still going. Resolving the
         # env's own snakemake binary makes our subprocess the real thing, so
         # process-group kill actually reaches it and everything it spawns.
+        #
+        # Loaded unconditionally (not just in the "snakemake not on PATH"
+        # branch below) because settings.json's conda_path is also what makes
+        # --use-conda itself work -- see conda_path_bin_dir below.
+        from settings_store import load_settings
+        settings = load_settings()
+
         snakemake_bin = shutil.which("snakemake")
         conda = None
         if not snakemake_bin:
-            from settings_store import load_settings
-            settings = load_settings()
             conda = settings.get("conda_path") or shutil.which("conda") or "conda"
             if conda and os.path.isfile(conda):
                 candidate = os.path.join(os.path.dirname(os.path.dirname(conda)), "envs", "snakemake", "bin", "snakemake")
@@ -1532,6 +1537,24 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
             # Last-resort fallback if the env's binary couldn't be located --
             # signal handling isn't guaranteed to work through this path.
             cmd = [conda or "conda", "run", "--no-capture-output", "-n", "snakemake", "snakemake"]
+
+        # `--use-conda` below makes Snakemake itself shell out to `conda`/
+        # `mamba` (per --conda-frontend) to *build* each rule's environment
+        # the first time it's needed -- a real, separate subprocess call
+        # Snakemake makes on its own, independent of how this backend found
+        # snakemake_bin above. That call only succeeds if `conda` is
+        # resolvable via the *inherited* PATH -- which is not guaranteed:
+        # neither this repo's run_dev.sh nor a typical .desktop launcher (which
+        # skips shell profiles entirely) ever puts a conda install on PATH,
+        # so an environment that has never needed to build a fresh rule env
+        # before (dry-runs don't; a first real run does) can fail with a
+        # bare "conda: command not found" the moment it tries to. Fixed the
+        # same way run_dev.sh already fixes Flutter's own equivalent PATH gap
+        # -- prepend the resolved conda's own bin/ directory.
+        conda_path_bin_dir = None
+        _conda_for_path = conda or settings.get("conda_path")
+        if _conda_for_path and os.path.isfile(_conda_for_path):
+            conda_path_bin_dir = os.path.dirname(_conda_for_path)
 
         os.makedirs(CONDA_ENVS_DIR, exist_ok=True)
         cmd += [
@@ -1617,8 +1640,11 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         # corresponds to, so e.g. deleting it from the Results page can clear
         # the "last run" banner instead of leaving it pointing at nothing.
         await _emit(pid, {"type": "run_id", "id": run["id"]})
+        run_extra_env = dict(dart_extra_env or {})
+        if conda_path_bin_dir:
+            run_extra_env["PATH"] = f"{conda_path_bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
         pipeline_tasks[pid] = asyncio.create_task(
-            _run_pipeline_task(pid, cmd, pipeline_root, run["id"], extra_env=dart_extra_env)
+            _run_pipeline_task(pid, cmd, pipeline_root, run["id"], extra_env=run_extra_env or None)
         )
 
     # Attach as a viewer: replay everything so far from this run's on-disk
