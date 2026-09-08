@@ -13,6 +13,14 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "0.0.4-alpha"
+  date: 2026-09-07
+  entries:
+    - pt: "**O preset padrão de 16S completo (27F/1492R) do PRISM não descartava mais 100% das reads no corte de primer.** O primer reverso estava gravado já invertido-complementado no manifesto e no card do Cutadapt na aba Tools; o código invertia de novo antes de montar o adaptador, então nenhuma read sobrevivia ao Cutadapt — em qualquer amostra, PacBio ou Nanopore — travando o VSEARCH logo depois com um arquivo vazio. Corrigido para a sequência literal do 1492R (Lane 1991), e as flags manuais `-g`/`-G` da aba Tools agora vêm desligadas por padrão, para não sobrescrever silenciosamente o preset escolhido na aba Inputs."
+      en: "**PRISM's default full-length 16S preset (27F/1492R) no longer discards 100% of reads at primer trimming.** The reverse primer was stored already reverse-complemented, both in the manifest and in the Tools tab's Cutadapt card; the code reverse-complemented it again before building the adapter, so no read survived Cutadapt — on any sample, PacBio or Nanopore — which then starved VSEARCH with an empty file right after. Fixed to the literal 1492R sequence (Lane 1991), and the Tools tab's manual `-g`/`-G` flags now default to off, so they no longer silently override the preset chosen on the Inputs tab."
+    - pt: "**A geração de FASTQ de demonstração do PRISM agora também escreve um `metadata.tsv`** pronto para testar a aba de Gráficos, com as 3 amostras lidas como um gradiente de profundidade (superfície/coluna d'água/sedimento) num mesmo lago."
+      en: "**PRISM's demo FASTQ generator now also writes a `metadata.tsv`** ready to test the Plots tab with, reading the 3 samples as a depth gradient (surface/water column/sediment) in one lake."
+
 - version: "0.0.3-alpha"
   date: 2026-09-07
   entries:

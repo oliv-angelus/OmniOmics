@@ -39,6 +39,7 @@ What's real vs. synthetic, and why this changed from the first version:
 
 Files written:
   <OUT>/reads/<sample>/<sample>.fastq.gz   for each of 3 samples
+  <OUT>/reads/metadata.tsv                 sample metadata for the Plots tab
   <OUT>/README.txt                         what this is + how to load it
 """
 import glob
@@ -168,6 +169,19 @@ TEMPLATE_ABUNDANCE = {
 
 QUAL_MEAN, QUAL_SD, QUAL_MIN, QUAL_MAX = 30, 6, 8, 50  # realistic-ish long-read CCS/CLR blend
 
+# Sample metadata for the Plots tab's grouped analyses (see docs/plot_input_
+# formats.md's "The metadata table" section for the exact contract this
+# format follows: first column = sample ID matching the abundance table's
+# columns exactly, any number of further columns, text = grouping variable,
+# numeric = usable as an RDA environmental variable). Invented labels/values
+# reading the SAMPLES names as a depth gradient in one lake -- same "made up
+# for the demo, not measured" status as TEMPLATE_ABUNDANCE above.
+SAMPLE_METADATA = {
+    "lake_S1": {"habitat": "surface", "depth_m": 0.5, "pH": 7.8},
+    "lake_W1": {"habitat": "water_column", "depth_m": 5.0, "pH": 7.4},
+    "lake_B1": {"habitat": "sediment", "depth_m": 15.0, "pH": 6.9},
+}
+
 
 def simulate_read(template):
     """Draw a per-base quality, then decide per-base whether that quality's
@@ -204,6 +218,13 @@ def main():
                 seq, qual = simulate_read(templates[t])
                 f.write(f"@{sample}_{i:05d}/ccs\n{seq}\n+\n{qual}\n")
 
+    meta_cols = ["habitat", "depth_m", "pH"]
+    with open(os.path.join(OUT, "reads", "metadata.tsv"), "w", encoding="utf-8") as f:
+        f.write("SampleID\t" + "\t".join(meta_cols) + "\n")
+        for sample in SAMPLES:
+            row = SAMPLE_METADATA[sample]
+            f.write(sample + "\t" + "\t".join(str(row[c]) for c in meta_cols) + "\n")
+
     species_line = ("Escherichia coli, Pseudomonas aeruginosa, Bacillus subtilis, "
                      "Bacteroides fragilis, Nitrosomonas europaea, Methanomethylovorans hollandica"
                      if real else "6 random-sequence templates (no taxonomic identity)")
@@ -218,8 +239,15 @@ app's Inputs tab scans:
     lake_S1/lake_S1.fastq.gz
     lake_W1/lake_W1.fastq.gz
     lake_B1/lake_B1.fastq.gz
+    metadata.tsv
 
 Species ({'real GTDB 16S sequences' if real else 'no real identity'}, invented per-sample abundances): {species_line}
+
+Metadata (invented, not measured -- reads the 3 sample names as a depth
+gradient in one lake): habitat (surface/water_column/sediment), depth_m,
+pH -- see {os.path.join(OUT, "reads", "metadata.tsv")}. Pick this file when
+the Plots tab asks for a metadata table; habitat/depth_m/pH all become usable
+group_var / RDA environmental-variable choices.
 
 How to use it:
   1. Inputs tab -> PRISM -> point "long_reads_dir" at:
@@ -234,6 +262,8 @@ How to use it:
      the GTDB reference is downloaded on the Databases tab first (it must be,
      for this script to have found real sequences to begin with).
   5. PICRUSt2 (functional inference) only runs on the PacBio/DADA2 path.
+  6. Plots tab -> pick this run -> when asked for a metadata table, point it
+     at {os.path.join(OUT, "reads", "metadata.tsv")}.
 
 Regenerate with: python3 scripts/make_prism_demo_fastq.py
 (seeded -- reruns are byte-identical unless the script or the GTDB file changes)
@@ -246,6 +276,7 @@ Regenerate with: python3 scripts/make_prism_demo_fastq.py
     print(f"samples:   {', '.join(SAMPLES)}")
     print(f"reads:     {total} total ({READS_PER_SAMPLE}/sample)")
     print(f"templates: {len(templates)} {'real GTDB' if real else 'RANDOM (fallback)'} species")
+    print(f"metadata:  {os.path.join(OUT, 'reads', 'metadata.tsv')}")
     print(f"readme:    {os.path.join(OUT, 'README.txt')}")
 
 

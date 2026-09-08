@@ -146,20 +146,20 @@
           "flag": "-g",
           "type": "str",
           "default": "AGRGTTYGATYMTGGCTCAG",
-          "enabled": true,
+          "enabled": false,
           "description": {
-            "en": "Forward primer sequence (5' end) -- default is 16S 27F",
-            "pt": "Sequência do primer forward (extremidade 5') -- padrão é o 27F do 16S"
+            "en": "Forward primer sequence (5' end) -- manual override; leave off so the Amplicon preset (Inputs tab) supplies it. Default shown here is 16S 27F.",
+            "pt": "Sequência do primer forward (extremidade 5') -- sobreposição manual; deixe desligado para que o preset de Amplicon (aba Inputs) forneça o valor. O padrão mostrado aqui é o 27F do 16S."
           }
         },
         {
           "flag": "-G",
           "type": "str",
-          "default": "AAGTCGTAACAAGGTARCY",
-          "enabled": true,
+          "default": "TACGGYTACCTTGTTACGACTT",
+          "enabled": false,
           "description": {
-            "en": "Reverse primer sequence (3' end) -- default is 16S 1492R",
-            "pt": "Sequência do primer reverse (extremidade 3') -- padrão é o 1492R do 16S"
+            "en": "Reverse primer sequence, in its own 5'->3' orientation -- cutadapt_trim reverse-complements it internally. Manual override; leave off so the Amplicon preset (Inputs tab) supplies it. Default shown here is 16S 1492R (Lane 1991).",
+            "pt": "Sequência do primer reverse, na orientação 5'->3' dele mesmo -- cutadapt_trim faz o reverso-complemento internamente. Sobreposição manual; deixe desligado para que o preset de Amplicon (aba Inputs) forneça o valor. O padrão mostrado aqui é o 1492R do 16S (Lane 1991)."
           }
         },
         {
@@ -670,13 +670,13 @@
         "AGRGTTYGATYMTGGCTCAG"
       ],
       "rev_primers": [
-        "AAGTCGTAACAAGGTARCY"
+        "TACGGYTACCTTGTTACGACTT"
       ],
       "min_length": 1300,
       "max_length": 1700,
       "note": {
-        "pt": "Par universal clássico; foi o padrão do PRISM e o usado em todos os testes reais desta build.",
-        "en": "Classic universal pair; PRISM's previous default and the one used in every real test of this build."
+        "pt": "Par universal clássico (27F/1492R, Lane 1991); foi o padrão do PRISM. O reverso estava armazenado já invertido-complementado por engano -- 02_primer_trim.smk aplica revcomp() de novo, então o adaptador final nunca batia com nenhum dado real (0 reads sobreviviam ao corte de primer, em qualquer amostra, Nanopore ou PacBio). Corrigido para a sequência literal do 1492R, na mesma convenção que todo outro preset deste arquivo já usa; verificado contra reads reais (97-98% recuperados, vs. 0% antes).",
+        "en": "Classic universal pair (27F/1492R, Lane 1991); was PRISM's default. The reverse primer was stored already reverse-complemented by mistake -- 02_primer_trim.smk revcomps it again, so the final adapter never matched any real data (0 reads survived primer trimming, on any sample, Nanopore or PacBio). Fixed to the literal 1492R sequence, matching the convention every other preset in this file already uses; verified against real reads (97-98% recovered, up from 0%)."
       }
     },
     {

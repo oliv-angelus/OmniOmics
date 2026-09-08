@@ -23,7 +23,7 @@ def _cutadapt_primers(wildcards):
     rev_m = re.search(r"-G\s+(\S+)", extra)
     if fwd_m or rev_m:
         pairs = [(fwd_m.group(1) if fwd_m else "AGRGTTYGATYMTGGCTCAG",
-                  rev_m.group(1) if rev_m else "AAGTCGTAACAAGGTARCY")]
+                  rev_m.group(1) if rev_m else "TACGGYTACCTTGTTACGACTT")]
     else:
         preset = config.get("amplicon_preset", {}) or {}
         fwds = preset.get("fwd_primers") or []
