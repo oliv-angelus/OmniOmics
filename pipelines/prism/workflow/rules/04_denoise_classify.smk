@@ -1,4 +1,6 @@
+import os
 import re
+import glob
 import pandas as pd
 
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False).fillna("")
@@ -46,18 +48,61 @@ def _emu_max_align_len():
     return str(int(max_len * 1.2)) if max_len else ""
 
 
+
+# Each PRISM reference database is a single fasta FILE, but config["databases"]
+# only ever holds the DIRECTORY the Databases tab was pointed at (databases_engine's
+# get_databases_status/detect_databases both resolve to a base_dir, never the file
+# inside it -- see its own module docstring) -- the exact kaiju-fmi-glob gotcha
+# already handled in the short-read pipelines' *.fmi lookups (e.g.
+# magma/workflow/rules/01_qc_tax.smk), just not yet applied here. These patterns
+# mirror each database's own "detect_files" fingerprint in pipeline.yaml.
+_DB_FILE_PATTERNS = {
+    "gtdb_ssu": ["*.fa"],
+    "silva_ssu": ["silva_ssu_dada2.fasta"],
+    "silva_lsu": ["silva_lsu_dada2.fasta"],
+    "unite_its": ["*.fasta"],
+    "grond": ["grond_rrn_dada2.fasta"],
+}
+
+
+def _resolve_db_file(db_key):
+    """Turns a configured database directory into the actual fasta file path
+    dada2_pacbio.R / build_emu_taxonomy.py need. Tolerates a config value that
+    is already a file (a manual override pointed straight at it), searches the
+    directory itself first, then one level of subdirectories (matching
+    validate_database's own one-level fallback) -- and returns "" rather than
+    raising if nothing matches, since this runs at DAG-build time even for
+    branches that won't actually execute."""
+    base = config["databases"].get(db_key, "")
+    if not base:
+        return ""
+    if os.path.isfile(base):
+        return base
+    if not os.path.isdir(base):
+        return ""
+    patterns = _DB_FILE_PATTERNS.get(db_key, ["*.fa", "*.fasta"])
+    for pattern in patterns:
+        hits = glob.glob(os.path.join(base, pattern))
+        if hits:
+            return sorted(hits)[0]
+    for pattern in patterns:
+        hits = glob.glob(os.path.join(base, "*", pattern))
+        if hits:
+            return sorted(hits)[0]
+    return ""
+
+
 def _resolve_ref_path(gene, reference_db):
-    """Picks which configured database path a --gene/--reference_db
-    combination actually resolves to. 18S/23S/28S only ever have one real
-    option (SILVA SSU/LSU respectively -- GTDB never covers them), so
-    --reference_db is ignored for those regardless of what it's set to;
-    real validation (clear error, not a silent wrong answer) happens inside
+    """Picks which configured database a --gene/--reference_db combination
+    actually resolves to, then resolves that database's directory down to its
+    actual fasta file (see _resolve_db_file). 18S/23S/28S only ever have one
+    real option (SILVA SSU/LSU respectively -- GTDB never covers them), so
+    --reference_db is ignored for those regardless of what it's set to; real
+    validation (clear error, not a silent wrong answer) happens inside
     dada2_pacbio.R / the emu_build_db shell block below, not here -- this
     function alone must never raise, since Snakemake evaluates params
-    lambdas at DAG-build time even for inactive branches (the same
-    kaiju-fmi-glob gotcha already documented elsewhere in this app's
-    history), so an empty string is the correct "not configured yet"
-    signal, not a crash.
+    lambdas at DAG-build time even for inactive branches, so an empty string
+    is the correct "not configured yet" signal, not a crash.
     """
     gene = (gene or "16S").upper()
     # Full 16S-ITS-23S operon: GROND is the only reference that carries whole
@@ -65,16 +110,16 @@ def _resolve_ref_path(gene, reference_db):
     # amplicon that spans both subunits plus the ITS between them, so
     # --reference_db is ignored here the same way it is for ITS/18S/23S/28S.
     if gene == "RRN_OPERON":
-        return config["databases"].get("grond", "")
+        return _resolve_db_file("grond")
     if gene == "ITS":
-        return config["databases"].get("unite_its", "")
+        return _resolve_db_file("unite_its")
     if gene == "16S":
-        return config["databases"].get("silva_ssu", "") if reference_db == "silva" \
-            else config["databases"].get("gtdb_ssu", "")
+        return _resolve_db_file("silva_ssu") if reference_db == "silva" \
+            else _resolve_db_file("gtdb_ssu")
     if gene == "18S":
-        return config["databases"].get("silva_ssu", "")
+        return _resolve_db_file("silva_ssu")
     if gene in ("23S", "28S"):
-        return config["databases"].get("silva_lsu", "")
+        return _resolve_db_file("silva_lsu")
     return ""
 
 # ---------------------------------------------------------------------------

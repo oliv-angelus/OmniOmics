@@ -90,6 +90,8 @@ class _HubScreenState extends ConsumerState<HubScreen> {
               _Header(colors: colors, tags: tags, selected: _filter, onSelect: (t) {
                 setState(() => _filter = t);
               }),
+              const SizedBox(height: 18),
+              _HubStats(pipelineCount: pipelines.length),
               const SizedBox(height: 24),
               if (shownPipelines.isEmpty && shownPlaceholders.isEmpty)
                 Padding(
@@ -180,40 +182,124 @@ class _Header extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final english = ref.watch(localeProvider).languageCode == 'en';
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 24,
-      runSpacing: 14,
+
+    final titleColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Column(
+        Text(ref.t('hub_title'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(ref.t('hub_subtitle'), style: TextStyle(color: colors.textSecondary)),
+      ],
+    );
+
+    final chips = Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      alignment: WrapAlignment.end,
+      children: [
+        _Chip(
+          label: ref.t('hub_filter_all'),
+          selected: selected == null,
+          onTap: () => onSelect(null),
+        ),
+        for (final tag in tags)
+          _Chip(
+            label: tag.extraTagLabel(english),
+            selected: selected == tag,
+            onTap: () => onSelect(selected == tag ? null : tag),
+          ),
+      ],
+    );
+
+    // A Wrap only ever sizes itself to its own content, so the chip row used
+    // to sit wherever that content happened to land -- centred, short of the
+    // right edge -- instead of reaching it. Expanded is what actually claims
+    // the row's remaining width; Align then has real space to push the chips
+    // flush against it.
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 760) {
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          children: [titleColumn, const SizedBox(height: 14), chips],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          titleColumn,
+          const SizedBox(width: 24),
+          Expanded(child: Align(alignment: Alignment.centerRight, child: chips)),
+        ],
+      );
+    });
+  }
+}
+
+/// A quick-glance stat band under the Hub's title -- the same role
+/// DatabaseBudget plays on the Databases screen (a real number right under a
+/// plain title, instead of the title standing alone with nothing behind it).
+/// Every number here is live: pipelines is the catalogue this session
+/// actually loaded, the other two come straight off the same run list
+/// [HubRecentJobs] renders below.
+class _HubStats extends ConsumerWidget {
+  final int pipelineCount;
+  const _HubStats({required this.pipelineCount});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final runsAsync = ref.watch(recentRunsProvider);
+    final running = runsAsync.value?.where((r) => r.isRunning).length;
+    final total = runsAsync.value?.length;
+
+    final items = [
+      (ref.t('hub_stat_pipelines'), '$pipelineCount'),
+      (ref.t('hub_stat_running'), running == null ? '—' : '$running'),
+      (ref.t('hub_stat_runs'), total == null ? '—' : '$total'),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+        child: Row(
           children: [
-            Text(ref.t('hub_title'), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text(ref.t('hub_subtitle'), style: TextStyle(color: colors.textSecondary)),
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(width: 1, height: 32, color: colors.border),
+                ),
+              _Stat(label: items[i].$1, value: items[i].$2),
+            ],
           ],
         ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            alignment: WrapAlignment.end,
-            children: [
-              _Chip(
-                label: ref.t('hub_filter_all'),
-                selected: selected == null,
-                onTap: () => onSelect(null),
-              ),
-              for (final tag in tags)
-                _Chip(
-                  label: tag.extraTagLabel(english),
-                  selected: selected == tag,
-                  onTap: () => onSelect(selected == tag ? null : tag),
-                ),
-            ],
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  const _Stat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+        const SizedBox(height: 2),
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+            color: colors.textSecondary,
           ),
         ),
       ],

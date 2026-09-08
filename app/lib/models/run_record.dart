@@ -11,6 +11,10 @@ class RunRecord {
   final String outputDir;
   final String configPath;
   final int cores;
+  /// Rule names Snakemake was told to skip on this run (--omit-from), i.e. the
+  /// tools the user had disabled -- saved so Retry can pass Snakemake the same
+  /// flags a fresh launch would, instead of re-enabling everything.
+  final List<String> omitFrom;
   final double startedAt;
   final double? finishedAt;
   final String status; // running | done | error | stopped
@@ -36,6 +40,7 @@ class RunRecord {
     required this.outputDir,
     required this.configPath,
     required this.cores,
+    this.omitFrom = const [],
     required this.startedAt,
     required this.finishedAt,
     required this.status,
@@ -68,6 +73,10 @@ class RunRecord {
         outputDir: json['output_dir'] as String? ?? '',
         configPath: json['config_path'] as String? ?? '',
         cores: (json['cores'] as num?)?.toInt() ?? 0,
+        // Absent on records from before this field existed -- an empty list
+        // there just means Retry re-enables every tool, same as a run that
+        // genuinely had none disabled.
+        omitFrom: (json['omit_from'] as List?)?.cast<String>() ?? const [],
         startedAt: (json['started_at'] as num?)?.toDouble() ?? 0,
         finishedAt: (json['finished_at'] as num?)?.toDouble(),
         status: json['status'] as String? ?? 'running',

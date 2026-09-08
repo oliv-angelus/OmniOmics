@@ -38,6 +38,10 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     await ref.read(pipelineRunProvider.notifier).stop();
   }
 
+  void _retry() {
+    ref.read(pipelineRunProvider.notifier).retry();
+  }
+
   String _statusText(PipelineRunState run) {
     if (run.stopped && !run.finished) return ref.t('monitor_stopping');
     if (!run.finished) return ref.t('monitor_running');
@@ -95,6 +99,17 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
                 onPressed: _stop,
                 icon: Icon(Icons.stop_circle_outlined, color: colors.statusError),
                 label: Text(ref.t('stop_pipeline_button'), style: TextStyle(color: colors.statusError)),
+              ),
+            // Shown for ANY finished state, not just error/stopped: Snakemake
+            // is idempotent, so retrying a run that actually succeeded just
+            // costs one "nothing to be done" exit -- no need to gate this on
+            // exitCode and risk hiding it on some in-between state.
+            if (run.finished)
+              TextButton.icon(
+                onPressed: _retry,
+                icon: const Icon(Icons.replay),
+                label: Text(ref.t('retry_run_button')),
+                style: TextButton.styleFrom(foregroundColor: colors.textPrimary),
               ),
           ],
         ),

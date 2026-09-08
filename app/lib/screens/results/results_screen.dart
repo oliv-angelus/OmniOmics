@@ -65,6 +65,30 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     if (added == true) await _loadRuns();
   }
 
+  /// Re-launches a finished (or stopped/errored) run's exact config/cores/
+  /// omit_from -- Snakemake picks up right where it left off, only redoing
+  /// what's missing or failed, so this is safe even on a run that actually
+  /// succeeded (worst case: a "nothing to be done" no-op). Blocked while a
+  /// DIFFERENT run is live in the Monitor tab, since start() unconditionally
+  /// replaces whatever pipelineRunProvider is currently tracking -- without
+  /// this check, clicking Retry here could silently kill an unrelated
+  /// in-progress run instead of just doing nothing useful.
+  void _retryRun(RunRecord run) {
+    final notifier = ref.read(pipelineRunProvider.notifier);
+    if (notifier.isRunning && ref.read(pipelineRunProvider)?.runId != run.id) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('results_retry_blocked'))));
+      return;
+    }
+    notifier.start(
+      pipelineId: run.pipelineId,
+      pipelineName: run.pipelineName,
+      configPath: run.configPath,
+      cores: run.cores,
+      omitFrom: run.omitFrom,
+    );
+    ref.read(embeddedMonitorProvider.notifier).state = true;
+  }
+
   Future<void> _loadRuns({bool silent = false}) async {
     if (!silent) setState(() => _loading = true);
     try {
@@ -363,6 +387,16 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               ),
               _StatusBadge(status: run.status),
               const SizedBox(width: 8),
+              // Imported runs (no config_path -- see RunRecord.isImported) have
+              // nothing for Snakemake to redo, and a still-running one is
+              // already covered by the Monitor tab's own Retry (shown once it
+              // finishes) -- so this only makes sense for a finished launch.
+              if (!run.isRunning && !run.isImported)
+                IconButton(
+                  icon: const Icon(Icons.replay),
+                  tooltip: ref.t('retry_run_tooltip'),
+                  onPressed: () => _retryRun(run),
+                ),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: ref.t('review_refresh'),
@@ -577,8 +611,16 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       final api = ref.read(apiClientProvider);
       final res = await api.post('/api/runs/delete', {'run_ids': deletable.map((r) => r.id).toList()}) as Map<String, dynamic>;
       if (!mounted) return;
+      // Two different reasons a folder can survive on disk after this call --
+      // worded separately so a deliberately-protected path (e.g. the user's
+      // own home directory, picked as output_dir by mistake) reads as
+      // reassuring ("we left that alone on purpose"), not as an error the way
+      // a genuine OS-level delete failure should.
+      final protectedDirs = (res['protected_dirs'] as List?) ?? const [];
       final failedDirs = (res['failed_dirs'] as List?) ?? const [];
-      if (failedDirs.isNotEmpty) {
+      if (protectedDirs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('results_delete_protected_kept'))));
+      } else if (failedDirs.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ref.t('results_delete_partial_failure'))));
       }
       final deletedIds = ((res['deleted'] as List?) ?? const []).cast<String>().toSet();

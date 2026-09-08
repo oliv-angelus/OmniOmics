@@ -44,3 +44,43 @@ final embeddedPlotRunProvider = StateProvider<RunRecord?>((ref) => null);
 /// top bar's database-downloads indicator -- can jump straight to a tab
 /// (Databases) without needing a BuildContext-based Navigator call.
 final selectedTabProvider = StateProvider<int>((ref) => 0);
+
+/// Node/font size multiplier for the Monitor tab's live DAG (RuleGraphView),
+/// adjustable from Settings. Backed by the backend's own settings file (see
+/// /api/ui-settings/graph-scale) rather than a local prefs package, so it
+/// sits alongside every other persisted app preference in one place -- but
+/// the value in memory here is what every open RuleGraphView actually reads,
+/// so changing it in Settings takes effect immediately, no app restart.
+class GraphScaleNotifier extends Notifier<double> {
+  static const double defaultScale = 1.0;
+
+  @override
+  double build() {
+    // Fires once per app run; state starts at the default and jumps to the
+    // saved value as soon as the backend answers, rather than blocking the
+    // first frame on a network round trip.
+    Future(() async {
+      try {
+        final res = await ref.read(apiClientProvider).get('/api/ui-settings/graph-scale') as Map<String, dynamic>;
+        state = (res['scale'] as num?)?.toDouble() ?? defaultScale;
+      } catch (_) {
+        // Keep the default -- a settings-load failure shouldn't block the
+        // Monitor screen's graph from rendering at all.
+      }
+    });
+    return defaultScale;
+  }
+
+  Future<void> setScale(double value) async {
+    state = value; // live immediately, everywhere this provider is watched
+    try {
+      await ref.read(apiClientProvider).post('/api/ui-settings/graph-scale', {'scale': value});
+    } catch (_) {
+      // Best-effort persistence -- the live value above already applied
+      // regardless, so a save failure here just means it won't survive a
+      // restart, not that the change didn't take.
+    }
+  }
+}
+
+final graphScaleProvider = NotifierProvider<GraphScaleNotifier, double>(GraphScaleNotifier.new);

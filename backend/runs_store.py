@@ -32,7 +32,8 @@ def generate_run_name() -> str:
     return f"{random.choice(_ADJECTIVES)}-{random.choice(_NOUNS)}-{random.randint(100, 999)}"
 
 
-def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: str, cores: int) -> dict:
+def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: str, cores: int,
+            omit_from: list | None = None) -> dict:
     run = {
         "id": uuid.uuid4().hex[:12],
         "name": generate_run_name(),
@@ -41,6 +42,12 @@ def add_run(pipeline_id: str, pipeline_name: str, output_dir: str, config_path: 
         "output_dir": output_dir,
         "config_path": config_path,
         "cores": cores,
+        # Saved so a later retry (re-running this exact history entry from the
+        # Results page, possibly in a whole new app session) can pass the same
+        # --omit-from Snakemake got the first time -- without it, a retry would
+        # have no way to know which tools were disabled on this run and could
+        # execute rules the user deliberately turned off.
+        "omit_from": omit_from or [],
         "started_at": time.time(),
         "finished_at": None,
         "status": "running",  # running | done | error | stopped

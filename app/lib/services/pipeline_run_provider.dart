@@ -24,6 +24,13 @@ class PipelineRunState {
   final int stepsTotal;
   final bool finished;
   final int? exitCode;
+  /// The exact launch parameters this run started with -- kept around (not
+  /// just consumed by start()) so a Retry button can re-launch identically
+  /// without the caller needing to reconstruct them (e.g. the Monitor screen,
+  /// which only ever sees the state after start() already ran).
+  final String configPath;
+  final int cores;
+  final List<String> omitFrom;
   /// Null until (and unless) the dart logger plugin is installed and sends
   /// its one `rulegraph` event for this run -- an environment without the
   /// plugin (see check_dart_logger_plugin on the backend) never gets one,
@@ -46,6 +53,9 @@ class PipelineRunState {
     required this.stepsTotal,
     required this.finished,
     required this.exitCode,
+    required this.configPath,
+    required this.cores,
+    required this.omitFrom,
     this.stopped = false,
     this.ruleGraph,
   });
@@ -71,6 +81,9 @@ class PipelineRunState {
       stepsTotal: stepsTotal ?? this.stepsTotal,
       finished: finished ?? this.finished,
       exitCode: exitCode ?? this.exitCode,
+      configPath: configPath,
+      cores: cores,
+      omitFrom: omitFrom,
       stopped: stopped ?? this.stopped,
       ruleGraph: ruleGraph ?? this.ruleGraph,
     );
@@ -111,6 +124,9 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
       stepsTotal: 0,
       finished: false,
       exitCode: null,
+      configPath: configPath,
+      cores: cores,
+      omitFrom: omitFrom,
     );
 
     final api = ref.read(apiClientProvider);
@@ -118,6 +134,24 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
     _ws = ws;
     ws.send({'config_path': configPath, 'cores': cores, 'omit_from': omitFrom, 'pipeline_name': pipelineName});
     _listen(ws);
+  }
+
+  /// Re-launches the current (finished) run with the exact same parameters.
+  /// Safe to call whether the run failed, was stopped, or even succeeded --
+  /// Snakemake is idempotent (--keep-going already run once means a rerun
+  /// with the same config just skips every output that's already up to date;
+  /// worst case it says there's nothing to do and exits immediately), so this
+  /// never needs to ask "are you sure the run actually needs retrying".
+  void retry() {
+    final current = state;
+    if (current == null || !current.finished) return;
+    start(
+      pipelineId: current.pipelineId,
+      pipelineName: current.pipelineName,
+      configPath: current.configPath,
+      cores: current.cores,
+      omitFrom: current.omitFrom,
+    );
   }
 
   void _listen(WsClient ws) {

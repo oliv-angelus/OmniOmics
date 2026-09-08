@@ -494,6 +494,27 @@ def api_changelog():
     return changelog.list_entries()
 
 
+@app.get("/api/ui-settings/graph-scale")
+def get_graph_scale():
+    """Persisted node/font size multiplier for the Monitor tab's live DAG
+    (RuleGraphView) -- a small DAG like PRISM's 14 rules renders at its
+    native (small) size once _fitToViewport sees it already fits the panel
+    (deliberately never zooms IN past 1:1 there), so this is the user's own
+    override for "I want it bigger by default", not a bug in that clamp."""
+    return {"scale": load_settings().get("graph_scale", 1.0)}
+
+
+@app.post("/api/ui-settings/graph-scale")
+def set_graph_scale(data: dict):
+    try:
+        scale = float(data.get("scale", 1.0))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="scale must be a number.")
+    scale = max(0.5, min(3.0, scale))
+    save_settings({"graph_scale": scale})
+    return {"ok": True, "scale": scale}
+
+
 @app.get("/api/pipelines")
 def pipelines_list():
     return pipelines.list_pipelines()
@@ -1640,7 +1661,7 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
 
         pipeline_finished[pid] = False
         pipeline_subscribers.setdefault(pid, [])
-        run = runs_store.add_run(pid, pipeline_name, output_dir, config_path, cores)
+        run = runs_store.add_run(pid, pipeline_name, output_dir, config_path, cores, omit_from)
         pipeline_current_run[pid] = run["id"]
         await _emit(pid, {"type": "log", "text": f"Comando: {' '.join(cmd)}\n\n"})
         # Tells the client which runs_store history entry this live session
@@ -1781,11 +1802,18 @@ async def pipeline_dart_bridge_ws(websocket: WebSocket, pid: str):
                     "total": payload.get("total"), "pct": payload.get("pct"),
                 })
             elif ftype == "rulegraph":
-                # Not rendered anywhere yet (Phase 2 of the integration plan
-                # -- the live DAG) -- stored/forwarded now regardless, so the
-                # on-disk event log already has it once that UI exists,
-                # rather than needing every run re-done to backfill it.
-                await _emit(pid, {"type": "rulegraph", "graph": payload})
+                # Real, confirmed bug: the plugin's own Message wraps this as
+                # {"rulegraph": {"nodes": [...], "links": [...]}} (see its
+                # events.py _on_rulegraph), one level deeper than the flat
+                # {"nodes", "links"} shape RuleGraph.fromJson (Flutter) and
+                # this integration's own notes assumed -- forwarding `payload`
+                # as-is left `graph.nodes`/`graph.links` both absent, so the
+                # Monitor screen's Graph tab silently rendered zero nodes and
+                # only the job list looked populated. Unwrapped here so the
+                # emitted event's `graph` field is the flat shape everywhere
+                # downstream still expects.
+                graph = payload.get("rulegraph", payload) if isinstance(payload, dict) else payload
+                await _emit(pid, {"type": "rulegraph", "graph": graph})
             elif ftype == "log":
                 # Confirmed against a real run: payload is {"level", "message"},
                 # not {"text"} -- Snakemake's own internal log records, not a
@@ -1919,7 +1947,7 @@ def _dir_size_bytes(path: str) -> int:
 
 @app.post("/api/runs/delete")
 def delete_runs(data: dict):
-    """Deletes the given runs' history entries, and their output folders on
+    """Removes the given runs' history entries, and their output folders on
     disk *only* when safe to do so:
       - a run still in progress is never touched (stop it first)
       - the target path goes through _safe_to_delete's guardrails
@@ -1929,11 +1957,23 @@ def delete_runs(data: dict):
         exactly what happened before this comment existed (see: "apagar uma
         run apagou todas"). The folder is only actually removed once *every*
         record referencing it is included in this same request.
+
+    Real, reported bug fixed here: history removal used to be GATED on disk
+    removal actually succeeding -- a run whose output_dir was the user's own
+    home directory (picked by mistake) would fail _safe_to_delete forever,
+    and its history entry could then never be removed via this endpoint
+    either, with no way out short of hand-editing the settings file. History
+    is just this app's own bookkeeping, so it is now unregistered
+    unconditionally for every requested (non-active) run; only the on-disk
+    folder removal stays best-effort/guarded, reported separately via
+    `protected_dirs` (blocked by _safe_to_delete, e.g. home -- left
+    untouched, always) vs `failed_dirs` (rmtree raised, e.g. a permissions
+    error -- also left as found, disk state not otherwise assumed).
     The frontend is expected to have already confirmed this with the user.
     """
     requested_ids = set(data.get("run_ids", []))
     if not requested_ids:
-        return {"deleted": [], "blocked_active": [], "failed_dirs": []}
+        return {"deleted": [], "blocked_active": [], "failed_dirs": [], "protected_dirs": []}
 
     all_runs = runs_store.list_runs()
     by_id = {r["id"]: r for r in all_runs}
@@ -1961,23 +2001,33 @@ def delete_runs(data: dict):
         else:
             ids_removed.add(rid)  # another surviving record still needs this folder
 
-    deleted_dirs, failed_dirs = [], []
+    deleted_dirs, protected_dirs, failed_dirs = [], [], []
     for d in dirs_to_delete:
         if not _safe_to_delete(d):
-            failed_dirs.append(d)
+            protected_dirs.append(d)  # deliberately never touched, e.g. home
             continue
         try:
             if os.path.isdir(d):
                 shutil.rmtree(d)
             deleted_dirs.append(d)
         except Exception:
-            failed_dirs.append(d)
+            failed_dirs.append(d)  # left as found -- unknown partial state, not assumed safe either way
 
-    for d in deleted_dirs:
+    # Unregister every requested run whose folder was actually deleted, AND
+    # every one whose folder was deliberately left alone or failed to delete
+    # -- either way there is nothing more for this app to do with that
+    # record, and disk state is reported back via protected_dirs/failed_dirs
+    # rather than silently implied by whether the record disappeared.
+    for d in dirs_to_delete:
         ids_removed |= refs_by_dir[d]
 
     runs_store.remove_runs(ids_removed)
-    return {"deleted": sorted(ids_removed), "blocked_active": blocked_active, "failed_dirs": failed_dirs}
+    return {
+        "deleted": sorted(ids_removed),
+        "blocked_active": blocked_active,
+        "failed_dirs": failed_dirs,
+        "protected_dirs": protected_dirs,
+    }
 
 
 @app.post("/api/runs/{run_id}/rename")

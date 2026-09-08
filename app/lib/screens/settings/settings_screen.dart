@@ -126,8 +126,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            const _GraphScaleCard(),
           ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Manual override for the Monitor tab's live DAG node/font size -- exists
+/// because a small graph (e.g. PRISM's 14 rules) already fits the panel at
+/// its native size, so RuleGraphView's own "never zoom in past 1:1" fit
+/// logic leaves it looking tiny with no automatic way to grow it. Backed by
+/// [graphScaleProvider], which every open RuleGraphView watches directly --
+/// dragging this slider takes effect immediately, no app restart needed.
+class _GraphScaleCard extends ConsumerWidget {
+  const _GraphScaleCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final scale = ref.watch(graphScaleProvider);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(ref.t('settings_graph_scale_title'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+            const SizedBox(height: 4),
+            Text(ref.t('settings_graph_scale_subtitle'), style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: scale,
+                    min: 0.7,
+                    max: 2.2,
+                    divisions: 15,
+                    label: '${(scale * 100).round()}%',
+                    onChanged: (v) => ref.read(graphScaleProvider.notifier).setScale(v),
+                  ),
+                ),
+                SizedBox(
+                  width: 52,
+                  child: Text('${(scale * 100).round()}%',
+                      textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
