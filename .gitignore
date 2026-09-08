@@ -25,3 +25,7 @@ notes/
 
 # Snapshots of the application's own settings file, taken while developing
 backups/
+
+# Local editor/tool config -- machine-specific, not project source
+.vscode/
+.claude/
