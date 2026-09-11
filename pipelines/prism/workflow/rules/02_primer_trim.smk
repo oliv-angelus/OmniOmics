@@ -77,7 +77,7 @@ def _cutadapt_primers_short(wildcards):
     resolution order as the long-read version; deliberately not reused
     directly since the linked-adapter string it builds isn't valid syntax
     for paired mode."""
-    extra = config["params"]["cutadapt_short"]
+    extra = config["params"].get("cutadapt_short", "")  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     err = re.search(r"-e\s+(\S+)", extra)
     err = err.group(1) if err else "0.1"
 
@@ -115,7 +115,7 @@ rule cutadapt_trim_short:
     params:
         primers=_cutadapt_primers_short
     conda: "../envs/cutadapt.yaml"
-    threads: config["threads"]["cutadapt_short"]
+    threads: config["threads"].get("cutadapt_short", 4)
     log: "logs/cutadapt/{sample}_short.log"
     shell:
         "cutadapt {params.primers} --discard-untrimmed --pair-filter any --cores {threads} "

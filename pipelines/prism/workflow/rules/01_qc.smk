@@ -18,10 +18,17 @@ rule fastp:
         html="results/01_QC/{sample}/{sample}_fastp.html",
         json="results/01_QC/{sample}/{sample}_fastp.json"
     params:
-        extra=config["params"]["fastp"]
+        # .get, not config["params"]["fastp"]: `params:`/`threads:` are
+        # evaluated eagerly at rule-parse time, not lazily per-job, even
+        # though this rule only ever gets a real job for SHORT_SAMPLES --
+        # so any config.yaml predating this tool_id would otherwise KeyError
+        # on DAG-build for a run with zero short-read samples (real bug,
+        # caught by a real dry-run against an existing HPC config, see
+        # 04_denoise_classify.smk's _reference_db comment for the full story)
+        extra=config["params"].get("fastp", "")
     conda: "../envs/qc.yaml"
     log: "logs/fastp/{sample}.log"
-    threads: config["threads"]["fastp"]
+    threads: config["threads"].get("fastp", 4)
     shell:
         "fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} "
         "-o {output.r1} -O {output.r2} -h {output.html} -j {output.json} 2> {log}"

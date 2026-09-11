@@ -20,11 +20,22 @@ def _gene(tool_id):
     preset_gene = (config.get("amplicon_preset", {}) or {}).get("gene", "")
     if preset_gene:
         return preset_gene
-    return _flag_value(config["params"][tool_id], "--gene", "16S")
+    return _flag_value(config["params"].get(tool_id, ""), "--gene", "16S")
 
 
 def _reference_db(tool_id):
-    return _flag_value(config["params"][tool_id], "--reference_db", "gtdb")
+    # .get(tool_id, ""), not config["params"][tool_id]: this (and _gene above)
+    # are called EAGERLY in every rule's `params:` block (`gene=_gene(...)`
+    # calls it immediately at rule-parse time, not lazily per-job), for
+    # singleton rules that are always scheduled regardless of read_type --
+    # so any run whose config.yaml predates a given tool_id (e.g. an existing
+    # v-prism-style config from before dada2_illumina existed) would
+    # otherwise KeyError on DAG-build even though that rule's real work is a
+    # no-op for that run. Real bug, caught by a real dry-run against an
+    # actual pre-existing HPC config (2026-09-11) -- same gotcha class
+    # picrust2's own `config["threads"].get("picrust2", 1)` comment already
+    # documents, just missed here on the first pass.
+    return _flag_value(config["params"].get(tool_id, ""), "--reference_db", "gtdb")
 
 
 def _emu_max_align_len():
