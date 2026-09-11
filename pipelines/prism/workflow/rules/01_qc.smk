@@ -2,6 +2,30 @@ import pandas as pd
 
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False).fillna("")
 
+# ---------------------------------------------------------------------------
+# Short-read (Illumina) QC -- fastp. Only ever requested for SHORT_SAMPLES
+# (see Snakefile's rule all), so unlike MAGMA's fastp/filtlong this needs no
+# if/else-touch branching: a sample is either short or long, never both, so
+# Snakemake simply never asks this rule to build for a long-read sample.
+# ---------------------------------------------------------------------------
+rule fastp:
+    input:
+        r1=lambda wildcards: samples.loc[wildcards.sample, "fq1"],
+        r2=lambda wildcards: samples.loc[wildcards.sample, "fq2"]
+    output:
+        r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
+        r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz",
+        html="results/01_QC/{sample}/{sample}_fastp.html",
+        json="results/01_QC/{sample}/{sample}_fastp.json"
+    params:
+        extra=config["params"]["fastp"]
+    conda: "../envs/qc.yaml"
+    log: "logs/fastp/{sample}.log"
+    threads: config["threads"]["fastp"]
+    shell:
+        "fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} "
+        "-o {output.r1} -O {output.r2} -h {output.html} -j {output.json} 2> {log}"
+
 rule nanoplot_raw:
     input:
         long=lambda wildcards: samples.loc[wildcards.sample, "fq_long"]

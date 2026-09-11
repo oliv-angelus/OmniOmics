@@ -62,6 +62,8 @@ _DB_FILE_PATTERNS = {
     "silva_lsu": ["silva_lsu_dada2.fasta"],
     "unite_its": ["*.fasta"],
     "grond": ["grond_rrn_dada2.fasta"],
+    "midori2_coi": ["MIDORI2*CO1_DADA2.fasta"],
+    "mitofish_12s": ["mitofish_12s_dada2.fasta"],
 }
 
 
@@ -120,7 +122,19 @@ def _resolve_ref_path(gene, reference_db):
         return _resolve_db_file("silva_ssu")
     if gene in ("23S", "28S"):
         return _resolve_db_file("silva_lsu")
+    # COI/12S (short-read Illumina path, added 2026-09-11): each has exactly
+    # one real reference option here, same "reference_db ignored" story ITS/
+    # 18S/23S/28S already have above -- MIDORI2 is COI's only wired database,
+    # MitoFish is 12S's.
+    if gene == "COI":
+        return _resolve_db_file("midori2_coi")
+    if gene == "12S":
+        return _resolve_db_file("mitofish_12s")
     return ""
+
+
+LONG_SAMPLES = [s for s in samples.index if samples.loc[s, "read_type"] == "long"]
+SHORT_SAMPLES = [s for s in samples.index if samples.loc[s, "read_type"] == "short"]
 
 # ---------------------------------------------------------------------------
 # PacBio HiFi path: cohort-level DADA2 (see workflow/scripts/dada2_pacbio.R).
@@ -132,7 +146,12 @@ def _resolve_ref_path(gene, reference_db):
 # ---------------------------------------------------------------------------
 rule dada2_pacbio:
     input:
-        reads=expand("results/03_CHIMERA/{sample}/{sample}_nonchimeric.fastq.gz", sample=samples.index)
+        # LONG_SAMPLES, not samples.index: the short-read (Illumina) path
+        # added 2026-09-11 has no results/03_CHIMERA output at all (see
+        # 03_chimera.smk's header comment) -- expanding over every sample
+        # here would demand that file for short samples too and break the
+        # DAG for any run mixing both read types.
+        reads=expand("results/03_CHIMERA/{sample}/{sample}_nonchimeric.fastq.gz", sample=LONG_SAMPLES)
     output:
         table="results/04_DENOISE/dada2/prism_abundance_table.tsv",
         # Real bug caught by a real dry-run: these ASV-level
@@ -152,7 +171,7 @@ rule dada2_pacbio:
         max_ee=_flag_value(config["params"]["dada2_pacbio"], "--max_ee", "2.0"),
         min_freq=_flag_value(config["params"]["dada2_pacbio"], "--min_asv_totalfreq", "5"),
         ref_path=lambda wc: _resolve_ref_path(_gene("dada2_pacbio"), _reference_db("dada2_pacbio")),
-        sample_list=",".join(samples.index),
+        sample_list=",".join(LONG_SAMPLES),
         input_list=lambda wc, input: ",".join(input.reads)
     conda: "../envs/dada2.yaml"
     threads: config["threads"]["dada2_pacbio"]
@@ -249,7 +268,9 @@ rule emu_classify:
 
 rule join_emu:
     input:
-        tables=expand("results/04_DENOISE/emu/{sample}/{sample}_rel-abundance.tsv", sample=samples.index)
+        # LONG_SAMPLES, same reasoning as dada2_pacbio's input above -- Emu
+        # is an ONT-only engine, never applicable to short-read samples.
+        tables=expand("results/04_DENOISE/emu/{sample}/{sample}_rel-abundance.tsv", sample=LONG_SAMPLES)
     output:
         table="results/04_DENOISE/emu/prism_abundance_table.tsv",
         # tax_id-resolution table (not lineage-collapsed) # feeds build_emu_tree.R below, which needs to know exactly which
@@ -258,7 +279,7 @@ rule join_emu:
         # itself which is conditionally skipped for <3 detected species.
         species="results/04_DENOISE/emu/prism_species_counts.tsv"
     params:
-        pairs=lambda wc, input: [f"{s}:{t}" for s, t in zip(samples.index, input.tables)]
+        pairs=lambda wc, input: [f"{s}:{t}" for s, t in zip(LONG_SAMPLES, input.tables)]
     log: "logs/denoise/join_emu.log"
     shell:
         "python3 {workflow.basedir}/workflow/scripts/join_emu_tables.py "
@@ -302,15 +323,65 @@ rule emu_tree:
         """
 
 # ---------------------------------------------------------------------------
-# Final: whichever engine actually ran (dada2 vs emu) produced a real,
-# non-empty table; the other is the empty touch-placeholder. Pick the
-# non-empty one so downstream (Plots tab) always reads from one stable path
-# regardless of platform.
+# Short-read (Illumina) path (added 2026-09-11): cohort-level paired-end
+# DADA2, the original/textbook workflow (Callahan et al. 2016) -- unlike
+# dada2_pacbio above, this calls DADA2's own removeBimeraDenovo() for
+# chimera removal (see workflow/scripts/dada2_illumina.R and 03_chimera.smk's
+# header comment for why that's the right call here but not for long reads).
+# Empty-input-list guard plays the same role as the if/else-touch idiom
+# elsewhere in this pipeline: if a run has zero short-read samples,
+# expand(..., sample=SHORT_SAMPLES) below is simply [], so this rule still
+# runs (Snakemake needs a rule that produces this output unconditionally,
+# since select_abundance_table checks it) but writes an empty table instead
+# of invoking Rscript with nothing to process.
+# ---------------------------------------------------------------------------
+rule dada2_illumina:
+    input:
+        r1=expand("results/02_PRIMER_TRIM/{sample}/{sample}_R1_trimmed.fastq.gz", sample=SHORT_SAMPLES),
+        r2=expand("results/02_PRIMER_TRIM/{sample}/{sample}_R2_trimmed.fastq.gz", sample=SHORT_SAMPLES)
+    output:
+        table="results/04_DENOISE/dada2_illumina/prism_abundance_table.tsv",
+        asv_fasta="results/04_DENOISE/dada2_illumina/prism_asv_sequences.fasta",
+        asv_taxonomy="results/04_DENOISE/dada2_illumina/prism_asv_taxonomy.tsv",
+        asv_counts="results/04_DENOISE/dada2_illumina/prism_asv_counts.tsv"
+    params:
+        gene=_gene("dada2_illumina"),
+        reference_db=_reference_db("dada2_illumina"),
+        max_ee=_flag_value(config["params"].get("dada2_illumina", ""), "--max_ee", "2.0"),
+        min_freq=_flag_value(config["params"].get("dada2_illumina", ""), "--min_asv_totalfreq", "5"),
+        ref_path=lambda wc: _resolve_ref_path(_gene("dada2_illumina"), _reference_db("dada2_illumina")),
+        sample_list=",".join(SHORT_SAMPLES),
+        r1_list=lambda wc, input: ",".join(input.r1),
+        r2_list=lambda wc, input: ",".join(input.r2)
+    conda: "../envs/dada2.yaml"
+    threads: config["threads"].get("dada2_illumina", 4)
+    log: "logs/denoise/dada2_illumina.log"
+    shell:
+        """
+        if [ -n "{params.r1_list}" ]; then
+            Rscript {workflow.basedir}/workflow/scripts/dada2_illumina.R \
+                --input_r1 {params.r1_list} --input_r2 {params.r2_list} --samples {params.sample_list} \
+                --gene {params.gene} --reference_db {params.reference_db} --ref_path {params.ref_path} \
+                --max_ee {params.max_ee} --min_asv_totalfreq {params.min_freq} \
+                --out {output.table} > {log} 2>&1
+        else
+            mkdir -p $(dirname {output.table})
+            touch {output.table} {output.asv_fasta} {output.asv_taxonomy} {output.asv_counts}
+            echo "dada2_illumina: skipped -- no short-read samples in this run" > {log}
+        fi
+        """
+
+# ---------------------------------------------------------------------------
+# Final: whichever engine actually ran (dada2_pacbio / emu_ont /
+# dada2_illumina) produced a real, non-empty table; the other two are the
+# empty touch-placeholders. Pick the non-empty one so downstream (Plots tab)
+# always reads from one stable path regardless of platform/read_type.
 # ---------------------------------------------------------------------------
 rule select_abundance_table:
     input:
         dada2="results/04_DENOISE/dada2/prism_abundance_table.tsv",
-        emu="results/04_DENOISE/emu/prism_abundance_table.tsv"
+        emu="results/04_DENOISE/emu/prism_abundance_table.tsv",
+        dada2_illumina="results/04_DENOISE/dada2_illumina/prism_abundance_table.tsv"
     output:
         table="results/05_ABUNDANCE_TABLE/prism_abundance_table.tsv"
     log: "logs/denoise/select_abundance_table.log"
@@ -321,8 +392,10 @@ rule select_abundance_table:
             cp {input.dada2} {output.table}
         elif [ -s {input.emu} ]; then
             cp {input.emu} {output.table}
+        elif [ -s {input.dada2_illumina} ]; then
+            cp {input.dada2_illumina} {output.table}
         else
-            echo "select_abundance_table: neither engine produced output (platform={PLATFORM})" > {log}
+            echo "select_abundance_table: no engine produced output (platform={PLATFORM})" > {log}
             touch {output.table}
         fi
         """

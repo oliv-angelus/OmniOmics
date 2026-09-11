@@ -2,16 +2,25 @@ import pandas as pd
 
 configfile: "config/config.yaml"
 
-samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False).fillna("")
 SAMPLES = samples.index.tolist()
 
-# PRISM is long-read-only by deliberate scope decision -- every sample is read_type "long", unlike MAGMA/SIGMA/
-# DOGMA which branch short/long/hybrid per sample. Kept as a real check
-# rather than assumed, since a stray short-read sample would otherwise fail
-# silently deep in the DAG instead of at the point samples are loaded.
-_bad = [s for s in SAMPLES if samples.loc[s, "read_type"] != "long"]
+# PRISM was long-read-only by deliberate scope decision through 2026-09-11;
+# short-read (Illumina) paired-amplicon support (COI/12S fish metabarcoding,
+# but usable for any short-amplicon marker) was added that day -- see
+# notes/PRISM.md's "Short-read (Illumina) path added" section. Every sample
+# is now either "short" or "long", same two of MAGMA/SIGMA/DOGMA's three
+# read_type values (no "hybrid": a single amplicon run is one platform, there
+# is no real protocol that merges short + long reads for the same amplicon).
+# Kept as a real check rather than assumed, since a stray bad read_type value
+# would otherwise fail silently deep in the DAG instead of at the point
+# samples are loaded.
+_bad = [s for s in SAMPLES if samples.loc[s, "read_type"] not in ("short", "long")]
 if _bad:
-    raise ValueError(f"PRISM only accepts long reads; non-long samples found: {_bad}")
+    raise ValueError(f"PRISM only accepts read_type short or long; bad samples found: {_bad}")
+
+LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] == "long"]
+SHORT_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] == "short"]
 
 # Long-read platform (Nanopore vs PacBio HiFi) is one run-wide choice (same
 # mechanism DOGMA's long_read_platform already uses for Flye/SPAdes flags --
@@ -26,10 +35,16 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=SAMPLES),
-        expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=SAMPLES),
-        expand("results/02_PRIMER_TRIM/{sample}/{sample}_trimmed.fastq.gz", sample=SAMPLES),
-        expand("results/03_CHIMERA/{sample}/{sample}_nonchimeric.fastq.gz", sample=SAMPLES),
+        expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=LONG_SAMPLES),
+        expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=LONG_SAMPLES),
+        expand("results/02_PRIMER_TRIM/{sample}/{sample}_trimmed.fastq.gz", sample=LONG_SAMPLES),
+        expand("results/03_CHIMERA/{sample}/{sample}_nonchimeric.fastq.gz", sample=LONG_SAMPLES),
+        # Short-read (Illumina) path -- see 01_qc.smk/02_primer_trim.smk. No
+        # equivalent of results/03_CHIMERA here: chimera removal happens
+        # inside dada2_illumina.R itself (DADA2's own removeBimeraDenovo),
+        # not a separate VSEARCH step (see that rule's own comment for why).
+        expand("results/01_QC/{sample}/{sample}_R1_clean.fastq.gz", sample=SHORT_SAMPLES),
+        expand("results/02_PRIMER_TRIM/{sample}/{sample}_R1_trimmed.fastq.gz", sample=SHORT_SAMPLES),
         "results/05_ABUNDANCE_TABLE/prism_abundance_table.tsv",
         # ONT/Emu path's closed-reference phylogenetic tree (see
         # 04_denoise_classify.smk's emu_tree rule) -- listed unconditionally

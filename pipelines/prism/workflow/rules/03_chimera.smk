@@ -30,6 +30,15 @@
 # cluster mapping (works unchanged with --cluster_size's.uc output, same
 # H/S/C record shape --fastx_uniques produced before) -- see that script's
 # own docstring for the full reasoning.
+#
+# Long-read-only rules, deliberately: the short-read (Illumina) path added
+# 2026-09-11 has NO equivalent step here -- chimera removal happens inside
+# dada2_illumina.R via DADA2's own removeBimeraDenovo() instead (see
+# 04_denoise_classify.smk). Short Illumina reads exact-dereplicate reliably
+# (unlike raw noisy long reads, the whole reason this file's clustering
+# workaround exists), which is exactly the abundance signal
+# removeBimeraDenovo's own parent/child logic needs -- no external VSEARCH
+# step or clustering workaround needed for that read type.
 
 rule vsearch_cluster:
     input:

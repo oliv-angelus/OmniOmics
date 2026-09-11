@@ -5,6 +5,9 @@ channels:
 dependencies:
   - filtlong=0.3.1
   - nanoplot=1.44.1
+  # Same pin MAGMA/DOGMA's own qc.yaml already uses, for the new short-read
+  # (Illumina) path's fastp rule (2026-09-11).
+  - fastp=1.3.5
   # Real bug, caught by a real `snakemake --use-conda` execution (2026-08-07),
   # not assumed: nanoplot's own bioconda recipe declares a `python-kaleido`
   # dependency with NO version pin at all, so a fresh solve grabs whatever's

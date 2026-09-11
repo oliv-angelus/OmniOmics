@@ -21,12 +21,19 @@
     "columns": [
       "sample",
       "read_type",
+      "fq1",
+      "fq2",
       "fq_long"
     ],
     "read_type_values": [
+      "short",
       "long"
     ],
     "input_dirs": [
+      {
+        "key": "short_reads_dir",
+        "label": "Pasta de reads curtas (amplicon, pareadas)"
+      },
       {
         "key": "long_reads_dir",
         "label": "Pasta de reads longas (amplicon)"
@@ -70,6 +77,83 @@
       "rule_names": [
         "nanoplot_raw",
         "nanoplot_clean"
+      ]
+    },
+    "fastp": {
+      "name": "fastp",
+      "description": {
+        "en": "QC + adapter/quality trimming for paired short-read amplicon data (Illumina) -- same tool MAGMA/SIGMA/DOGMA already use for their own short-read paths, kept for consistency instead of a different amplicon-specific trimmer. Runs before primer removal (cutadapt), same order every other OmniOmics short-read pipeline uses",
+        "pt": "QC + trimming de adaptador/qualidade para dados de amplicon de reads curtas pareadas (Illumina) -- mesma ferramenta que MAGMA/SIGMA/DOGMA já usam nos próprios caminhos de reads curtas, mantida por consistência em vez de um trimmer específico de amplicon diferente. Roda antes da remoção de primer (cutadapt), mesma ordem que todo outro pipeline de reads curtas da OmniOmics usa"
+      },
+      "citation": [
+        {
+          "text": "Chen S, Zhou Y, Chen Y, Gu J. fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics. 2018;34(17):i884-i890.",
+          "doi": "10.1093/bioinformatics/bty560"
+        }
+      ],
+      "category": "QC & Trimming",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--qualified_quality_phred",
+          "type": "int",
+          "default": 20,
+          "enabled": true,
+          "description": {
+            "en": "Minimum Phred quality score for a base to be considered qualified",
+            "pt": "Escore de qualidade Phred mínimo para uma base ser considerada qualificada"
+          },
+          "min": 0,
+          "max": 40
+        },
+        {
+          "flag": "--length_required",
+          "type": "int",
+          "default": 50,
+          "enabled": true,
+          "description": {
+            "en": "Minimum read length after trimming; shorter reads are discarded -- keep well below the shortest configured amplicon (e.g. MiFish 12S ~170 bp) so real short reads survive",
+            "pt": "Comprimento mínimo da read após o trimming; reads mais curtas são descartadas -- mantenha bem abaixo do menor amplicon configurado (ex. 12S MiFish ~170 pb) para que reads reais sobrevivam"
+          },
+          "min": 1
+        }
+      ],
+      "requires": [],
+      "rule_names": [
+        "fastp"
+      ]
+    },
+    "cutadapt_short": {
+      "name": "Cutadapt (reads curtas pareadas)",
+      "description": {
+        "en": "Removes the marker-gene primers from paired short reads (fwd primer at R1's 5' end, rev primer at R2's 5' end), discarding any pair where the expected primer isn't found on both mates -- the standard paired-end amplicon convention (unlike the long-read cutadapt tool above, which needs a single linked adapter since both primers sit on the same read). Defaults shown here are the MiFish-U 12S primers (Miya et al. 2015); swap via the Amplicon preset (Inputs tab) for COI (Leray et al. 2013) or any other short-amplicon marker",
+        "pt": "Remove os primers do gene marcador de reads curtas pareadas (primer forward na extremidade 5' da R1, primer reverse na extremidade 5' da R2), descartando qualquer par em que o primer esperado não seja encontrado em ambas as mates -- a convenção padrão de amplicon pareado (diferente do cutadapt de reads longas acima, que precisa de um único adaptador ligado já que os dois primers ficam na mesma read). Os padrões mostrados aqui são os primers MiFish-U de 12S (Miya et al. 2015); troque via o preset de Amplicon (aba Entradas) para COI (Leray et al. 2013) ou qualquer outro marcador de amplicon curto"
+      },
+      "citation": [
+        {
+          "text": "Martin M. Cutadapt removes adapter sequences from high-throughput sequencing reads. EMBnet.journal. 2011;17(1):10-12.",
+          "doi": "10.14806/ej.17.1.200"
+        }
+      ],
+      "category": "Primer Removal",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "-e",
+          "type": "float",
+          "default": 0.1,
+          "enabled": true,
+          "description": {
+            "en": "Maximum allowed primer-matching error rate",
+            "pt": "Taxa de erro máxima permitida no pareamento do primer"
+          },
+          "min": 0.0,
+          "max": 0.3
+        }
+      ],
+      "requires": [],
+      "rule_names": [
+        "cutadapt_trim_short"
       ]
     },
     "filtlong": {
@@ -318,6 +402,92 @@
       ],
       "rule_names": [
         "dada2_pacbio"
+      ]
+    },
+    "dada2_illumina": {
+      "name": "DADA2 (Illumina, reads curtas pareadas)",
+      "description": {
+        "en": "Exact amplicon sequence variant (ASV) inference for paired-end short reads (Illumina) -- the original, textbook DADA2 workflow (Callahan et al. 2016), unlike the reparameterized long-read variants used by dada2_pacbio/emu_ont. Runs filterAndTrim -> learnErrors (forward/reverse separately) -> dada() -> mergePairs() -> makeSequenceTable() -> DADA2's own removeBimeraDenovo() for chimera removal -- no external VSEARCH chimera step needed here (unlike the long-read path), since short Illumina reads exact-dereplicate reliably, which is exactly what removeBimeraDenovo's abundance-skew logic needs to work",
+        "pt": "Inferência exata de variantes de sequência de amplicon (ASV) para reads curtas pareadas (Illumina) -- o fluxo DADA2 original, de livro-texto (Callahan et al. 2016), diferente das variantes reparametrizadas para leitura longa usadas por dada2_pacbio/emu_ont. Roda filterAndTrim -> learnErrors (forward/reverse separadamente) -> dada() -> mergePairs() -> makeSequenceTable() -> removeBimeraDenovo() do próprio DADA2 para remoção de quimera -- não precisa do passo externo de quimera do VSEARCH aqui (diferente do caminho de reads longas), já que reads curtas Illumina dereplicam exato de forma confiável, exatamente o que a lógica de assimetria de abundância do removeBimeraDenovo precisa para funcionar"
+      },
+      "citation": [
+        {
+          "text": "Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP. DADA2: High-resolution sample inference from Illumina amplicon data. Nature Methods. 2016;13(7):581-583.",
+          "doi": "10.1038/nmeth.3869"
+        }
+      ],
+      "category": "Denoising & Classification",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--gene",
+          "type": "choice",
+          "default": "12S",
+          "enabled": true,
+          "description": {
+            "en": "Marker gene -- 16S/18S (GTDB or SILVA SSU), 23S/28S (SILVA LSU), ITS (UNITE), COI (MIDORI2, animal barcode), 12S (MitoFish, fish-specific). Normally set for you by the amplicon preset chosen on the Inputs tab.",
+            "pt": "Gene marcador -- 16S/18S (GTDB ou SILVA SSU), 23S/28S (SILVA LSU), ITS (UNITE), COI (MIDORI2, barcode animal), 12S (MitoFish, específico de peixes). Normalmente definido automaticamente pelo preset de amplicon escolhido na aba Entradas."
+          },
+          "choices": [
+            "16S",
+            "18S",
+            "23S",
+            "28S",
+            "ITS",
+            "COI",
+            "12S"
+          ]
+        },
+        {
+          "flag": "--reference_db",
+          "type": "choice",
+          "default": "mitofish",
+          "enabled": true,
+          "description": {
+            "en": "Reference database -- gtdb (16S only), silva (16S/18S/23S/28S), unite (ITS, selected automatically), midori2 (COI, selected automatically), mitofish (12S, selected automatically)",
+            "pt": "Banco de referência -- gtdb (só 16S), silva (16S/18S/23S/28S), unite (ITS, selecionado automaticamente), midori2 (COI, selecionado automaticamente), mitofish (12S, selecionado automaticamente)"
+          },
+          "choices": [
+            "gtdb",
+            "silva",
+            "midori2",
+            "mitofish"
+          ]
+        },
+        {
+          "flag": "--max_ee",
+          "type": "float",
+          "default": 2.0,
+          "enabled": true,
+          "description": {
+            "en": "Maximum expected errors per read (forward and reverse, each) to keep during filtering",
+            "pt": "Máximo de erros esperados por read (forward e reverse, cada uma) a manter durante a filtragem"
+          },
+          "min": 0.5,
+          "max": 10.0
+        },
+        {
+          "flag": "--min_asv_totalfreq",
+          "type": "int",
+          "default": 5,
+          "enabled": true,
+          "description": {
+            "en": "Minimum total read count across all samples for an ASV to be kept",
+            "pt": "Contagem total mínima de reads em todas as amostras para uma ASV ser mantida"
+          },
+          "min": 1
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "cutadapt_short"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "dada2_illumina"
       ]
     },
     "emu_ont": {
@@ -574,6 +744,68 @@
       "download_options": [],
       "config_key": "unite_its"
     },
+    "midori2_coi": {
+      "name": "MIDORI2 (COI, animal barcode)",
+      "description": {
+        "en": "Curated, regularly-updated reference of the COI (cytochrome c oxidase subunit I) barcode gene across the animal kingdom, built from GenBank -- the UNIQ/DADA2 release used here (one entry per unique haplotype) ships already formatted for DADA2's assignTaxonomy() (7-rank lineage headers), an official MIDORI2 output format, no header conversion needed unlike SILVA/GROND above",
+        "pt": "Referência curada e atualizada regularmente do gene barcode COI (citocromo c oxidase subunidade I) em todo o reino animal, construída a partir do GenBank -- a versão UNIQ/DADA2 usada aqui (uma entrada por haplótipo único) já vem formatada para o assignTaxonomy() do DADA2 (cabeçalhos de linhagem em 7 ranks), um formato de saída oficial do MIDORI2, sem precisar de conversão de cabeçalho ao contrário do SILVA/GROND acima"
+      },
+      "citation": [
+        {
+          "text": "Leray M, Knowlton N, Machida RJ. MIDORI2: A collection of quality controlled, preformatted, and regularly updated reference databases for taxonomic assignment of eukaryotic mitochondrial sequences. Environmental DNA. 2022;4(4):894-907.",
+          "doi": "10.1002/edn3.303"
+        }
+      ],
+      "setting_key": "db_midori2_coi",
+      "size_gb": 1,
+      "detect_files": [
+        "MIDORI2*CO1_DADA2.fasta"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "midori2_uniq_gb272_co1",
+          "label": "MIDORI2 UNIQ GenBank272 COI, formatado DADA2 (~96 MB) ★ Recomendado",
+          "size_gb": 0.096,
+          "description": {
+            "en": "One sequence per unique haplotype (UNIQ, not the larger redundant LONGEST set), nucleotide, DADA2-ready headers",
+            "pt": "Uma sequência por haplótipo único (UNIQ, não o conjunto LONGEST redundante e maior), nucleotídeo, cabeçalhos prontos para DADA2"
+          },
+          "url": "https://www.reference-midori.info/download/Databases/GenBank272_2026-06-07/DADA2/uniq/MIDORI2_UNIQ_NUC_GB272_CO1_DADA2.fasta.gz",
+          "extract": false
+        }
+      ],
+      "config_key": "midori2_coi"
+    },
+    "mitofish_12s": {
+      "name": "MitoFish (12S, específico de peixes)",
+      "description": {
+        "en": "Curated fish mitogenome database purpose-built as the reference companion to the MiFish 12S primers -- the standard fish eDNA metabarcoding reference pair (Miya et al. 2015 / Iwasaki et al. 2013). No automated download here: MitoFish's own download page is a JS-driven app, not a stable direct-file link like MIDORI2/SILVA/GROND above, and its raw FASTA headers are accession-only (need converting to DADA2-formatted lineage strings before assignTaxonomy() can use them, same class of gap UNITE (ITS) already has in this manifest) -- download manually from the link below, run through a header-conversion step, and point this database's path at the result",
+        "pt": "Banco curado de mitogenomas de peixe, feito sob medida como referência companheira dos primers 12S do MiFish -- o par padrão de referência para metabarcoding de eDNA de peixe (Miya et al. 2015 / Iwasaki et al. 2013). Sem download automatizado aqui: a própria página de download do MitoFish é uma aplicação JS, não um link de arquivo direto estável como MIDORI2/SILVA/GROND acima, e os cabeçalhos brutos do FASTA são só-acessão (precisam ser convertidos para strings de linhagem formatadas DADA2 antes do assignTaxonomy() conseguir usá-los, a mesma categoria de lacuna que o UNITE (ITS) já tem neste manifesto) -- baixe manualmente pelo link abaixo, rode por uma etapa de conversão de cabeçalho, e aponte o caminho deste banco para o resultado"
+      },
+      "citation": [
+        {
+          "text": "Iwasaki W, Fukunaga T, Isagozawa R, et al. MitoFish and MitoAnnotator: a mitochondrial genome database of fish with an accurate and automatic annotation pipeline. Molecular Biology and Evolution. 2013;30(11):2531-2540.",
+          "doi": "10.1093/molbev/mst141"
+        },
+        {
+          "text": "Sato Y, Miya M, Fukunaga T, Sado T, Iwasaki W. MitoFish and MiFish Pipeline: A Mitochondrial Genome Database of Fish with an Analysis Pipeline for Environmental DNA Metabarcoding. Molecular Biology and Evolution. 2018;35(6):1553-1555.",
+          "doi": "10.1093/molbev/msy074"
+        },
+        {
+          "text": "Miya M, Sato Y, Fukunaga T, et al. MiFish, a set of universal PCR primers for metabarcoding environmental DNA from fishes: detection of more than 230 subtropical marine species. Royal Society Open Science. 2015;2(7):150088.",
+          "doi": "10.1098/rsos.150088"
+        }
+      ],
+      "setting_key": "db_mitofish_12s",
+      "size_gb": 1,
+      "detect_files": [
+        "mitofish_12s_dada2.fasta"
+      ],
+      "detect_dirs": [],
+      "download_options": [],
+      "config_key": "mitofish_12s"
+    },
     "grond": {
       "name": "GROND (operon rrn 16S-ITS-23S)",
       "description": {
@@ -623,7 +855,10 @@
     "vsearch_chimera": "--id 0.95 --abskew 2.0",
     "dada2_pacbio": "--gene 16S --reference_db gtdb --max_ee 2.0 --min_asv_totalfreq 5",
     "emu_ont": "--gene 16S --reference_db gtdb --min-abundance 0.0001",
-    "picrust2": "--max_nsti 2.0"
+    "picrust2": "--max_nsti 2.0",
+    "fastp": "--qualified_quality_phred 20 --length_required 50",
+    "cutadapt_short": "-e 0.1",
+    "dada2_illumina": "--gene 12S --reference_db mitofish --max_ee 2.0 --min_asv_totalfreq 5"
   },
   "special_overrides": {},
   "default_threads": {
@@ -633,7 +868,10 @@
     "vsearch_chimera": 4,
     "dada2_pacbio": 4,
     "emu_ont": 8,
-    "picrust2": 4
+    "picrust2": 4,
+    "fastp": 4,
+    "cutadapt_short": 4,
+    "dada2_illumina": 4
   },
   "amplicon_presets": [
     {
@@ -782,6 +1020,44 @@
       "note": {
         "pt": "Primers não confirmados contra uma fonte real — informe os seus antes de rodar. A janela de tamanho é aproximada e provavelmente precisa de ajuste.",
         "en": "Primers not confirmed against a real source -- supply your own before running. The length window is approximate and likely needs adjusting."
+      }
+    },
+    {
+      "id": "coi_leray",
+      "label": "COI (barcode animal) — fragmento Leray, Illumina pareado",
+      "label_en": "COI (animal barcode) — Leray fragment, paired Illumina",
+      "gene": "COI",
+      "reference_db": "midori2",
+      "fwd_primers": [
+        "GGWACWGGWTGAACWGTWTAYCCYCC"
+      ],
+      "rev_primers": [
+        "TAIACYTCIGGRTGICCRAARAAYCA"
+      ],
+      "min_length": 250,
+      "max_length": 320,
+      "note": {
+        "pt": "mlCOIintF/jgHCO2198 (Leray et al. 2013, Front. Zool.), ~313 pb -- o par mais usado em metabarcoding de eDNA multi-táxon (não específico de peixe, mas cobre peixes junto com o resto da comunidade). Banco: MIDORI2. Exclusivo de reads curtas pareadas (Illumina) -- não há protocolo estabelecido de leitura longa para este fragmento.",
+        "en": "mlCOIintF/jgHCO2198 (Leray et al. 2013, Front. Zool.), ~313 bp -- the most-used pair in multi-taxon eDNA metabarcoding (not fish-specific, but covers fish alongside the rest of the community). Database: MIDORI2. Short paired-end (Illumina) only -- no established long-read protocol for this fragment."
+      }
+    },
+    {
+      "id": "12s_mifish",
+      "label": "12S (peixes) — MiFish-U, Illumina pareado",
+      "label_en": "12S (fish) — MiFish-U, paired Illumina",
+      "gene": "12S",
+      "reference_db": "mitofish",
+      "fwd_primers": [
+        "GTCGGTAAAACTCGTGCCAGC"
+      ],
+      "rev_primers": [
+        "CATAGTGGGGTATCTAATCCCAGTTTG"
+      ],
+      "min_length": 140,
+      "max_length": 200,
+      "note": {
+        "pt": "MiFish-U-F/MiFish-U-R (Miya et al. 2015, R. Soc. Open Sci.), ~170 pb -- desenhado especificamente para peixes (o par \"universal\", cobre a maioria dos teleósteos; existe também um par \"E\" complementar para elasmobrânquios, não incluído aqui). Banco: MitoFish. Exclusivo de reads curtas pareadas (Illumina) -- amplicon curto demais para o fluxo de long-read atual do PRISM.",
+        "en": "MiFish-U-F/MiFish-U-R (Miya et al. 2015, R. Soc. Open Sci.), ~170 bp -- designed specifically for fish (the \"universal\" pair, covers most teleosts; a complementary \"E\" pair for elasmobranchs also exists, not included here). Database: MitoFish. Short paired-end (Illumina) only -- too short an amplicon for PRISM's current long-read flow."
       }
     },
     {

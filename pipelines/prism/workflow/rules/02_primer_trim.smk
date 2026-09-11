@@ -67,3 +67,56 @@ rule cutadapt_trim:
     shell:
         "cutadapt {params.linked} --discard-untrimmed --cores {threads} "
         "--json {output.report} -o {output.long} {input.long} > {log} 2>&1"
+
+
+def _cutadapt_primers_short(wildcards):
+    """Paired-end version of _cutadapt_primers above: fwd primer expected at
+    R1's 5' end (-g), rev primer at R2's 5' end (-G), NOT linked -- paired
+    short reads carry one primer each, unlike a full-length long read
+    carrying both on the same strand. Same manual-override-then-preset
+    resolution order as the long-read version; deliberately not reused
+    directly since the linked-adapter string it builds isn't valid syntax
+    for paired mode."""
+    extra = config["params"]["cutadapt_short"]
+    err = re.search(r"-e\s+(\S+)", extra)
+    err = err.group(1) if err else "0.1"
+
+    fwd_m = re.search(r"-g\s+(\S+)", extra)
+    rev_m = re.search(r"-G\s+(\S+)", extra)
+    if fwd_m or rev_m:
+        pairs = [(fwd_m.group(1) if fwd_m else "GTCGGTAAAACTCGTGCCAGC",
+                  rev_m.group(1) if rev_m else "CATAGTGGGGTATCTAATCCCAGTTTG")]
+    else:
+        preset = config.get("amplicon_preset", {}) or {}
+        fwds = preset.get("fwd_primers") or []
+        revs = preset.get("rev_primers") or []
+        if not fwds or not revs:
+            raise ValueError(
+                "No primers available: the chosen amplicon preset "
+                f"('{preset.get('id', '?')}') carries none, and no -g/-G was set on "
+                "the Tools tab. Pick a preset that includes primers, or type your "
+                "own -g/-G in cutadapt's parameters."
+            )
+        pairs = [(f, r) for f in fwds for r in revs]
+
+    g_flags = " ".join(f"-g {f}" for f, _ in pairs)
+    G_flags = " ".join(f"-G {r}" for _, r in pairs)
+    return f"{g_flags} {G_flags} -e {err}"
+
+
+rule cutadapt_trim_short:
+    input:
+        r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
+        r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz"
+    output:
+        r1="results/02_PRIMER_TRIM/{sample}/{sample}_R1_trimmed.fastq.gz",
+        r2="results/02_PRIMER_TRIM/{sample}/{sample}_R2_trimmed.fastq.gz",
+        report="results/02_PRIMER_TRIM/{sample}/{sample}_cutadapt.json"
+    params:
+        primers=_cutadapt_primers_short
+    conda: "../envs/cutadapt.yaml"
+    threads: config["threads"]["cutadapt_short"]
+    log: "logs/cutadapt/{sample}_short.log"
+    shell:
+        "cutadapt {params.primers} --discard-untrimmed --pair-filter any --cores {threads} "
+        "--json {output.report} -o {output.r1} -p {output.r2} {input.r1} {input.r2} > {log} 2>&1"
