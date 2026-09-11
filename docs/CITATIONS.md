@@ -147,6 +147,20 @@ The MIMAG quality tiers the Plots tab reports follow **Bowers RM, *et al.*
 | phangorn | — | Schliep KP (2011) *Bioinformatics* 27:592. doi:10.1093/bioinformatics/btq706 |
 | PICRUSt2 | 2.6.3 | Douglas GM, *et al.* (2020) *Nat Biotechnol* 38:685. doi:10.1038/s41587-020-0548-6 |
 
+### Amplicon primer sets worth citing alongside
+
+- **16S 27F/1492R** (universal) — Lane DJ (1991) in *Nucleic Acid Techniques
+  in Bacterial Systematics*, Stackebrandt & Goodfellow (eds), Wiley.
+- **ITS1F/ITS4** (fungal) — Gardes M, Bruns TD (1993) *Mol Ecol* 2:113.
+  doi:10.1111/j.1365-294X.1993.tb00005.x; White TJ, *et al.* (1990) in *PCR
+  Protocols*, Academic Press.
+- **rrn operon 27F/2241R** (full 16S-ITS-23S) — Cuscó A, *et al.* (2019)
+  *F1000Research* 7:1755. doi:10.12688/f1000research.16817.2
+- **COI, Leray fragment (mlCOIintF/jgHCO2198)** — Leray M, *et al.* (2013)
+  *Front Zool* 10:34. doi:10.1186/1742-9994-10-34
+- **12S, MiFish-U** — Miya M, *et al.* (2015) *R Soc Open Sci* 2:150088.
+  doi:10.1098/rsos.150088
+
 ---
 
 ## Statistics and figures (the Plots tab)
@@ -196,8 +210,12 @@ and their tools'. Check each one before redistributing derived data.
 
 | Database | Used by | Reference |
 |---|---|---|
-| GTDB | GTDB-Tk | Parks DH, *et al.* (2022) *Nucleic Acids Res* 50:D785. doi:10.1093/nar/gkab776 |
+| GTDB | GTDB-Tk, PRISM | Parks DH, *et al.* (2022) *Nucleic Acids Res* 50:D785. doi:10.1093/nar/gkab776 |
 | SILVA | PRISM | Quast C, *et al.* (2013) *Nucleic Acids Res* 41:D590. doi:10.1093/nar/gks1219 |
+| UNITE | PRISM | Nilsson RH, *et al.* (2019) *Nucleic Acids Res* 47:D259. doi:10.1093/nar/gky1022 |
+| GROND | PRISM | Benitez-Paez A, *et al.* Zenodo. doi:10.5281/zenodo.10889037 |
+| MIDORI2 | PRISM | Leray M, Knowlton N, Machida RJ (2022) *Environ DNA* 4:894. doi:10.1002/edn3.303 |
+| MitoFish (via Mitohelper) | PRISM | Iwasaki W, *et al.* (2013) *Mol Biol Evol* 30:2531. doi:10.1093/molbev/mst141; Lim J, Thompson LR (2021) *Environ DNA* 3:1053. doi:10.1002/edn3.187 |
 | CARD | ABRicate | Alcock BP, *et al.* (2023) *Nucleic Acids Res* 51:D690. doi:10.1093/nar/gkac920 |
 | VFDB | ABRicate | Chen L, *et al.* (2016) *Nucleic Acids Res* 44:D694. doi:10.1093/nar/gkv1239 |
 | Pfam | dbCAN, BiG-SCAPE | Mistry J, *et al.* (2021) *Nucleic Acids Res* 49:D412. doi:10.1093/nar/gkaa913 |

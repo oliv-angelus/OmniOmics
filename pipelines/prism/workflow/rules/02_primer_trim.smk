@@ -12,7 +12,7 @@ def _cutadapt_primers(wildcards):
     string every other tool's `extra` param uses) instead of adding a second
     config path, since cutadapt's own real CLI flags already are -g/-G/-e -- no wrapper-script indirection needed here, unlike dada2_pacbio/emu_ont's
     non-CLI --gene flag."""
-    extra = config["params"]["cutadapt"]
+    extra = config["params"].get("cutadapt", "")  # .get for consistency (lazy already, called only per-job, but see 04_denoise_classify.smk's _reference_db comment)
     err = re.search(r"-e\s+(\S+)", extra)
     err = err.group(1) if err else "0.1"
 
@@ -62,7 +62,7 @@ rule cutadapt_trim:
     params:
         linked=_cutadapt_primers
     conda: "../envs/cutadapt.yaml"
-    threads: config["threads"]["cutadapt"]
+    threads: config["threads"].get("cutadapt", 4)  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     log: "logs/cutadapt/{sample}.log"
     shell:
         "cutadapt {params.linked} --discard-untrimmed --cores {threads} "

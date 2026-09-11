@@ -50,7 +50,7 @@ rule vsearch_cluster:
         id=lambda wc: config["params"]["vsearch_chimera"].split("--id")[-1].strip().split()[0]
             if "--id" in config["params"]["vsearch_chimera"] else "0.95"
     conda: "../envs/vsearch.yaml"
-    threads: config["threads"]["vsearch_chimera"]
+    threads: config["threads"].get("vsearch_chimera", 4)  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     log: "logs/chimera/{sample}_cluster.log"
     shell:
         "vsearch --cluster_size {input.long} --id {params.id} --sizeout "
@@ -68,7 +68,7 @@ rule vsearch_chimera:
         abskew=lambda wc: config["params"]["vsearch_chimera"].split("--abskew")[-1].strip().split()[0]
             if "--abskew" in config["params"]["vsearch_chimera"] else "2.0"
     conda: "../envs/vsearch.yaml"
-    threads: config["threads"]["vsearch_chimera"]
+    threads: config["threads"].get("vsearch_chimera", 4)  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     log: "logs/chimera/{sample}_uchime.log"
     shell:
         """

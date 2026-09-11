@@ -179,13 +179,19 @@ rule dada2_pacbio:
     params:
         gene=_gene("dada2_pacbio"),
         reference_db=_reference_db("dada2_pacbio"),
-        max_ee=_flag_value(config["params"]["dada2_pacbio"], "--max_ee", "2.0"),
-        min_freq=_flag_value(config["params"]["dada2_pacbio"], "--min_asv_totalfreq", "5"),
+        max_ee=_flag_value(config["params"].get("dada2_pacbio", ""), "--max_ee", "2.0"),
+        min_freq=_flag_value(config["params"].get("dada2_pacbio", ""), "--min_asv_totalfreq", "5"),
         ref_path=lambda wc: _resolve_ref_path(_gene("dada2_pacbio"), _reference_db("dada2_pacbio")),
         sample_list=",".join(LONG_SAMPLES),
         input_list=lambda wc, input: ",".join(input.reads)
     conda: "../envs/dada2.yaml"
-    threads: config["threads"]["dada2_pacbio"]
+    # .get, not config["threads"]["dada2_pacbio"]: this rule is a singleton
+    # (always scheduled, needed unconditionally by select_abundance_table),
+    # so `threads:` is evaluated eagerly regardless of whether the run has
+    # any long-read samples -- a short-read-only config (added 2026-09-11)
+    # genuinely has no "dada2_pacbio" key anymore. Real bug, caught by a
+    # real dry-run against a real short-read-only config (coi-12s project).
+    threads: config["threads"].get("dada2_pacbio", 4)
     log: "logs/denoise/dada2_pacbio.log"
     shell:
         """
@@ -256,11 +262,11 @@ rule emu_classify:
         table="results/04_DENOISE/emu/{sample}/{sample}_rel-abundance.tsv"
     params:
         gene=_gene("emu_ont"),
-        min_abundance=_flag_value(config["params"]["emu_ont"], "--min-abundance", "0.0001"),
+        min_abundance=_flag_value(config["params"].get("emu_ont", ""), "--min-abundance", "0.0001"),
         max_align_len=_emu_max_align_len(),
         db_dir=lambda wc: f"results/04_DENOISE/emu/db_{_gene('emu_ont')}"
     conda: "../envs/emu.yaml"
-    threads: config["threads"]["emu_ont"]
+    threads: config["threads"].get("emu_ont", 8)  # .get, see dada2_pacbio's own comment above for why
     log: "logs/denoise/emu_{sample}.log"
     shell:
         """

@@ -39,7 +39,14 @@ rule nanoplot_raw:
     output:
         outdir=directory("results/01_QC/{sample}/nanoplot_raw"),
         stats="results/01_QC/{sample}/nanoplot_raw/NanoStats.txt"
-    threads: config["threads"]["nanoplot"]
+    # .get, not config["threads"]["nanoplot"]: this rule is only ever
+    # scheduled for LONG_SAMPLES, but `threads:` is evaluated eagerly at
+    # rule-parse time regardless -- a short-read-only run's config.yaml
+    # (added 2026-09-11, genuinely has zero long-read tool keys now) would
+    # otherwise KeyError on DAG-build even though nanoplot never runs for it.
+    # Real bug, caught by a real dry-run against a real short-read-only
+    # config (coi-12s project), same class as _reference_db's own comment.
+    threads: config["threads"].get("nanoplot", 4)
     conda: "../envs/qc.yaml"
     log: "logs/nanoplot/{sample}_raw.log"
     shell:
@@ -81,7 +88,14 @@ rule nanoplot_clean:
     output:
         outdir=directory("results/01_QC/{sample}/nanoplot_clean"),
         stats="results/01_QC/{sample}/nanoplot_clean/NanoStats.txt"
-    threads: config["threads"]["nanoplot"]
+    # .get, not config["threads"]["nanoplot"]: this rule is only ever
+    # scheduled for LONG_SAMPLES, but `threads:` is evaluated eagerly at
+    # rule-parse time regardless -- a short-read-only run's config.yaml
+    # (added 2026-09-11, genuinely has zero long-read tool keys now) would
+    # otherwise KeyError on DAG-build even though nanoplot never runs for it.
+    # Real bug, caught by a real dry-run against a real short-read-only
+    # config (coi-12s project), same class as _reference_db's own comment.
+    threads: config["threads"].get("nanoplot", 4)
     conda: "../envs/qc.yaml"
     log: "logs/nanoplot/{sample}_clean.log"
     shell:
