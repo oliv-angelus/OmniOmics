@@ -476,6 +476,16 @@
             "pt": "Contagem total mínima de reads em todas as amostras para uma ASV ser mantida"
           },
           "min": 1
+        },
+        {
+          "flag": "--single_end",
+          "type": "bool",
+          "default": false,
+          "enabled": false,
+          "description": {
+            "en": "Ignore R2 and classify off the forward read alone -- turn this on when the read length/amplicon length combination leaves no reliable overlap to merge (e.g. 150 bp reads on the ~313 bp Leray COI fragment). Real, standard DADA2 fallback (shorter ASVs, less resolution than a real merge), not a workaround hack",
+            "pt": "Ignora a R2 e classifica só pela read forward -- ative quando a combinação comprimento-de-read/comprimento-de-amplicon não deixa overlap confiável pra merge (ex. reads de 150 pb no fragmento Leray de COI, ~313 pb). Fallback real e padrão do DADA2 (ASVs mais curtas, menos resolução que um merge de verdade), não é um workaround improvisado"
+          }
         }
       ],
       "requires": [
@@ -778,10 +788,10 @@
       "config_key": "midori2_coi"
     },
     "mitofish_12s": {
-      "name": "MitoFish (12S, específico de peixes)",
+      "name": "MitoFish (12S, específico de peixes, via Mitohelper)",
       "description": {
-        "en": "Curated fish mitogenome database purpose-built as the reference companion to the MiFish 12S primers -- the standard fish eDNA metabarcoding reference pair (Miya et al. 2015 / Iwasaki et al. 2013). No automated download here: MitoFish's own download page is a JS-driven app, not a stable direct-file link like MIDORI2/SILVA/GROND above, and its raw FASTA headers are accession-only (need converting to DADA2-formatted lineage strings before assignTaxonomy() can use them, same class of gap UNITE (ITS) already has in this manifest) -- download manually from the link below, run through a header-conversion step, and point this database's path at the result",
-        "pt": "Banco curado de mitogenomas de peixe, feito sob medida como referência companheira dos primers 12S do MiFish -- o par padrão de referência para metabarcoding de eDNA de peixe (Miya et al. 2015 / Iwasaki et al. 2013). Sem download automatizado aqui: a própria página de download do MitoFish é uma aplicação JS, não um link de arquivo direto estável como MIDORI2/SILVA/GROND acima, e os cabeçalhos brutos do FASTA são só-acessão (precisam ser convertidos para strings de linhagem formatadas DADA2 antes do assignTaxonomy() conseguir usá-los, a mesma categoria de lacuna que o UNITE (ITS) já tem neste manifesto) -- baixe manualmente pelo link abaixo, rode por uma etapa de conversão de cabeçalho, e aponte o caminho deste banco para o resultado"
+        "en": "Curated fish mitogenome database purpose-built as the reference companion to the MiFish 12S primers -- the standard fish eDNA metabarcoding reference pair (Miya et al. 2015 / Iwasaki et al. 2013). Downloaded here via Mitohelper (Lim & Thompson 2021), a maintained tool that re-publishes MitoFish as monthly-dated, single-file TSV releases on Zenodo (stable DOI, real direct download) -- MitoFish's own download page is a JS-driven app with no stable direct-file link. A broader alternative was tested and rejected: a generic universal-12S-primer in-silico-PCR database (not fish-curated) came back only ~2% real fish, overwhelmingly non-target noise -- not usable as a fish-specific reference. Sequence and taxonomy are already joined in Mitohelper's TSV (Accession/Superkingdom/Phylum/Class/Order/Family/Genus/Species/Sequence columns, confirmed against a real downloaded fragment), converted to DADA2-formatted lineage headers by convert_mitofish_headers.py (no separate join step needed, unlike GROND above)",
+        "pt": "Banco curado de mitogenomas de peixe, feito sob medida como referência companheira dos primers 12S do MiFish -- o par padrão de referência para metabarcoding de eDNA de peixe (Miya et al. 2015 / Iwasaki et al. 2013). Baixado aqui via Mitohelper (Lim & Thompson 2021), uma ferramenta mantida que republica o MitoFish em releases mensais datadas, TSV de arquivo único, no Zenodo (DOI estável, download direto real) -- a própria página de download do MitoFish é uma aplicação JS sem link de arquivo direto estável. Uma alternativa mais ampla foi testada e descartada: um banco genérico de PCR in-silico com primer universal de 12S (não curado pra peixe) trouxe só ~2% de peixe de verdade, ruído esmagador fora do alvo -- não serve como referência específica de peixe. Sequência e taxonomia já vêm juntas no TSV do Mitohelper (colunas Accession/Superkingdom/Phylum/Class/Order/Family/Genus/Species/Sequence, confirmado contra um trecho real baixado), convertidas para cabeçalhos de linhagem formatados DADA2 pelo convert_mitofish_headers.py (sem etapa de join separada, diferente do GROND acima)"
       },
       "citation": [
         {
@@ -795,6 +805,10 @@
         {
           "text": "Miya M, Sato Y, Fukunaga T, et al. MiFish, a set of universal PCR primers for metabarcoding environmental DNA from fishes: detection of more than 230 subtropical marine species. Royal Society Open Science. 2015;2(7):150088.",
           "doi": "10.1098/rsos.150088"
+        },
+        {
+          "text": "Lim J, Thompson LR. Mitohelper: A mitochondrial reference sequence analysis tool for fish eDNA studies. Environmental DNA. 2021;3(6):1053-1060.",
+          "doi": "10.1002/edn3.187"
         }
       ],
       "setting_key": "db_mitofish_12s",
@@ -803,7 +817,20 @@
         "mitofish_12s_dada2.fasta"
       ],
       "detect_dirs": [],
-      "download_options": [],
+      "download_options": [
+        {
+          "id": "mitohelper_mitofish_12s_jul2026",
+          "label": "MitoFish 12S via Mitohelper, Jul2026 (~112 MB TSV) ★ Recomendado",
+          "size_gb": 0.112,
+          "description": {
+            "en": "66,798 real fish 12S records, sequence+taxonomy already joined -- converted to DADA2 format on download",
+            "pt": "66.798 registros reais de 12S de peixe, sequência+taxonomia já unidas -- convertido para formato DADA2 no download"
+          },
+          "url": "https://zenodo.org/records/21326269/files/mitofish.12S.Jul2026.tsv",
+          "extract": false,
+          "post_cmd": "python3 {pipeline_dir}/workflow/scripts/convert_mitofish_headers.py --tsv {dest_dir}/mitofish.12S.Jul2026.tsv --out {dest_dir}/mitofish_12s_dada2.fasta && rm -f {dest_dir}/mitofish.12S.Jul2026.tsv"
+        }
+      ],
       "config_key": "mitofish_12s"
     },
     "grond": {

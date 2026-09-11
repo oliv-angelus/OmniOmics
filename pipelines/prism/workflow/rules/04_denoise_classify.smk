@@ -361,6 +361,11 @@ rule dada2_illumina:
         max_ee=_flag_value(config["params"].get("dada2_illumina", ""), "--max_ee", "2.0"),
         min_freq=_flag_value(config["params"].get("dada2_illumina", ""), "--min_asv_totalfreq", "5"),
         ref_path=lambda wc: _resolve_ref_path(_gene("dada2_illumina"), _reference_db("dada2_illumina")),
+        # Real need (2026-09-11): iSeq 150bp reads on an amplicon too long to
+        # merge (e.g. Leray COI, ~313bp) -- see dada2_illumina.R's own header
+        # comment. Off by default (real paired merging is the better result
+        # whenever the amplicon/read-length combination actually allows it).
+        single_end_flag="--single_end" if "--single_end" in config["params"].get("dada2_illumina", "") else "",
         sample_list=",".join(SHORT_SAMPLES),
         r1_list=lambda wc, input: ",".join(input.r1),
         r2_list=lambda wc, input: ",".join(input.r2)
@@ -373,7 +378,7 @@ rule dada2_illumina:
             Rscript {workflow.basedir}/workflow/scripts/dada2_illumina.R \
                 --input_r1 {params.r1_list} --input_r2 {params.r2_list} --samples {params.sample_list} \
                 --gene {params.gene} --reference_db {params.reference_db} --ref_path {params.ref_path} \
-                --max_ee {params.max_ee} --min_asv_totalfreq {params.min_freq} \
+                --max_ee {params.max_ee} --min_asv_totalfreq {params.min_freq} {params.single_end_flag} \
                 --out {output.table} > {log} 2>&1
         else
             mkdir -p $(dirname {output.table})

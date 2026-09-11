@@ -32,7 +32,7 @@ suppressPackageStartupMessages({
 
 opt_list <- list(
   make_option("--input_r1", type = "character"),   # comma-separated R1 fastq.gz paths
-  make_option("--input_r2", type = "character"),   # comma-separated R2 fastq.gz paths, same order
+  make_option("--input_r2", type = "character", default = ""),   # comma-separated R2 fastq.gz paths, same order; ignored if --single_end
   make_option("--samples", type = "character"),     # comma-separated sample names, same order
   make_option("--gene", type = "character", default = "12S"),
   make_option("--reference_db", type = "character", default = "mitofish"),
@@ -40,14 +40,24 @@ opt_list <- list(
   make_option("--max_ee", type = "double", default = 2.0),
   make_option("--min_asv_totalfreq", type = "integer", default = 5),
   make_option("--build_tree", type = "logical", default = TRUE, action = "store_true"),
+  # Real need, not speculative: iSeq/short-run Illumina data (150 bp reads)
+  # on an amplicon whose length leaves no reliable overlap (e.g. the Leray
+  # COI fragment, ~313 bp -- 150+150 doesn't reach it) can't be merged at
+  # all. Standard, documented DADA2 practice for this case is to drop R2 and
+  # classify off R1 alone (real ASVs, just forward-only) rather than force a
+  # merge that would fail or silently keep only spurious short overlaps.
+  make_option("--single_end", type = "logical", default = FALSE, action = "store_true"),
   make_option("--out", type = "character")
 )
 opt <- parse_args(OptionParser(option_list = opt_list))
 
 r1_files <- strsplit(opt$input_r1, ",")[[1]]
-r2_files <- strsplit(opt$input_r2, ",")[[1]]
 sample_names <- strsplit(opt$samples, ",")[[1]]
-stopifnot(length(r1_files) == length(sample_names), length(r2_files) == length(sample_names))
+stopifnot(length(r1_files) == length(sample_names))
+if (!isTRUE(opt$single_end)) {
+  r2_files <- strsplit(opt$input_r2, ",")[[1]]
+  stopifnot(length(r2_files) == length(sample_names))
+}
 
 # Real validation, not a silent wrong answer -- same spirit as
 # dada2_pacbio.R's own checks, kept generic here since this script's
@@ -64,9 +74,7 @@ dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 filt_dir <- file.path(out_dir, "filtered")
 dir.create(filt_dir, showWarnings = FALSE, recursive = TRUE)
 filt_r1 <- file.path(filt_dir, paste0(sample_names, "_R1_filt.fastq.gz"))
-filt_r2 <- file.path(filt_dir, paste0(sample_names, "_R2_filt.fastq.gz"))
 names(filt_r1) <- sample_names
-names(filt_r2) <- sample_names
 
 # Standard DADA2 paired-end tutorial parameters (Callahan et al. 2016's own
 # workflow): truncQ=2 truncates each read at the first base with quality <=2
@@ -78,34 +86,53 @@ names(filt_r2) <- sample_names
 # truncLen would need per-gene tuning DADA2's own docs don't provide a single
 # safe default for -- maxEE is the length-agnostic quality gate used instead,
 # same choice dada2_pacbio.R already makes for its own reasons.
-filterAndTrim(r1_files, filt_r1, r2_files, filt_r2,
-              maxEE = c(opt$max_ee, opt$max_ee), truncQ = 2, minLen = 50,
-              rm.phix = TRUE, compress = TRUE, multithread = TRUE)
+if (isTRUE(opt$single_end)) {
+  # Real, requested need (2026-09-11): iSeq 150 bp reads on an amplicon that
+  # doesn't leave enough overlap to merge (e.g. the ~313 bp Leray COI
+  # fragment -- 150+150 never reaches it) -- R2 is ignored entirely rather
+  # than fed to a mergePairs() that would fail or keep only spurious
+  # short-overlap junk. Real ASVs still come out, just forward-read-only
+  # (shorter, less taxonomic resolution than a merged read, but a documented
+  # and standard DADA2 fallback, not a hack).
+  filterAndTrim(r1_files, filt_r1, maxEE = opt$max_ee, truncQ = 2, minLen = 50,
+                rm.phix = TRUE, compress = TRUE, multithread = TRUE)
+} else {
+  filt_r2 <- file.path(filt_dir, paste0(sample_names, "_R2_filt.fastq.gz"))
+  names(filt_r2) <- sample_names
+  filterAndTrim(r1_files, filt_r1, r2_files, filt_r2,
+                maxEE = c(opt$max_ee, opt$max_ee), truncQ = 2, minLen = 50,
+                rm.phix = TRUE, compress = TRUE, multithread = TRUE)
+}
 
-present <- file.exists(filt_r1) & file.size(filt_r1) > 0 &
-           file.exists(filt_r2) & file.size(filt_r2) > 0
+present <- file.exists(filt_r1) & file.size(filt_r1) > 0
+if (!isTRUE(opt$single_end)) present <- present & file.exists(filt_r2) & file.size(filt_r2) > 0
 filt_r1 <- filt_r1[present]
-filt_r2 <- filt_r2[present]
+if (!isTRUE(opt$single_end)) filt_r2 <- filt_r2[present]
 sample_names <- sample_names[present]
 if (length(filt_r1) == 0) stop("No sample survived DADA2's filterAndTrim -- check --max_ee / upstream QC.")
 
-# Forward/reverse error models learned separately (standard paired-end
-# practice -- R1/R2 have genuinely different real error profiles on
-# Illumina, R2 typically noisier).
+# Error model(s): forward-only for --single_end, forward+reverse learned
+# separately otherwise (standard paired-end practice -- R1/R2 have genuinely
+# different real error profiles on Illumina, R2 typically noisier).
 errF <- learnErrors(filt_r1, multithread = TRUE, verbose = 1)
-errR <- learnErrors(filt_r2, multithread = TRUE, verbose = 1)
-
 dadaF <- dada(filt_r1, err = errF, multithread = TRUE, verbose = 1)
-dadaR <- dada(filt_r2, err = errR, multithread = TRUE, verbose = 1)
-if (length(filt_r1) == 1) { dadaF <- list(dadaF); dadaR <- list(dadaR) }
+if (length(filt_r1) == 1) dadaF <- list(dadaF)
 names(dadaF) <- sample_names
-names(dadaR) <- sample_names
 
-mergers <- mergePairs(dadaF, filt_r1, dadaR, filt_r2, verbose = TRUE)
-if (length(filt_r1) == 1) mergers <- list(mergers)
-names(mergers) <- sample_names
+if (isTRUE(opt$single_end)) {
+  seqtab <- makeSequenceTable(dadaF)
+} else {
+  errR <- learnErrors(filt_r2, multithread = TRUE, verbose = 1)
+  dadaR <- dada(filt_r2, err = errR, multithread = TRUE, verbose = 1)
+  if (length(filt_r1) == 1) dadaR <- list(dadaR)
+  names(dadaR) <- sample_names
 
-seqtab <- makeSequenceTable(mergers)
+  mergers <- mergePairs(dadaF, filt_r1, dadaR, filt_r2, verbose = TRUE)
+  if (length(filt_r1) == 1) mergers <- list(mergers)
+  names(mergers) <- sample_names
+
+  seqtab <- makeSequenceTable(mergers)
+}
 
 # The one real algorithmic difference from dada2_pacbio.R: short Illumina
 # reads exact-dereplicate reliably (unlike raw long reads, see this script's
