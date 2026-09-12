@@ -889,16 +889,17 @@
   },
   "special_overrides": {},
   "default_threads": {
-    "nanoplot": 4,
+    "nanoplot": 8,
     "filtlong": 1,
-    "cutadapt": 4,
-    "vsearch_chimera": 4,
-    "dada2_pacbio": 4,
-    "emu_ont": 8,
-    "picrust2": 4,
-    "fastp": 4,
-    "cutadapt_short": 4,
-    "dada2_illumina": 4
+    "cutadapt": 16,
+    "vsearch_chimera": 16,
+    "dada2_pacbio": 48,
+    "emu_ont": 16,
+    "emu_tree": 8,
+    "picrust2": 16,
+    "fastp": 16,
+    "cutadapt_short": 16,
+    "dada2_illumina": 48
   },
   "amplicon_presets": [
     {

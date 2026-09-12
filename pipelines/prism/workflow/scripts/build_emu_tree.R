@@ -36,7 +36,8 @@ opt_list <- list(
   make_option("--species_counts", type = "character"),  # tax_id x sample counts (join_emu_tables.py --out_species)
   make_option("--ref_fasta", type = "character"),        # Emu db's own species_taxid.fasta (tax_id-headered)
   make_option("--taxonomy", type = "character"),         # Emu db's own taxonomy.tsv (tax_id -> rank columns)
-  make_option("--out_dir", type = "character")
+  make_option("--out_dir", type = "character"),
+  make_option("--threads", type = "integer", default = 4)
 )
 opt <- parse_args(OptionParser(option_list = opt_list))
 
@@ -77,7 +78,7 @@ detected_seqs <- as.character(ref_seqs[matched])
 names(detected_seqs) <- ref_tax_ids[matched]
 detected_seqs <- detected_seqs[!duplicated(names(detected_seqs))]
 
-tree <- build_tree_from_sequences(detected_seqs, label = "detected reference species")
+tree <- build_tree_from_sequences(detected_seqs, label = "detected reference species", processors = opt$threads)
 if (!is.null(tree)) {
   write.tree(tree, file.path(opt$out_dir, "prism_tree.nwk"))
   cat(sprintf("build_emu_tree: wrote prism_tree.nwk (%d tips)\n", length(tree$tip.label)))

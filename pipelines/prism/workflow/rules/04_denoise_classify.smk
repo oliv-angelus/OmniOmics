@@ -199,7 +199,7 @@ rule dada2_pacbio:
             Rscript {workflow.basedir}/workflow/scripts/dada2_pacbio.R \
                 --input {params.input_list} --samples {params.sample_list} \
                 --gene {params.gene} --reference_db {params.reference_db} --ref_path {params.ref_path} \
-                --max_ee {params.max_ee} --min_asv_totalfreq {params.min_freq} \
+                --max_ee {params.max_ee} --min_asv_totalfreq {params.min_freq} --threads {threads} \
                 --out {output.table} > {log} 2>&1
         else
             mkdir -p $(dirname {output.table})
@@ -344,13 +344,18 @@ rule emu_tree:
     params:
         out_dir="results/04_DENOISE/emu"
     conda: "../envs/dada2.yaml"  # reuses the same DECIPHER/phangorn/Biostrings/optparse stack already pinned there, not a separate env
+    # .get, not config["threads"]["emu_tree"] -- this key didn't exist in
+    # this pipeline's threads: schema before 2026-09-11 (the rule used to
+    # have no threads: at all, silently defaulting to 1), added alongside
+    # the real --threads passthrough to build_tree_from_sequences below.
+    threads: config["threads"].get("emu_tree", 4)
     log: "logs/denoise/emu_tree.log"
     shell:
         """
         if [ "{PLATFORM}" == "ont" ]; then
             Rscript {workflow.basedir}/workflow/scripts/build_emu_tree.R \
                 --species_counts {input.species_counts} --ref_fasta {input.ref_seqs} \
-                --taxonomy {input.ref_tax} --out_dir {params.out_dir} > {log} 2>&1
+                --taxonomy {input.ref_tax} --out_dir {params.out_dir} --threads {threads} > {log} 2>&1
         else
             echo "emu_tree: skipped (platform={PLATFORM})" > {log}
         fi
@@ -403,7 +408,7 @@ rule dada2_illumina:
                 --input_r1 {params.r1_list} --input_r2 {params.r2_list} --samples {params.sample_list} \
                 --gene {params.gene} --reference_db {params.reference_db} --ref_path {params.ref_path} \
                 --max_ee {params.max_ee} --min_asv_totalfreq {params.min_freq} {params.single_end_flag} \
-                --out {output.table} > {log} 2>&1
+                --threads {threads} --out {output.table} > {log} 2>&1
         else
             mkdir -p $(dirname {output.table})
             touch {output.table} {output.asv_fasta} {output.asv_taxonomy} {output.asv_counts}

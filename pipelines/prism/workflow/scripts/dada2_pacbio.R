@@ -57,6 +57,13 @@ opt_list <- list(
   make_option("--max_ee", type = "double", default = 2.0),
   make_option("--min_asv_totalfreq", type = "integer", default = 5),
   make_option("--build_tree", type = "logical", default = TRUE, action = "store_true"),
+  # Real fix (2026-09-11): every multithread= below used to be a bare TRUE
+  # (DADA2's "auto-detect all system cores" convention) instead of the exact
+  # count Snakemake/PBS actually reserved for this job -- on a shared
+  # cluster node this real oversubscription risk (the R process guessing at
+  # cores instead of using what it was actually given) is worth removing
+  # even without confirmed proof PBS's cgroups don't already cap it.
+  make_option("--threads", type = "integer", default = 4),
   make_option("--out", type = "character")
 )
 opt <- parse_args(OptionParser(option_list = opt_list))
@@ -91,7 +98,7 @@ names(filt_files) <- sample_names
 # Filtlong and primers already removed by cutadapt upstream, this is DADA2's
 # own denoising-specific EE gate.
 filterAndTrim(input_files, filt_files, maxEE = opt$max_ee, truncQ = 0,
-              minLen = 20, rm.phix = FALSE, compress = TRUE, multithread = TRUE)
+              minLen = 20, rm.phix = FALSE, compress = TRUE, multithread = opt$threads)
 
 present <- file.exists(filt_files) & file.size(filt_files) > 0
 filt_files <- filt_files[present]
@@ -102,9 +109,9 @@ if (length(filt_files) == 0) stop("No sample survived DADA2's filterAndTrim -- c
 # estimated conditioned on the read's own reported quality, using the
 # self-consistency loop dada2::learnErrors already implements generically --
 # no separate PacBio-only function needed as of current DADA2 releases.
-errors <- learnErrors(filt_files, multithread = TRUE, verbose = 1)
+errors <- learnErrors(filt_files, multithread = opt$threads, verbose = 1)
 
-dada_out <- dada(filt_files, err = errors, multithread = TRUE, verbose = 1)
+dada_out <- dada(filt_files, err = errors, multithread = opt$threads, verbose = 1)
 if (length(filt_files) == 1) dada_out <- list(dada_out)
 names(dada_out) <- sample_names
 
@@ -116,7 +123,7 @@ seqtab <- makeSequenceTable(dada_out)
 keep <- colSums(seqtab) >= opt$min_asv_totalfreq
 seqtab <- seqtab[, keep, drop = FALSE]
 
-tax <- assignTaxonomy(seqtab, ref_fasta, multithread = TRUE, verbose = TRUE)
+tax <- assignTaxonomy(seqtab, ref_fasta, multithread = opt$threads, verbose = TRUE)
 
 # DADA2's assignTaxonomy returns one column per rank, unprefixed values
 # (e.g. "Bacteria", not "d__Bacteria") -- re-add the d__/p__/c__/o__/f__/g__/
@@ -159,7 +166,7 @@ write.table(asv_counts_df, file.path(out_dir, "prism_asv_counts.tsv"), sep = "\t
 # ASVs and isn't needed if the user only wants the abundance table.
 if (isTRUE(opt$build_tree)) {
   names(asv_seqs) <- asv_ids
-  tree <- build_tree_from_sequences(asv_seqs, label = "ASVs")
+  tree <- build_tree_from_sequences(asv_seqs, label = "ASVs", processors = opt$threads)
   if (!is.null(tree)) {
     write.tree(tree, file.path(out_dir, "prism_tree.nwk"))
     cat(sprintf("dada2_pacbio: wrote prism_tree.nwk (%d tips)\n", length(tree$tip.label)))

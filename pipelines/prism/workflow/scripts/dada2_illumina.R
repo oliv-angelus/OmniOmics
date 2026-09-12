@@ -47,6 +47,10 @@ opt_list <- list(
   # classify off R1 alone (real ASVs, just forward-only) rather than force a
   # merge that would fail or silently keep only spurious short overlaps.
   make_option("--single_end", type = "logical", default = FALSE, action = "store_true"),
+  # Real fix (2026-09-11), same as dada2_pacbio.R: every multithread= below
+  # used to be a bare TRUE (DADA2's "auto-detect all system cores"
+  # convention) instead of the exact count Snakemake/PBS actually reserved.
+  make_option("--threads", type = "integer", default = 4),
   make_option("--out", type = "character")
 )
 opt <- parse_args(OptionParser(option_list = opt_list))
@@ -95,13 +99,13 @@ if (isTRUE(opt$single_end)) {
   # (shorter, less taxonomic resolution than a merged read, but a documented
   # and standard DADA2 fallback, not a hack).
   filterAndTrim(r1_files, filt_r1, maxEE = opt$max_ee, truncQ = 2, minLen = 50,
-                rm.phix = TRUE, compress = TRUE, multithread = TRUE)
+                rm.phix = TRUE, compress = TRUE, multithread = opt$threads)
 } else {
   filt_r2 <- file.path(filt_dir, paste0(sample_names, "_R2_filt.fastq.gz"))
   names(filt_r2) <- sample_names
   filterAndTrim(r1_files, filt_r1, r2_files, filt_r2,
                 maxEE = c(opt$max_ee, opt$max_ee), truncQ = 2, minLen = 50,
-                rm.phix = TRUE, compress = TRUE, multithread = TRUE)
+                rm.phix = TRUE, compress = TRUE, multithread = opt$threads)
 }
 
 present <- file.exists(filt_r1) & file.size(filt_r1) > 0
@@ -114,16 +118,16 @@ if (length(filt_r1) == 0) stop("No sample survived DADA2's filterAndTrim -- chec
 # Error model(s): forward-only for --single_end, forward+reverse learned
 # separately otherwise (standard paired-end practice -- R1/R2 have genuinely
 # different real error profiles on Illumina, R2 typically noisier).
-errF <- learnErrors(filt_r1, multithread = TRUE, verbose = 1)
-dadaF <- dada(filt_r1, err = errF, multithread = TRUE, verbose = 1)
+errF <- learnErrors(filt_r1, multithread = opt$threads, verbose = 1)
+dadaF <- dada(filt_r1, err = errF, multithread = opt$threads, verbose = 1)
 if (length(filt_r1) == 1) dadaF <- list(dadaF)
 names(dadaF) <- sample_names
 
 if (isTRUE(opt$single_end)) {
   seqtab <- makeSequenceTable(dadaF)
 } else {
-  errR <- learnErrors(filt_r2, multithread = TRUE, verbose = 1)
-  dadaR <- dada(filt_r2, err = errR, multithread = TRUE, verbose = 1)
+  errR <- learnErrors(filt_r2, multithread = opt$threads, verbose = 1)
+  dadaR <- dada(filt_r2, err = errR, multithread = opt$threads, verbose = 1)
   if (length(filt_r1) == 1) dadaR <- list(dadaR)
   names(dadaR) <- sample_names
 
@@ -139,12 +143,12 @@ if (isTRUE(opt$single_end)) {
 # header), so DADA2's own removeBimeraDenovo() has real abundance signal to
 # work with here -- no external VSEARCH chimera step needed for this
 # read type (see 03_chimera.smk's header comment).
-seqtab <- removeBimeraDenovo(seqtab, method = "consensus", multithread = TRUE, verbose = TRUE)
+seqtab <- removeBimeraDenovo(seqtab, method = "consensus", multithread = opt$threads, verbose = TRUE)
 
 keep <- colSums(seqtab) >= opt$min_asv_totalfreq
 seqtab <- seqtab[, keep, drop = FALSE]
 
-tax <- assignTaxonomy(seqtab, ref_fasta, multithread = TRUE, verbose = TRUE)
+tax <- assignTaxonomy(seqtab, ref_fasta, multithread = opt$threads, verbose = TRUE)
 
 # Same GTDB-style rank-prefix convention every other PRISM engine's output
 # already uses (see dada2_pacbio.R's own identical block) -- keeps the final
@@ -178,7 +182,7 @@ write.table(asv_counts_df, file.path(out_dir, "prism_asv_counts.tsv"), sep = "\t
 # 05_functional_inference.smk).
 if (isTRUE(opt$build_tree)) {
   names(asv_seqs) <- asv_ids
-  tree <- build_tree_from_sequences(asv_seqs, label = "ASVs")
+  tree <- build_tree_from_sequences(asv_seqs, label = "ASVs", processors = opt$threads)
   if (!is.null(tree)) {
     write.tree(tree, file.path(out_dir, "prism_tree.nwk"))
     cat(sprintf("dada2_illumina: wrote prism_tree.nwk (%d tips)\n", length(tree$tip.label)))

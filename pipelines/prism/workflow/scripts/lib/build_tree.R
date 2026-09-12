@@ -13,8 +13,16 @@
 #
 #' @param seqs Named character vector of DNA sequences (names become tip labels).
 #' @param label A short string used only in log messages (e.g. "3 ASVs", "12 detected species").
+#' @param processors Cores to give DECIPHER::AlignSeqs (real speedup for many
+#'   sequences -- DECIPHER's own alignment IS multithreaded). NULL lets
+#'   DECIPHER auto-detect (its own default). NOTE: phangorn's optim.pml (the
+#'   GTR+G+I ML refinement below) has no multicore support in this call at
+#'   all -- more processors here does NOT speed that step up; found for real
+#'   running a 4569-ASV COI tree (2026-09-11) that ML refinement dominates
+#'   wall time regardless of core count once past a few hundred tips. Not
+#'   fixable by adding threads; a real, current limitation of the method.
 #' @return An ape phylo tree object, or NULL if fewer than 3 sequences were given.
-build_tree_from_sequences <- function(seqs, label = "sequences") {
+build_tree_from_sequences <- function(seqs, label = "sequences", processors = NULL) {
   if (length(seqs) < 3) {
     cat(sprintf("build_tree_from_sequences: skipping (%d %s, need >=3 for a meaningful tree)\n",
                 length(seqs), label))
@@ -28,7 +36,7 @@ build_tree_from_sequences <- function(seqs, label = "sequences") {
               length(seqs), label))
   seqs_dna <- DNAStringSet(seqs)
   names(seqs_dna) <- names(seqs)
-  alignment <- AlignSeqs(seqs_dna, anchor = NA, verbose = FALSE)
+  alignment <- AlignSeqs(seqs_dna, anchor = NA, verbose = FALSE, processors = processors)
 
   phang_align <- phyDat(as(alignment, "matrix"), type = "DNA")
   dm <- dist.ml(phang_align)
