@@ -299,8 +299,26 @@ rule join_emu:
         pairs=lambda wc, input: [f"{s}:{t}" for s, t in zip(LONG_SAMPLES, input.tables)]
     log: "logs/denoise/join_emu.log"
     shell:
-        "python3 {workflow.basedir}/workflow/scripts/join_emu_tables.py "
-        "--inputs {params.pairs} --out {output.table} --out_species {output.species} > {log} 2>&1"
+        """
+        if [ -n "{params.pairs}" ]; then
+            python3 {workflow.basedir}/workflow/scripts/join_emu_tables.py \
+                --inputs {params.pairs} --out {output.table} --out_species {output.species} > {log} 2>&1
+        else
+            # Real bug, caught by a real run (2026-09-11, coi-12s/coi project
+            # -- zero long-read samples, a genuinely short-read-only run):
+            # join_emu_tables.py's own --inputs argparse requires at least
+            # one value (nargs='+'), so an empty {params.pairs} list (LONG_SAMPLES
+            # is genuinely empty here, not just each entry being an empty
+            # touch-file like the PacBio-vs-ONT platform split already
+            # tolerated) crashed with "error: argument --inputs: expected at
+            # least one argument" instead of the intended no-op. Same
+            # empty-guard idiom dada2_illumina/dada2_pacbio/emu_build_db/
+            # emu_classify already use for their own "nothing to do" case.
+            mkdir -p $(dirname {output.table})
+            touch {output.table} {output.species}
+            echo "join_emu: skipped -- no long-read samples in this run" > {log}
+        fi
+        """
 
 # ---------------------------------------------------------------------------
 # ONT/Emu path's phylogenetic tree -- Emu is reference-only EM classification

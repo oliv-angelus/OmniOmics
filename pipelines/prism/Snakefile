@@ -43,7 +43,18 @@ SHORT_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] == "short"]
 # runs (dada2_pacbio vs emu_ont); the other one's rule no-ops (touches empty
 # outputs), the same if/else-touch idiom fastp/filtlong already use for their
 # own short/long branching.
-PLATFORM = config.get("long_read_platform", {}).get("id", "ont")
+#
+# "none" (not the default-to-"ont" this used to be) when there are zero
+# long-read samples -- real bug, caught by a real run (2026-09-11,
+# coi-12s/coi, a genuinely short-read-only project with no long_read_platform
+# key in its config at all): the old unconditional default silently made
+# PLATFORM=="ont" true, which is a real value every emu_build_db/emu_tree
+# shell guard checks -- so emu_build_db ran FOR REAL (not its touch-empty
+# branch) and built a complete, genuinely unused Emu index from MIDORI2's
+# full 1.8M-sequence COI database, wasted real HPC time/disk for a run that
+# will only ever use dada2_illumina. "none" never matches "ont" or
+# "pacbio_hifi", so every PLATFORM-gated rule correctly no-ops instead.
+PLATFORM = config.get("long_read_platform", {}).get("id", "ont") if LONG_SAMPLES else "none"
 
 wildcard_constraints:
     sample="[^/]+"
