@@ -21,7 +21,15 @@ rule bakta:
     shell:
         """
         rm -rf {output.outdir}
-        bakta --db {params.db} --output {output.outdir} --prefix {wildcards.sample} --threads {threads} {params.extra} {input.fa} > {log} 2>&1
+        # --keep-contig-headers: achado real 2026-09-12 -- sem isso, Bakta
+        # renomeia todo contig pra "contig_1"/"contig_2"/... (--locus default
+        # 'contig'), e o .gff3 resultante não bate mais com os IDs reais de
+        # final_polished.fa. amrfinder_sample e antismash (abaixo, neste
+        # arquivo) recebem os dois -- o .gff3 do Bakta E o final_polished.fa
+        # original -- então IDs divergentes quebram os dois com "GFF contig
+        # id is not in the DNA FASTA file" / "No GFF3 record IDs match any
+        # sequence record IDs".
+        bakta --db {params.db} --output {output.outdir} --prefix {wildcards.sample} --keep-contig-headers --threads {threads} {params.extra} {input.fa} > {log} 2>&1
         """
 
 rule eggnog_sample:
