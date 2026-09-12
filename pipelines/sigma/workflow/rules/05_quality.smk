@@ -41,6 +41,7 @@ rule gunc:
     output:
         outdir=directory("results/05_QUALITY/{sample}/gunc")
     params:
+        db=config["databases"]["gunc"],
         extra=config["params"]["gunc"]
     threads: config["threads"]["gunc"]
     conda: "../envs/gunc.yaml"
@@ -48,5 +49,15 @@ rule gunc:
     shell:
         """
         mkdir -p {output.outdir}
-        gunc run --input_file {input.fa} --out_dir {output.outdir} --threads {threads} {params.extra} > {log} 2>&1
+        # mesma lógica do MAGMA's gunc (05_mag_refine.smk) -- gunc run precisa
+        # de -d apontando pro .dmnd de verdade, não só a pasta do banco (nome
+        # varia por versão do banco). Achado real 2026-09-12: essa regra do
+        # SIGMA nunca teve isso -- rodava sem -d nenhum e falhava com
+        # "Database file (-r/--db_file) is required".
+        db_file=$(find {params.db} -maxdepth 1 -name "*.dmnd" | head -1)
+        if [ -z "$db_file" ]; then
+            echo "ERRO: nenhum arquivo .dmnd encontrado em {params.db} (databases.gunc no config.yaml)" > {log}
+            exit 1
+        fi
+        gunc run --input_file {input.fa} --out_dir {output.outdir} -d "$db_file" --threads {threads} {params.extra} > {log} 2>&1
         """

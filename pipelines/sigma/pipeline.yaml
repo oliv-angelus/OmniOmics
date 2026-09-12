@@ -2321,6 +2321,113 @@
       ],
       "config_key": "gtdbtk"
     },
+    "gunc": {
+      "name": "GUNC",
+      "description": {
+        "en": "Genome chimerism and contamination detection database",
+        "pt": "Banco para detecção de quimerismo e contaminação em genomas"
+      },
+      "citation": [
+        {
+          "text": "Mende DR, Letunic I, Maistrenko OM, et al. proGenomes2: an improved database for accurate and consistent habitat, taxonomic and functional annotations of prokaryotic genomes. Nucleic Acids Research. 2020;48(D1):D621-D625.",
+          "doi": "10.1093/nar/gkz1002"
+        }
+      ],
+      "citation_by_option": {
+        "gunc_progenomes21": [
+          {
+            "text": "Mende DR, Letunic I, Maistrenko OM, et al. proGenomes2: an improved database for accurate and consistent habitat, taxonomic and functional annotations of prokaryotic genomes. Nucleic Acids Research. 2020;48(D1):D621-D625.",
+            "doi": "10.1093/nar/gkz1002"
+          }
+        ],
+        "gunc_progenomes3": [
+          {
+            "text": "Fullam A, Letunic I, Schmidt TSB, et al. proGenomes3: approaching one million accurately and consistently annotated high-quality prokaryotic genomes. Nucleic Acids Research. 2023;51(D1):D760-D766.",
+            "doi": "10.1093/nar/gkac1078"
+          }
+        ],
+        "gunc_gtdb95": [
+          {
+            "text": "Parks DH, Chuvochina M, Waite DW, et al. A standardized bacterial taxonomy based on genome phylogeny substantially revises the tree of life. Nature Biotechnology. 2018;36:996-1004.",
+            "doi": "10.1038/nbt.4229"
+          },
+          {
+            "text": "Parks DH, Chuvochina M, Chaumeil PA, Rinke C, Mussig AJ, Hugenholtz P. A complete domain-to-species taxonomy for Bacteria and Archaea. Nature Biotechnology. 2020;38:1079-1086.",
+            "doi": "10.1038/s41587-020-0501-8"
+          }
+        ],
+        "gunc_gtdb214": [
+          {
+            "text": "Parks DH, Chuvochina M, Waite DW, et al. A standardized bacterial taxonomy based on genome phylogeny substantially revises the tree of life. Nature Biotechnology. 2018;36:996-1004.",
+            "doi": "10.1038/nbt.4229"
+          },
+          {
+            "text": "Parks DH, Chuvochina M, Chaumeil PA, Rinke C, Mussig AJ, Hugenholtz P. A complete domain-to-species taxonomy for Bacteria and Archaea. Nature Biotechnology. 2020;38:1079-1086.",
+            "doi": "10.1038/s41587-020-0501-8"
+          }
+        ]
+      },
+      "setting_key": "db_gunc",
+      "size_gb": 13,
+      "detect_files": [
+        "gunc_db_progenomes2.1.dmnd",
+        "gunc_db_progenomes3.dmnd",
+        "gunc_db_gtdb95.dmnd",
+        "gunc_db_gtdb214.dmnd"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "gunc_progenomes21",
+          "label": "proGenomes 2.1 (~13 GB) ★ Recommended",
+          "size_gb": 13.0,
+          "description": {
+            "en": "Curated prokaryotic genomes — recommended for most metagenomes",
+            "pt": "Genomas procarióticos curados — recomendado para a maioria dos metagenomas"
+          },
+          "url": "https://zenodo.org/records/19631736/files/gunc_db_progenomes2.1.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        },
+        {
+          "id": "gunc_progenomes3",
+          "label": "proGenomes 3 (~17 GB)",
+          "size_gb": 17.0,
+          "description": {
+            "en": "Latest proGenomes release",
+            "pt": "Versão mais recente do proGenomes"
+          },
+          "url": "https://zenodo.org/records/19631883/files/gunc_db_progenomes3.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        },
+        {
+          "id": "gunc_gtdb95",
+          "label": "GTDB r95 (~28 GB)",
+          "size_gb": 28.0,
+          "description": {
+            "en": "GTDB-based reference — higher taxonomic resolution",
+            "pt": "Referência baseada no GTDB — maior resolução taxonômica"
+          },
+          "url": "https://zenodo.org/records/19631804/files/gunc_db_gtdb95.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        },
+        {
+          "id": "gunc_gtdb214",
+          "label": "GTDB r214 (~38 GB)",
+          "size_gb": 38.0,
+          "description": {
+            "en": "Latest GTDB release",
+            "pt": "Versão mais recente do GTDB"
+          },
+          "url": "https://zenodo.org/records/19632326/files/gunc_db_gtdb214.dmnd.gz",
+          "extract": false,
+          "gunzip": true
+        }
+      ],
+      "config_key": "gunc"
+    },
     "amrfinder": {
       "name": "AMRFinderPlus",
       "description": {

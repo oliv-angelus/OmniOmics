@@ -2,6 +2,15 @@ import pandas as pd
 
 configfile: "config/config.yaml"
 
+# Achado real 2026-09-12: esta diretiva nunca existiu no SIGMA (só MAGMA e
+# PRISM tinham) -- primeira execução real do SIGMA escreveu tudo em
+# SIGMA-root/pipeline/results/ (a pasta base do pipeline, compartilhada
+# entre TODOS os projetos) em vez de output_root, misturando saída de
+# runs diferentes e causando falhas reais (bakta/isescan/gunc lendo
+# input contaminado de uma tentativa anterior). Ver o comentário
+# equivalente no Snakefile do MAGMA para o racional completo.
+workdir: config.get("output_root", ".")
+
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
 SAMPLES = samples.index.tolist()
 LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]

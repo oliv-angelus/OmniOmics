@@ -1,5 +1,9 @@
 import pandas as pd
 
+# Achado real 2026-09-12: faltava aqui (só MAGMA e PRISM tinham) -- ver o
+# comentário equivalente no Snakefile do MAGMA para o racional completo.
+workdir: config.get("output_root", ".")
+
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
 SAMPLES = samples.index.tolist()
 
