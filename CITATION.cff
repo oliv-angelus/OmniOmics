@@ -7,7 +7,7 @@ authors:
     family-names: "Barbosa de Oliveira"
     orcid: "https://orcid.org/0000-0003-0831-447X"
     affiliation: "Programa de Pós-Graduação em Genética e Biologia Molecular, Universidade Federal do Pará (UFPA), Belém, PA, Brazil"
-version: "0.0.7-alpha"
+version: "0.0.8-alpha"
 date-released: "2026-09-12"
 license: MIT
 repository-code: "https://github.com/oliv-angelus/OmniOmics"

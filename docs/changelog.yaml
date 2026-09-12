@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "0.0.8-alpha"
+  date: 2026-09-12
+  entries:
+    - pt: "**A construção da árvore filogenética do PRISM (caminhos DADA2 e Emu) agora usa FastTree 2**, em vez do antigo alinhamento DECIPHER seguido de refinamento por máxima verossimilhança do phangorn. O passo de refinamento antigo não usava mais de um núcleo e ficava extremamente lento com muitas sequências (milhares de ASVs ou espécies detectadas) — o FastTree 2 escala quase linearmente e usa multithreading de verdade."
+      en: "**PRISM's phylogenetic tree building (both the DADA2 and Emu paths) now uses FastTree 2**, instead of the previous DECIPHER alignment followed by phangorn's maximum-likelihood refinement. The old refinement step had no multicore support at all and became extremely slow with many sequences (thousands of ASVs or detected species) — FastTree 2 scales near-linearly and uses real multithreading."
+
 - version: "0.0.4-alpha"
   date: 2026-09-07
   entries:
