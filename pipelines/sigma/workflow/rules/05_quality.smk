@@ -50,14 +50,24 @@ rule gunc:
         """
         mkdir -p {output.outdir}
         # mesma lógica do MAGMA's gunc (05_mag_refine.smk) -- gunc run precisa
-        # de -d apontando pro .dmnd de verdade, não só a pasta do banco (nome
-        # varia por versão do banco). Achado real 2026-09-12: essa regra do
-        # SIGMA nunca teve isso -- rodava sem -d nenhum e falhava com
-        # "Database file (-r/--db_file) is required".
+        # de -r/--db_file apontando pro .dmnd de verdade, não só a pasta do
+        # banco (nome varia por versão do banco). Achado real 2026-09-12,
+        # em 2 passadas:
+        # 1) essa regra nunca tinha isso -- rodava sem banco nenhum e
+        #    falhava com "Database file (-r/--db_file) is required".
+        # 2) primeira correção usou "-d" pro banco, mas -d é o flag CURTO
+        #    de --input_dir (confirmado no argparse real do gunc.py) --
+        #    conflita com --input_file (os dois são do mesmo grupo
+        #    mutuamente exclusivo), erro real: "argument -d/--input_dir:
+        #    not allowed with argument -f/--input_file". Trocado pro flag
+        #    certo (-r) e pro flag certo de entrada pra 1 genoma só
+        #    (--input_fasta/-i, não --input_file/-f -- esse último espera
+        #    um arquivo de TEXTO com uma lista de caminhos, não um FASTA).
+        #    Mesmo engano estava no gunc do MAGMA, corrigido junto.
         db_file=$(find {params.db} -maxdepth 1 -name "*.dmnd" | head -1)
         if [ -z "$db_file" ]; then
             echo "ERRO: nenhum arquivo .dmnd encontrado em {params.db} (databases.gunc no config.yaml)" > {log}
             exit 1
         fi
-        gunc run --input_file {input.fa} --out_dir {output.outdir} -d "$db_file" --threads {threads} {params.extra} > {log} 2>&1
+        gunc run --input_fasta {input.fa} --out_dir {output.outdir} -r "$db_file" --threads {threads} {params.extra} > {log} 2>&1
         """

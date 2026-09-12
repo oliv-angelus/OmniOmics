@@ -77,18 +77,27 @@ rule gunc:
         """
         rm -rf {output.outdir}
         mkdir -p {output.outdir}
-        # gunc run needs -d pointing at the actual .dmnd file, not just the
-        # database folder -- its filename varies by database version
-        # (progenomes2.1.dmnd, gtdb_95.dmnd, ...), so it's resolved here
-        # instead of hardcoded. Fails loudly (not silently skipped) if the
-        # folder has no .dmnd, since a missing GUNC DB previously meant this
-        # rule ran with no -d at all and relied on gunc's own default search
-        # path, which is not guaranteed to be populated.
+        # gunc run needs -r/--db_file pointing at the actual .dmnd file, not
+        # just the database folder -- its filename varies by database
+        # version (progenomes2.1.dmnd, gtdb_95.dmnd, ...), so it's resolved
+        # here instead of hardcoded. Fails loudly (not silently skipped) if
+        # the folder has no .dmnd.
+        #
+        # Real bug found 2026-09-12 (writing SIGMA's copy of this rule,
+        # which surfaced the exact same mistake): `-d` is gunc's OWN short
+        # flag for --input_dir, not the database -- confirmed against
+        # gunc.py's real argparse (`-r`/`--db_file` is the database flag,
+        # entirely separate from `-d`/`--input_dir`/`-i`/`-f`). Passing
+        # `-d "$db_file"` here silently overwrote the real --input_dir value
+        # (argparse takes the last occurrence of a repeated flag) with the
+        # .dmnd path instead of setting the database -- confirmed with a
+        # real argparse.parse_args() test, not assumed. `db_file` (the
+        # variable) was never actually reaching gunc as the database.
         db_file=$(find {params.db} -maxdepth 1 -name "*.dmnd" | head -1)
         if [ -z "$db_file" ]; then
             echo "ERRO: nenhum arquivo .dmnd encontrado em {params.db} (databases.gunc no config.yaml)" > {log}
             exit 1
         fi
         gunc run --input_dir {input.bins} --file_suffix .fa --out_dir {output.outdir} \
-            -d "$db_file" --threads {threads} {params.extra} > {log} 2>&1
+            -r "$db_file" --threads {threads} {params.extra} > {log} 2>&1
         """
