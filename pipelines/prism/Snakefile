@@ -1,3 +1,6 @@
+import json
+import os
+
 import pandas as pd
 
 configfile: "config/config.yaml"
@@ -16,6 +19,37 @@ configfile: "config/config.yaml"
 # coi-12s real-data run's results/ into the shared PRISM-root/pipeline/
 # checkout instead of the project's own output_root).
 workdir: config.get("output_root", ".")
+
+# amplicon_preset_id: select a preset by id (pipeline.yaml's own
+# amplicon_presets list -- gene + reference_db + primers + length window,
+# already bundled consistently together) instead of hand-copying the whole
+# block into config.yaml. Real need, not speculative: on a cluster with no
+# app UI (config_engine.py's own preset expansion only runs inside the app),
+# writing every preset field by hand for each new project was found to be
+# genuinely error-prone and slow (2026-09-11, PRISM-HPC/tapajos). Only fires
+# when amplicon_preset (the full dict) isn't already provided directly -- an
+# explicit amplicon_preset: block always wins, same "manual override beats
+# resolved default" convention _gene()/_reference_db()/_cutadapt_primers
+# already use elsewhere in this pipeline. pipeline.yaml must be shipped
+# alongside the Snakefile for this to work (sync_pipeline_from_omniomics.sh
+# does this since the same day).
+if not config.get("amplicon_preset") and config.get("amplicon_preset_id"):
+    _manifest_path = os.path.join(workflow.basedir, "pipeline.yaml")
+    if not os.path.isfile(_manifest_path):
+        raise ValueError(
+            f"amplicon_preset_id was set but {_manifest_path} doesn't exist -- "
+            "pipeline.yaml needs to be shipped alongside the Snakefile for this to work."
+        )
+    with open(_manifest_path) as _f:
+        _manifest = json.load(_f)
+    _presets = {p["id"]: p for p in _manifest.get("amplicon_presets", [])}
+    _preset_id = config["amplicon_preset_id"]
+    if _preset_id not in _presets:
+        raise ValueError(
+            f"amplicon_preset_id '{_preset_id}' not found in {_manifest_path}'s "
+            f"amplicon_presets -- available ids: {sorted(_presets)}"
+        )
+    config["amplicon_preset"] = _presets[_preset_id]
 
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False).fillna("")
 SAMPLES = samples.index.tolist()
