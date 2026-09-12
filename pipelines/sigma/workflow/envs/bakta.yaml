@@ -3,4 +3,10 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bakta=1.11.3
+  # 1.11.3 -> 1.12.1: real bug found running SIGMA for real (2026-09-12) --
+  # 1.11.3 crashes with `AttributeError: 'str' object has no attribute
+  # 'decode'` in orf.detect_spurious() against any pyhmmer >=0.12 (bioconda's
+  # current release), since pyhmmer's hit.name switched from bytes to str.
+  # Bakta's own PR #421 (v1.12) is the fix -- upstream issue #424 is
+  # "wontfix" on bakta's 1.11.x side, has to be the newer bakta.
+  - bakta=1.12.1

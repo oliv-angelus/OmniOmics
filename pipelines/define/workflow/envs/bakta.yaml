@@ -3,4 +3,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - bakta=1.11.3
+  # ver o comentário no bakta.yaml do SIGMA -- mesmo bug real, mesmo fix.
+  - bakta=1.12.1
