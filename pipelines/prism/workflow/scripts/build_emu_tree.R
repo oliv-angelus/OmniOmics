@@ -11,7 +11,7 @@
 # small -- tens to low hundreds of species, not the whole tens-of-thousands
 # reference database) set of tax_ids actually DETECTED across the run's
 # cohort -- computationally bounded by what was found, not by database
-# size. Same DECIPHER align -> phangorn NJ -> GTR+G+I ML method as the
+# size. Same DECIPHER align -> FastTree2 GTR+CAT ML method as the
 # PacBio path (see lib/build_tree.R), reused rather than reimplemented.
 #
 # Real structural mirror of dada2_pacbio.R's own design: writes ASV-level-

@@ -18,9 +18,12 @@ dependencies:
   # own build era) fixes it -- confirmed via a real `library(dada2)` load
   # test, not just reading dependency metadata.
   - r-rcppparallel=5.1.9
-  # For phylogenetic tree construction (2026-08-07): DADA2/phyloseq's own
-  # real, documented method -- DECIPHER::AlignSeqs() + phangorn's NJ/GTR+G+I
-  # ML tree fit. See dada2_pacbio.R's header comment for the full citation
-  # trail (Wright 2016, Schliep 2011).
+  # For phylogenetic tree construction: DECIPHER::AlignSeqs() for the
+  # multiple alignment, then FastTree 2 (external binary, below) for the
+  # GTR+CAT ML tree itself. See lib/build_tree.R's header comment for the
+  # full method + citation trail and why this replaced phangorn on
+  # 2026-09-12 (phangorn's optim.pml doesn't scale past a few hundred tips).
   - bioconductor-decipher
-  - r-phangorn
+  - r-ape
+  # FastTreeMP (OpenMP multithreaded build) -- see lib/build_tree.R.
+  - fasttree
