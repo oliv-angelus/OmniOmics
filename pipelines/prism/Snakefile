@@ -2,6 +2,21 @@ import pandas as pd
 
 configfile: "config/config.yaml"
 
+# Where results/, logs/ and .snakemake/ (including --use-conda's own built
+# environments, unless --conda-prefix points them elsewhere) land for THIS
+# invocation. Optional and non-breaking: the app itself never hits this --
+# it always launches Snakemake with its own `--directory=<output_dir>` CLI
+# flag (backend/main.py), and a CLI --directory always wins over this
+# directive. This only takes effect for a direct/manual `snakemake` call
+# with no --directory of its own (e.g. PRISM-HPC on a cluster), giving a
+# config.yaml-driven way to point separate runs at separate output folders
+# instead of everything colliding into a single relative "results/" (real
+# gap found 2026-09-11, the same directive MAGMA's own Snakefile already
+# carries -- PRISM never had it, and it would have silently written the
+# coi-12s real-data run's results/ into the shared PRISM-root/pipeline/
+# checkout instead of the project's own output_root).
+workdir: config.get("output_root", ".")
+
 samples = pd.read_table(config["samples"]).set_index("sample", drop=False).fillna("")
 SAMPLES = samples.index.tolist()
 
