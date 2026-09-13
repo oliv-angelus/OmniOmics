@@ -23,7 +23,7 @@ dependencies:
   # GTR+CAT ML tree itself. See lib/build_tree.R's header comment for the
   # full method + citation trail and why this replaced phangorn on
   # 2026-09-12 (phangorn's optim.pml doesn't scale past a few hundred tips).
-  - bioconductor-decipher
-  - r-ape
+  - bioconductor-decipher=3.2.0
+  - r-ape=5.8_1
   # FastTreeMP (OpenMP multithreaded build) -- see lib/build_tree.R.
-  - fasttree
+  - fasttree=2.2.0

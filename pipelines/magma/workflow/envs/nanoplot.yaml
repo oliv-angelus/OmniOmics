@@ -3,4 +3,13 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - nanoplot
+  - nanoplot=1.48.0
+  # plotly/python-kaleido pinned explicitly (2026-09-12): the same solver
+  # that resolves this yaml already picked plotly=6.9.0 and
+  # python-kaleido=1.3.0 for real, currently-running MAGMA/DOGMA/SIGMA
+  # validation -- pinning captures that known-good real combination instead
+  # of leaving it to drift on a future solve. See prism/workflow/envs/qc.yaml
+  # for the real crash this class of bug caused there (nanoplot 1.44.1 +
+  # unpinned plotly 7.0.0, which removed figure_factory.create_2d_density).
+  - plotly=6.9.0
+  - python-kaleido=1.3.0
