@@ -169,11 +169,13 @@ rule consolidate_taxonomy:
         final_table = final_table.sort_values(by="total", ascending=False)
         final_table.to_csv(output.final_table, sep="\t", index=False)
 
-# ── Kaiju: protein-level alternative/complement to Kraken2 -- independent of
-# it, both only need clean reads, so the user can turn on either, both, or
-# neither. Kaiju's own output format (kaiju2table) isn't Kraken-report shaped,
-# so it gets its own summary + consolidation instead of feeding Bracken/
-# kreport2mpa, which are Kraken2-specific.
+# ── Kaiju: protein-level complement to Kraken2. Both are always run --
+# rule all requests both abundance_table_final_RAW.tsv (Kraken2/Bracken) and
+# abundance_table_final_kaiju_RAW.tsv (Kaiju) unconditionally, there is no
+# config toggle to run just one (unlike active_binners for the binning step
+# in 05_mag_refine.smk). Kaiju's own output format (kaiju2table) isn't
+# Kraken-report shaped, so it gets its own summary + consolidation instead of
+# feeding Bracken/kreport2mpa, which are Kraken2-specific.
 def kaiju_reads_flag(wildcards, input):
     return f"-i {input.reads[0]} -j {input.reads[1]}" if len(input.reads) == 2 else f"-i {input.reads[0]}"
 

@@ -64,10 +64,20 @@ rule abricate_sample:
         """
 
 rule amrfinder_sample:
+    """Protein-only mode (-p, no -n/-g/--annotation_format).
+
+    rule prodigal_sample uses Pyrodigal, which writes the real contig name into
+    each gene's ID (e.g. ID=k141_10000_1) instead of Prodigal classic's plain
+    sequential seqnum_genenum scheme (e.g. ID=3_1) -- AMRFinderPlus's
+    `--annotation_format prodigal` GFF/FASTA-id cross-check assumes the latter
+    and hard-fails ("GFF file mismatch") the moment a contig name contains an
+    underscore, which ours all do (k141_<node>). Confirmed against the actual
+    gunc/checkm2/RAPA02 run, 2026-08-28 (logs/annotation/RAPA02_amrfinder.log).
+    Dropping -n/-g avoids the check entirely; the tradeoff is losing AMRFinder's
+    coordinate-aware calls (point mutations needing --organism, partial genes at
+    contig edges) -- protein hits from complete genes are unaffected."""
     input:
-        faa="results/09_ANNOTATION/{sample}/prodigal/{sample}_proteins.faa",
-        fna="results/02_ASSEMBLY/{sample}/final.contigs_prokaryotic.fa",
-        gff="results/09_ANNOTATION/{sample}/prodigal/{sample}_coords.gff"
+        faa="results/09_ANNOTATION/{sample}/prodigal/{sample}_proteins.faa"
     output:
         out="results/09_ANNOTATION/{sample}/amrfinder/amrfinder_results.tsv"
     params:
@@ -79,8 +89,8 @@ rule amrfinder_sample:
     shell:
         """
         mkdir -p $(dirname {output.out})
-        amrfinder -p {input.faa} -n {input.fna} -g {input.gff} \
-            --database {params.db} --annotation_format prodigal \
+        amrfinder -p {input.faa} \
+            --database {params.db} \
             --plus --threads {threads} {params.extra} -o {output.out} > {log} 2>&1
         """
 
@@ -98,6 +108,18 @@ rule minced_sample:
         "minced -minNR 2 {params.extra} {input.fa} {output.crisprs} {output.gff} > {log} 2>&1"
 
 rule virsorter2_sample:
+    """VirSorter2 runs its own internal Snakemake (-j {threads}) that splits the
+    assembly into many pieces and gene-calls each one with a separate prodigal
+    process, all writing/removing small files concurrently in its working dir
+    (-w). Pointing -w straight at the shared NFS-mounted results/ dir made that
+    churn hit "OSError: [Errno 116] Stale file handle" (rm/prodigal failing on
+    files another process just touched) -- confirmed on cluster tapajos,
+    sample UCPS01, 2026-08-29 -- the same bug already fixed for genomad_sample
+    below (NFS can't keep up with heavy concurrent small-file I/O from a
+    tool's own internal parallelism). Same fix: run in a scratch dir on the
+    node's local disk ({resources.tmpdir} -- Snakemake supplies this
+    automatically per job), then cp -a only the finished result to the real
+    (shared) output path."""
     input:
         fa="results/02_ASSEMBLY/{sample}/final.contigs.fa"
     output:
@@ -112,8 +134,12 @@ rule virsorter2_sample:
     shell:
         """
         rm -rf {output.outdir}
-        virsorter run -w {output.outdir} -i {input.fa} --db-dir {params.db} \
+        LOCAL_OUT=$(mktemp -d {resources.tmpdir}/virsorter2_{wildcards.sample}.XXXXXX)
+        virsorter run -w "$LOCAL_OUT" -i {input.fa} --db-dir {params.db} \
         --include-groups dsDNAphage,ssDNA -j {threads} {params.extra} all > {log} 2>&1
+        mkdir -p {output.outdir}
+        cp -a "$LOCAL_OUT"/. {output.outdir}/
+        rm -rf "$LOCAL_OUT"
         if [ ! -f "{output.viral_fa}" ]; then
             touch "{output.viral_fa}"
         fi
@@ -138,6 +164,13 @@ rule checkv_sample:
         """
 
 rule genomad_sample:
+    """geNomad's --splits parallel gene-calling writes/removes many small files
+    concurrently -- pointing that straight at the shared NFS-mounted results/
+    dir hit "OSError: [Errno 116] Stale file handle" (confirmed on cluster
+    tapajos, 2026-08-28). Fix: run in a scratch dir on the node's local disk
+    ({resources.tmpdir} -- Snakemake supplies this automatically per job, no
+    need to declare it in `resources:`), then cp -a only the finished result
+    to the real (shared) output path."""
     input:
         fa="results/02_ASSEMBLY/{sample}/final.contigs.fa"
     output:
@@ -151,7 +184,11 @@ rule genomad_sample:
     shell:
         """
         rm -rf {output.outdir}
-        genomad end-to-end --cleanup --splits 8 --threads {threads} {params.extra} {input.fa} {output.outdir} {params.db} > {log} 2>&1
+        LOCAL_OUT=$(mktemp -d {resources.tmpdir}/genomad_{wildcards.sample}.XXXXXX)
+        genomad end-to-end --cleanup --splits 8 --threads {threads} {params.extra} {input.fa} "$LOCAL_OUT" {params.db} > {log} 2>&1
+        mkdir -p {output.outdir}
+        cp -a "$LOCAL_OUT"/. {output.outdir}/
+        rm -rf "$LOCAL_OUT"
         """
 
 rule isescan_sample:
@@ -356,6 +393,9 @@ rule abricate_mags:
         """
 
 rule amrfinder_mags:
+    """Protein-only mode (-p, no -n/-g/--annotation_format) -- see
+    rule amrfinder_sample's docstring for why (Pyrodigal ID scheme vs.
+    AMRFinderPlus's --annotation_format prodigal check)."""
     input:
         mags="results/07_DEREP/drep_out/dereplicated_genomes",
         prodigal_dir="results/09_ANNOTATION/mags/prodigal"
@@ -375,11 +415,10 @@ rule amrfinder_mags:
             [ -e "$f" ] || continue
             magname=$(basename "$f" .fa)
             faa="{input.prodigal_dir}/$magname/${{magname}}_proteins.faa"
-            gff="{input.prodigal_dir}/$magname/${{magname}}_coords.gff"
-            [ -e "$faa" ] && [ -e "$gff" ] || continue
+            [ -e "$faa" ] || continue
             mkdir -p {output.outdir}/$magname
-            amrfinder -p "$faa" -n "$f" -g "$gff" \
-                --database {params.db} --annotation_format prodigal \
+            amrfinder -p "$faa" \
+                --database {params.db} \
                 --plus --threads {threads} {params.extra} \
                 -o {output.outdir}/$magname/amrfinder_results.tsv >> {log} 2>&1
         done
@@ -585,4 +624,14 @@ rule final_mag_catalog:
         tsv="results/07_DEREP/final_mag_catalog.tsv"
     log: "logs/annotation/final_mag_catalog.log"
     shell:
-        "python3 workflow/scripts/final_mag_catalog.py --results-dir results --out {output.tsv} > {log} 2>&1"
+        # workflow/scripts/... (relative) resolves against the shell's CWD at
+        # runtime, which is output_root (Snakefile: `workdir: config.get(
+        # "output_root", ".")`), not the pipeline's own directory -- so a
+        # relative path here silently looked for the script inside the run
+        # folder instead of pipeline/workflow/scripts/. {workflow.basedir} is
+        # Snakemake's own reference to the directory holding the top-level
+        # Snakefile (pipeline/), and is correct regardless of workdir.
+        # Confirmed against the actual RAPA02 test run, 2026-08-28
+        # (logs/annotation/final_mag_catalog.log: "can't open file
+        # '.../runs/test1/workflow/scripts/final_mag_catalog.py'").
+        "python3 {workflow.basedir}/workflow/scripts/final_mag_catalog.py --results-dir results --out {output.tsv} > {log} 2>&1"

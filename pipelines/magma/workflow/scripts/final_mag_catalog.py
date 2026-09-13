@@ -97,7 +97,7 @@ def read_checkm2_all(results_dir, samples):
                 name = row.get("Name")
                 if not name:
                     continue
-                out[name] = {
+                out[f"{sample}_{name}"] = {
                     "checkm2_completeness": row.get("Completeness", ""),
                     "checkm2_contamination": row.get("Contamination", ""),
                     "checkm2_genome_size": row.get("Genome_Size", ""),
@@ -117,7 +117,7 @@ def read_gunc_all(results_dir, samples):
                 genome = row.get("genome")
                 if not genome:
                     continue
-                out[genome] = {
+                out[f"{sample}_{genome}"] = {
                     "gunc_pass": row.get("pass.GUNC", ""),
                     "gunc_css": row.get("clade_separation_score", ""),
                     "gunc_contamination_portion": row.get("contamination_portion", ""),

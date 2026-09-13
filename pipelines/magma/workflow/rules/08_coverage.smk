@@ -18,7 +18,17 @@ rule coverm_index:
     shell:
         """
         mkdir -p results/10_MAG_COVERAGE/index
-        cat {input.mags}/*.fa > {output.ref}
+        # Prefixa cada contig com o nome do genoma/bin de origem (separador
+        # "~") antes de concatenar. Sem isso, contigs de amostras diferentes
+        # podem colidir de nome (ex: "k141_18234" do MEGAHIT se repete entre
+        # amostras) -- gera @SQ duplicado no SAM (samtools sort falha) e,
+        # pior, faria o coverm_genome misturar cobertura entre genomas
+        # diferentes silenciosamente. O separador "~" tem que bater com o
+        # --separator passado na regra `coverm` abaixo.
+        for f in {input.mags}/*.fa; do
+            genome=$(basename "$f" .fa)
+            awk -v g="$genome" '/^>/{{sub(/^>/, ">" g "~")}} {{print}}' "$f"
+        done > {output.ref}
         bowtie2-build --threads {threads} {output.ref} \
             results/10_MAG_COVERAGE/index/dereplicated_mags > {log} 2>&1
         """
@@ -74,7 +84,8 @@ rule coverm:
     input:
         mags="results/07_DEREP/drep_out/dereplicated_genomes",
         bams=expand("results/10_MAG_COVERAGE/bam/{sample}.bam", sample=SAMPLES),
-        bais=expand("results/10_MAG_COVERAGE/bam/{sample}.bam.bai", sample=SAMPLES)
+        bais=expand("results/10_MAG_COVERAGE/bam/{sample}.bam.bai", sample=SAMPLES),
+        ref="results/10_MAG_COVERAGE/index/dereplicated_mags.fa",
     output:
         coverage="results/10_MAG_COVERAGE/coverm_coverage.tsv"
     params:
@@ -84,11 +95,15 @@ rule coverm:
     log: "logs/coverm/coverm.log"
     shell:
         """
+        # Nem --genome-fasta-directory nem --reference são aceitos junto com
+        # --bam-files (dois erros reais e diferentes do CoverM, 2026-09-05).
+        # Com --bam-files, o único jeito válido de ligar contig a genoma é
+        # --separator: o CoverM lê nome/tamanho de cada contig direto do
+        # header do BAM (@SQ), sem precisar de FASTA nenhum aqui.
         coverm genome \
             --bam-files {input.bams} \
-            --genome-fasta-directory {input.mags} \
-            --genome-fasta-extension fa \
-            --methods trimmed_mean covered_fraction mean \
+            --separator '~' \
+            --methods trimmed_mean covered_fraction mean relative_abundance \
             --threads {threads} \
             {params.extra} \
             -o {output.coverage} > {log} 2>&1
