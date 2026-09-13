@@ -17,3 +17,14 @@ dependencies:
   # 'kaleido.scopes'`) and the fix (pin the last pre-rewrite release) for
   # real, not guessed.
   - python-kaleido=0.2.1
+  # Real crash, found running for real (2026-09-12): nanoplot's own bioconda
+  # recipe also leaves `plotly` completely unpinned, so a fresh solve grabs
+  # whatever's newest -- plotly 7.0.0 removed `figure_factory.create_2d_density`
+  # entirely (along with several other figure-factory functions, replaced by
+  # `plotly.express.density_heatmap`), which nanoplotter/nanoplotter_main.py's
+  # `scatter()` still calls directly. NanoPlot 1.44.1 was never updated for
+  # plotly 7 -- confirmed via plotly's own changelog (removed in 7.0.0, PR
+  # #5627) and by reproducing the exact `AttributeError: module
+  # 'plotly.figure_factory' has no attribute 'create_2d_density'` crash.
+  # Pinned to the last pre-removal major release.
+  - plotly=6.9.0
