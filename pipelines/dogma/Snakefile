@@ -1,4 +1,5 @@
 import pandas as pd
+from snakemake.exceptions import WorkflowError
 
 configfile: "config/config.yaml"
 
@@ -35,6 +36,27 @@ if "domain_filter" not in config.get("active_tools", []):
 else:
     _domain_filter_mode = config.get("params", {}).get("domain_filter", {}).get("mode", "prokaryote")
     DOMAINS = ["prokaryote", "eukaryote"] if _domain_filter_mode == "both" else [_domain_filter_mode]
+
+# Real bug found running a hand-written config for real (2026-09-13):
+# config["active_tools"] entirely missing (not just missing an assembler)
+# is silently accepted everywhere above and in 03_assembly.smk's
+# _active_assembler_transcripts() -- domain_filter quietly falls back to
+# ["all"] and transcript_set's assembler-transcript list comes back empty,
+# so `mmseqs easy-linclust` runs on an empty FASTA and fails, every time,
+# for every short/hybrid sample, with no earlier or clearer error. The
+# app's own pipeline.yaml manifest enforces "at least one assembler active"
+# via its `requires` block, but that check only runs inside the app --
+# nothing in the Snakemake layer itself catches it for a CLI/HPC run
+# (this pipeline's other real, intended deployment path). Fail fast here
+# instead, with the same real amount of information a person fixing this
+# needs, rather than a `mmseqs` error two rules and hours later.
+if SHORT_SAMPLES and not (set(config.get("active_tools", [])) & {"rnaspades", "megahit", "trinity"}):
+    raise WorkflowError(
+        "DOGMA config has short/hybrid samples but config['active_tools'] "
+        "includes none of rnaspades/megahit/trinity -- transcript_set has "
+        "no assembler output to combine. Add at least one of them to "
+        "active_tools in config.yaml."
+    )
 
 wildcard_constraints:
     sample="[^/]+"
