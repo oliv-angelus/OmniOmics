@@ -84,6 +84,17 @@ rule megahit:
 
 
 rule trinity:
+    """Trinity's own internal read-partitioning step (Inchworm/Chrysalis/
+    Butterfly) writes thousands of small per-bin files/directories
+    (read_partitions/Fb_N/CBin_M/*.out) concurrently. Pointing --output
+    straight at the shared NFS-mounted results/ dir hits the same class of
+    real bug already fixed for MAGMA's genomad_sample/virsorter2_sample
+    (heavy concurrent small-file I/O a shared NFS mount can't keep up
+    with) -- here it surfaced as a leftover `rm -rf`-can't-fully-clear
+    directory on retry rather than a mid-run crash, confirmed running the
+    real DOGMA validation, 2026-09-13. Same fix: run in a scratch dir on
+    the node's local disk ({resources.tmpdir}), then cp -a only the
+    finished result to the real (shared) output path."""
     input:
         r1=_short_reads_r1,
         r2=_short_reads_r2
@@ -93,7 +104,6 @@ rule trinity:
         # Trinity requires the --output path to contain the word "trinity" and
         # writes the final assembly to "<output>.Trinity.fasta" (a file next to
         # the work dir), which we then move to the declared output.
-        outdir="results/03_ASSEMBLY/{sample}/{domain}/trinity_run",
         extra=config["params"].get("trinity", "")
     threads: config["threads"]["trinity"]
     conda: "../envs/trinity.yaml"
@@ -101,10 +111,12 @@ rule trinity:
     shell:
         """
         mkdir -p $(dirname {output.fasta})
-        rm -rf {params.outdir} {params.outdir}.Trinity.fasta
+        LOCAL_OUT={resources.tmpdir}/trinity_{wildcards.sample}_{wildcards.domain}_run
+        rm -rf "$LOCAL_OUT" "$LOCAL_OUT.Trinity.fasta"
         Trinity --seqType fq --left {input.r1} --right {input.r2} \
-            --CPU {threads} --output {params.outdir} {params.extra} > {log} 2>&1
-        mv {params.outdir}.Trinity.fasta {output.fasta}
+            --CPU {threads} --output "$LOCAL_OUT" {params.extra} > {log} 2>&1
+        mv "$LOCAL_OUT.Trinity.fasta" {output.fasta}
+        rm -rf "$LOCAL_OUT"
         """
 
 
