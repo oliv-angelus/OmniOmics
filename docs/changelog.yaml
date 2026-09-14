@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "0.0.10-alpha"
+  date: 2026-09-14
+  entries:
+    - pt: "**O DOGMA não fica mais sem memória ao remover rRNA de amostras grandes.** O riboDetector era chamado sem um limite de `--chunk_size`, então usava seu próprio padrão sem limite -- em uma amostra real de 89 milhões de sequências, isso derrubava um worker por falta de memória de forma reproduzível perto de 83% do progresso, mesmo com bastante memória alocada. Agora o parâmetro padrão fixa `--chunk_size 200`, um valor conservador (a própria documentação da ferramenta liga esse parâmetro diretamente ao uso de memória), o que resolveu o problema."
+      en: "**DOGMA no longer runs out of memory removing rRNA from large samples.** riboDetector was invoked with no `--chunk_size` cap, so it used its own unbounded default -- on a real 89-million-sequence sample, this reproducibly killed a worker for lack of memory around 83% progress, even with plenty of memory allocated. The default parameter now sets `--chunk_size 200`, a conservative value (the tool's own documentation ties this parameter directly to memory use), which fixed it."
+
 - version: "0.0.9-alpha"
   date: 2026-09-13
   entries:

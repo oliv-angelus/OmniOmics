@@ -1460,7 +1460,7 @@
   "defaults": {
     "fastp": "--qualified_quality_phred 30 --length_required 50 --trim_front1 1 --trim_front2 1",
     "filtlong": "--min_length 500 --keep_percent 90",
-    "ribodetector": "-e norrna",
+    "ribodetector": "-e norrna --chunk_size 200",
     "kraken2": "--confidence 0.05",
     "kaiju": "",
     "domain_filter": {
