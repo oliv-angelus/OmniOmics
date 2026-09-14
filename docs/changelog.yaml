@@ -13,6 +13,14 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "0.0.9-alpha"
+  date: 2026-09-13
+  entries:
+    - pt: "**O DOGMA agora falha rápido e com uma mensagem clara quando nenhum montador está ativo.** Rodar com `active_tools` sem rnaSPAdes, MEGAHIT nem Trinity quebrava silenciosamente mais adiante: o passo de conjunto de transcritos (`transcript_set`) recebia uma lista vazia e travava no MMseqs2 com um FASTA vazio, sem indicar a causa real. Agora o Snakefile verifica isso assim que o config é lido e para com um erro explicando exatamente o que falta ativar."
+      en: "**DOGMA now fails fast with a clear message when no assembler is active.** Running with `active_tools` missing rnaSPAdes, MEGAHIT, and Trinity used to break silently much further downstream: the transcript-set step (`transcript_set`) received an empty list and stalled on MMseqs2 with an empty FASTA, with nothing pointing at the real cause. The Snakefile now checks this as soon as the config is read and stops with an error that says exactly what to activate."
+    - pt: "**A montagem do Trinity no DOGMA não fica mais presa num diretório impossível de limpar.** O Trinity escreve milhares de arquivos pequenos internamente (particionamento de reads); apontar isso direto para a pasta de resultados compartilhada (NFS) tinha o mesmo problema real já corrigido antes para o geNomad/VirSorter2 do MAGMA. Agora o Trinity roda no disco local do nó (scratch) e só o resultado final é copiado para a pasta compartilhada."
+      en: "**DOGMA's Trinity assembly no longer gets stuck in a directory that can't be cleaned up.** Trinity writes thousands of small files internally (read partitioning); pointing that straight at the shared results folder (NFS) had the same real problem already fixed earlier for MAGMA's geNomad/VirSorter2. Trinity now runs on the node's local scratch disk, and only the finished result is copied to the shared folder."
+
 - version: "0.0.8-alpha"
   date: 2026-09-12
   entries:
