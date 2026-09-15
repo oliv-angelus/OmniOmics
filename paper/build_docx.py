@@ -3,6 +3,7 @@
 HTML->soffice route for tables (LibreOffice's HTML import filter mis-sized
 columns, causing one-character-per-line wrapping)."""
 import json
+import os
 import docx
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
@@ -455,9 +456,9 @@ t2_headers = ["Pipeline", "Dataset", "Ground truth", "Pass criterion"]
 t2_rows = [
     ["MAGMA", "ZymoBIOMICS mock community, even+log, hybrid Illumina+ONT (Nicholls et al. 2019, doi:10.1093/gigascience/giz043)", "Certified theoretical composition (%) per species", "Observed abundance within 10% of certified value; correct species-level taxonomy for all 10"],
     ["SIGMA", "Individual E. coli isolate, same Zymo series, Illumina + independent ONT/PacBio (McIntyre et al. 2019, doi:10.1038/s41467-019-08289-9)", "Zymo's own reference genome for the isolate", "QUAST vs. reference: genome fraction, N50, misassemblies; hybrid vs. short-only comparison"],
-    ["DOGMA", "Soil metatranscriptome, glucose-amendment time course (Chuckran et al. 2021, doi:10.1128/mSystems.00161-21)", "Direction of change (up/down) for named gene categories at t8 vs t0, real fold-changes from the paper", "DESeq2 log2FoldChange sign matches reported direction"],
+    ["DOGMA", "Soil metatranscriptome, glucose-amendment time course (samples: Chuckran et al. 2020, doi:10.1128/MRA.00895-20; expected results: Chuckran et al. 2021, doi:10.1128/mSystems.00161-21)", "Direction of change (up/down) for named gene categories at t8 vs t0, real fold-changes from the paper", "DESeq2 log2FoldChange sign matches reported direction"],
     ["DEFINE", "E. coli exposed to 239Pu vs. control, day 1 (GEO GSE208658, doi:10.1128/msystems.00718-22)", "590 DEGs (13.8% of CDSs) reported for this contrast; enriched functional categories", "DEG count same order of magnitude; enriched categories overlap"],
-    ["PRISM", "ZymoBIOMICS 16S “MSPlus” community, ONT (vendor open-data, zymo_16s_2025.09)", "ONT's own official Emu classification for the same read file", "Species-level abundance correlates with ONT's own result; all 4 spiked species detected"],
+    ["PRISM", "ZymoBIOMICS 16S “MSPlus” community, ONT (Oxford Nanopore Technologies 2025, vendor open-data release zymo_16s_2025.09)", "ONT's own official Emu classification for the same read file", "Species-level abundance correlates with ONT's own result; all 4 spiked species detected"],
 ]
 make_table(t2_headers, t2_rows, widths_cm=[2.2, 4.8, 4.3, 4.7])
 
@@ -732,7 +733,7 @@ para(
     "run actually invokes.",
     size=10.5,
 )
-with open("/tmp/tool_refs.json") as f:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tool_refs.json")) as f:
     tool_refs = json.load(f)
 
 unnumbered_subheading("Tools", level=3)
@@ -758,7 +759,12 @@ para(
     "observed-vs-expected validation results described in this "
     "manuscript are available at github.com/oliv-angelus/"
     "OmniOmics-validation (MIT for scripts/configs, CC-BY-4.0 for "
-    "data). A permanent, versioned Zenodo DOI for both repositories "
+    "data), permanently archived on Zenodo at "
+    "https://doi.org/10.5281/zenodo.22780175 (concept DOI, always "
+    "resolves to the latest version; the exact v1.0.0 release "
+    "described in this manuscript is specifically archived at "
+    "https://doi.org/10.5281/zenodo.22780176). A Zenodo DOI for the "
+    "OmniOmics application repository itself "
 )
 p = doc.paragraphs[-1]
 add_pending(p, "[PENDING: to be minted before submission].")

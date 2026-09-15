@@ -5,6 +5,7 @@ traduzido. Nomes de ferramentas, bancos de dados, espécies, DOIs, números e
 referências bibliográficas permanecem no idioma/formato original, como é
 prática padrão em traduções de artigos científicos."""
 import json
+import os
 import docx
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
@@ -684,7 +685,7 @@ para(
     "invoca.",
     size=10.5,
 )
-with open("/tmp/tool_refs.json") as f:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tool_refs.json")) as f:
     tool_refs = json.load(f)
 
 heading("Ferramentas", level=3)
