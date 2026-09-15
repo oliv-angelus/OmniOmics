@@ -4,3 +4,11 @@ channels:
   - defaults
 dependencies:
   - trinity=2.15.1
+  # Real bug found 2026-09-14: unpinned, conda resolved salmon 2.7.0 (the
+  # Rust rewrite, "salmon 2.0"), which removed/renamed CLI flags Trinity's
+  # own bundled salmon_runner.pl still passes for its expression-filtering
+  # step (e.g. --minAssignedFrags), so every real Trinity run failed at
+  # that stage with "unexpected argument '--minAssignedFrags' found".
+  # Pinned to the last stable 1.x (C++) release Trinity 2.15.1 was built
+  # against.
+  - salmon=1.10.1

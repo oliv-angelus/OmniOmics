@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "0.0.11-alpha"
+  date: 2026-09-14
+  entries:
+    - pt: "**O Trinity (DOGMA) não falha mais na etapa final de filtragem por expressão.** O ambiente conda do Trinity não fixava a versão do salmon, então instalava a versão mais recente (2.7.0, a reescrita em Rust) -- mas o script interno do Trinity que filtra transcritos por expressão ainda chama o salmon com flags da versão C++ antiga (`--minAssignedFrags`), removidas na reescrita. Toda montagem real do Trinity quebrava nessa etapa, perto do fim da execução, depois de horas de trabalho. Agora o salmon fica travado em 1.10.1, a última versão compatível."
+      en: "**Trinity (DOGMA) no longer fails at the final expression-filtering step.** Trinity's conda environment did not pin a salmon version, so it installed the latest release (2.7.0, the Rust rewrite) -- but Trinity's own internal transcript expression-filtering script still calls salmon with old C++-version flags (`--minAssignedFrags`), removed in the rewrite. Every real Trinity assembly broke at this step, near the end of the run, after hours of work. salmon is now pinned to 1.10.1, the last compatible release."
+
 - version: "0.0.10-alpha"
   date: 2026-09-14
   entries:
