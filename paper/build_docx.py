@@ -83,6 +83,22 @@ def unnumbered_heading(text):
     r.font.color.rgb = BLACK
     return p
 
+def unnumbered_subheading(text, level=2):
+    """Bold, unnumbered sub-heading for back-matter sections (References'
+    own internal groupings: Platforms and validation datasets / Tools and
+    reference databases / Tools / Reference databases). These sit inside
+    an unnumbered_heading() section, so they must not borrow the running
+    1./2./3. body-section counter the way heading() does."""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(10 if level == 2 else 6)
+    p.paragraph_format.space_after = Pt(4)
+    r = p.add_run(text)
+    r.bold = True
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(12 if level == 2 else 11)
+    r.font.color.rgb = BLACK
+    return p
+
 def para(text="", size=12, italic=False, bold=False):
     p = doc.add_paragraph()
     if text:
@@ -148,13 +164,6 @@ r = title_p.add_run(
 r.bold = True
 r.font.size = Pt(16)
 
-sub = doc.add_paragraph()
-sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-rs = sub.add_run("Resource Article draft, target venue: Molecular Ecology Resources")
-rs.italic = True
-rs.font.size = Pt(11)
-rs.font.color.rgb = BLACK
-
 doc.add_paragraph()
 auth = doc.add_paragraph()
 auth.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -175,15 +184,6 @@ raf.font.size = Pt(10)
 raf.font.color.rgb = BLACK
 
 doc.add_paragraph()
-add_note(
-    "Draft in progress, started 2026-09-12. All five pipelines' real HPC "
-    "validation runs completed 2026-09-15 (see github.com/oliv-angelus/"
-    "OmniOmics-validation for the full results). Sections still marked "
-    "PENDING (Acknowledgements, Author Contributions, Zenodo DOI, the "
-    "expanded Table 3/figures) need the author's own input, not further "
-    "results. This note block itself should be deleted before "
-    "submission."
-)
 
 # ============================================================
 # ABSTRACT
@@ -358,11 +358,12 @@ para(
     "synthetic data, against a public dataset with an independently "
     "known, published expected result, using the identical Snakemake "
     "invocation and config schema the application itself generates "
-    "internally, executed on a compute node (128 CPU cores, ~264 GB "
-    "RAM, openSUSE Leap 15.3) at Universidade Federal do Oeste do "
-    "Pará's (UFOPA) institutional cluster. Correctness was then "
-    "checked against that published ground truth, not against another "
-    "tool's output."
+    "internally, executed on a compute node with 128 CPU cores, ~264 GB "
+    "RAM, and openSUSE Leap 15.3, with per-tool thread and memory "
+    "allocations set in each pipeline's own configuration (published in "
+    "full in the companion repository, see Data Accessibility). "
+    "Correctness was then checked against that published ground truth, "
+    "not against another tool's output."
 )
 para(
     "Datasets, their ground truth, and the pass criterion used for each "
@@ -397,7 +398,7 @@ t1_rows = [
     ["Anvi'o", "Eren et al. 2021, doi:10.1038/s41564-020-00834-3", "CLI + interactive HTML/D3 visualization, not a run-orchestration GUI", "Local", "Multi-omics, strongest in metagenomics", "Plugin-style, community-led"],
     ["Bactopia", "Petit & Read 2020, doi:10.1128/mSystems.00190-20", "CLI (Nextflow)", "Local/HPC/cloud", "Single domain: bacterial genomics only", "“Bactopia Tools” post-processing modules"],
     ["Snakemake (engine OmniOmics builds on)", "Mölder et al. 2021, doi:10.12688/f1000research.29032.3", "CLI, no native GUI", "Local/HPC/cloud", "Generic, domain-agnostic", "Rules-based, per-project"],
-    ["OmniOmics (this work)", "—", "Native desktop GUI, zero terminal", "Local, zero server/cloud dependency", "5 domains in one app", "New pipeline = new directory + manifest, no core code change"],
+    ["OmniOmics (this work)", "N/A", "Native desktop GUI, zero terminal", "Local, zero server/cloud dependency", "5 domains in one app", "New pipeline = new directory + manifest, no core code change"],
 ]
 make_table(t1_headers, t1_rows, widths_cm=[2.5, 2.7, 2.7, 2.7, 2.7, 3.2])
 
@@ -632,9 +633,9 @@ para(
     "mismatch, crp, is itself only a modest, non-significant effect in "
     "Chuckran et al.'s own reported result, and crp is a global "
     "carbon-catabolite regulator rather than a nitrogen-cycle gene per "
-    "se — a result this validation reports rather than omits, "
-    "consistent with the honesty standard applied to MAGMA's, SIGMA's, "
-    "and PRISM's mixed outcomes above."
+    "se. This result is reported rather than omitted, consistent with "
+    "the honesty standard applied to MAGMA's, SIGMA's, and PRISM's "
+    "mixed outcomes above."
 )
 para(
     "Taken together, the five pipelines' real validation results "
@@ -668,17 +669,17 @@ para(
     "for depth of integration (one consistent GUI, one plotting "
     "environment, one packaging story) across a smaller, curated set. "
     "PRISM's PacBio marker-gene path (the vendor's Kinnex 16S "
-    "mock-community release) remains unvalidated at time of writing — "
-    "the vendor's own data host was unreachable from both the analysis "
-    "machine and the HPC cluster used for this work at the time it was "
+    "mock-community release) remains unvalidated at time of writing. "
+    "The vendor's own data host was unreachable from both the analysis "
+    "machine and the compute node used for this work at the time it was "
     "set up (connection times out on port 443; DNS itself resolves "
     "correctly), a real, external infrastructure constraint documented "
     "in the companion repository rather than silently dropped. DOGMA "
     "does not attempt long-read-only metatranscriptome assembly, "
     "because no validated tool for that specific case exists in the "
-    "literature at present — a genuine, cited method gap (see the "
-    "eukrhythmic authors' own multi-assembler rationale, Krinos et al., "
-    "2023), not an implementation gap OmniOmics chose not to close. "
+    "literature at present. This is a genuine, cited method gap (see "
+    "the eukrhythmic authors' own multi-assembler rationale, Krinos et "
+    "al., 2023), not an implementation gap OmniOmics chose not to close. "
     "Future work includes additional pipelines, a GROND/full rrn-operon "
     "mode for PRISM, and an expanded Plots-tab library for SIGMA."
 )
@@ -694,23 +695,23 @@ add_pending(p, "[PENDING]")
 # REFERENCES
 # ============================================================
 unnumbered_heading("References")
-heading("Platforms and validation datasets", level=2)
+unnumbered_subheading("Platforms and validation datasets", level=2)
 refs = [
     "Arkin AP, Cottingham RW, Henry CS, et al. (2018). KBase: The United States Department of Energy Systems Biology Knowledgebase. Nature Biotechnology, 36(7), 566–569. https://doi.org/10.1038/nbt.4163",
     "Bolyen E, Rideout JR, Dillon MR, Bokulich NA, et al. (2019). Reproducible, interactive, scalable and extensible microbiome data science using QIIME 2. Nature Biotechnology, 37(8), 852–857. https://doi.org/10.1038/s41587-019-0209-9",
     "Chuckran PF, Huntemann M, Clum A, et al. (2020). Metagenomes and Metatranscriptomes of a Glucose-Amended Agricultural Soil. Microbiology Resource Announcements, 9(44), e00895-20. https://doi.org/10.1128/MRA.00895-20",
     "Chuckran PF, Fofanov V, Hungate BA, Morrissey EM, Schwartz E, Walkup J, Dijkstra P (2021). Rapid Response of Nitrogen Cycling Gene Transcription to Labile Carbon Amendments in a Soil Microbial Community. mSystems, 6(3), e00161-21. https://doi.org/10.1128/mSystems.00161-21",
     "Di Leo D, Nilsson E, Krinos A, Pinhassi J, Lundin D (2025). The Nextflow nf-core/metatdenovo pipeline for reproducible annotation of metatranscriptomes, and more. PeerJ, 13, e20328. https://doi.org/10.7717/peerj.20328",
+    "Di Tommaso P, Chatzou M, Floden EW, Barja PP, Palumbo E, Notredame C (2017). Nextflow enables reproducible computational workflows. Nature Biotechnology, 35(4), 316–319. https://doi.org/10.1038/nbt.3820",
     "Eren AM, Kiefl E, Shaiber A, et al. (2021). Community-led, integrated, reproducible multi-omics with anvi'o. Nature Microbiology, 6(1), 3–6. https://doi.org/10.1038/s41564-020-00834-3",
     "Ewels PA, Peltzer A, Fillinger S, et al. (2020). The nf-core framework for community-curated bioinformatics pipelines. Nature Biotechnology, 38(3), 276–278. https://doi.org/10.1038/s41587-020-0439-x",
     "Galaxy Community (2022). The Galaxy platform for accessible, reproducible and collaborative biomedical analyses: 2022 update. Nucleic Acids Research, 50(W1), W345–W351. https://doi.org/10.1093/nar/gkac247",
     "Krakau S, Straub D, Gourlé H, Gabernet G, Nahnsen S (2022). nf-core/mag: a best-practice pipeline for metagenome hybrid assembly and binning. NAR Genomics and Bioinformatics, 4(1), lqac007. https://doi.org/10.1093/nargab/lqac007",
     "Krinos AI, Cohen NR, Follows MJ, Alexander H (2023). Reverse engineering environmental metatranscriptomes clarifies best practices for eukaryotic assembly. BMC Bioinformatics, 24(1), 74. https://doi.org/10.1186/s12859-022-05121-y",
     "McIntyre ABR, Alexander N, Grigorev K, Bezdan D, Sichtig H, Chiu CY, Mason CE (2019). Single-molecule sequencing detection of N6-methyladenine in microbial reference materials. Nature Communications, 10, 579. https://doi.org/10.1038/s41467-019-08289-9",
-    "Di Tommaso P, Chatzou M, Floden EW, Barja PP, Palumbo E, Notredame C (2017). Nextflow enables reproducible computational workflows. Nature Biotechnology, 35(4), 316–319. https://doi.org/10.1038/nbt.3820",
+    "Mölder F, Jablonski KP, Letcher B, et al. (2021). Sustainable data analysis with Snakemake. F1000Research, 10, 33. https://doi.org/10.12688/f1000research.29032.3",
     "Nicholls SM, Quick JC, Tang S, Loman NJ (2019). Ultra-deep, long-read nanopore sequencing of mock microbial community standards. GigaScience, 8(5), giz043. https://doi.org/10.1093/gigascience/giz043",
     "Oxford Nanopore Technologies (2025). Zymo 16S mock community open data release (zymo_16s_2025.09). EPI2ME blog. https://epi2me.nanoporetech.com/zymo_16s_2025.09/",
-    "Mölder F, Jablonski KP, Letcher B, et al. (2021). Sustainable data analysis with Snakemake. F1000Research, 10, 33. https://doi.org/10.12688/f1000research.29032.3",
     "Petit RA III, Read TD (2020). Bactopia: a flexible pipeline for complete analysis of bacterial genomes. mSystems, 5(4), e00190-20. https://doi.org/10.1128/mSystems.00190-20",
     "Stamouli S, Beber ME, Normark T, Christensen II TA, Andersson-Li L, Borry M, Jamy M, nf-core community, Fellows Yates JA (2023). nf-core/taxprofiler: Highly parallelised and flexible pipeline for metagenomic taxonomic classification and profiling. bioRxiv preprint. https://doi.org/10.1101/2023.10.20.563221",
     "Varet H, Brillet-Guéguen L, Coppée JY, Dillies MA (2016). SARTools: A DESeq2- and edgeR-Based R Pipeline for Comprehensive Differential Analysis of RNA-Seq Data. PLoS ONE, 11(6), e0157022. https://doi.org/10.1371/journal.pone.0157022",
@@ -721,7 +722,7 @@ for ref in refs:
     r = p.add_run(ref)
     r.font.size = Pt(10.5)
 
-heading("Tools and reference databases used by the five pipelines", level=2)
+unnumbered_subheading("Tools and reference databases used by the five pipelines", level=2)
 para(
     "OmniOmics packages, but does not modify, the following third-party "
     "tools and reference databases across its five pipelines. Listed "
@@ -734,13 +735,13 @@ para(
 with open("/tmp/tool_refs.json") as f:
     tool_refs = json.load(f)
 
-heading("Tools", level=3)
+unnumbered_subheading("Tools", level=3)
 for doi, text in sorted(tool_refs["tools"].items(), key=lambda kv: kv[1]):
     p = doc.add_paragraph(style="List Bullet")
     r = p.add_run(f"{text} https://doi.org/{doi}")
     r.font.size = Pt(9.5)
 
-heading("Reference databases", level=3)
+unnumbered_subheading("Reference databases", level=3)
 for doi, text in sorted(tool_refs["databases"].items(), key=lambda kv: kv[1]):
     p = doc.add_paragraph(style="List Bullet")
     r = p.add_run(f"{text} https://doi.org/{doi}")
@@ -784,12 +785,12 @@ add_pending(p, "[PENDING]")
 unnumbered_heading("Tables and Figures")
 p = para()
 add_pending(p, (
-    "[PENDING: Table 3 (real observed-vs-expected results) should be "
-    "expanded into the full per-metric version once every pipeline run "
-    "is complete. Figures: architecture diagram (client/backend/"
+    "[PENDING: Figures. Architecture diagram (client/backend/"
     "pipeline-registry), one assembly-quality figure (e.g., SIGMA's "
     "short-only vs. hybrid contig-count/genome-fraction comparison) as "
-    "a visual anchor for the validation argument.]"
+    "a visual anchor for the validation argument. Table 3 already holds "
+    "the real, complete observed-vs-expected result for all five "
+    "pipelines (see Results); no further table work is pending.]"
 ))
 p = para()
 add_pending(p, (
