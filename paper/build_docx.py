@@ -801,12 +801,18 @@ add_pending(p, (
 p = para()
 add_pending(p, (
     "[PENDING: Figure: per-pipeline workflow diagrams (one panel per "
-    "pipeline, tool-labeled DAG). Real draw.io SVGs already exist for "
-    "MAGMA, SIGMA, and DOGMA (pipelines/<id>/<ID>.drawio.svg in the "
-    "OmniOmics repo); DEFINE and PRISM diagrams are being drawn by the "
-    "author in the same style; insert all 5 as one multi-panel figure "
-    "once both are ready, not before (keeps the 5 panels visually "
-    "consistent).]"
+    "pipeline, tool-labeled DAG). Two different sources now exist: "
+    "hand-illustrated draw.io diagrams for MAGMA, SIGMA, and DOGMA "
+    "(pipelines/<id>/<ID>.drawio.svg in the OmniOmics repo, custom "
+    "icon set); and auto-generated, accurate tool-labeled DAGs for "
+    "DEFINE and PRISM (pipelines/define/DEFINE_workflow.svg, "
+    "pipelines/prism/PRISM_workflow.svg -- plain boxes/arrows, "
+    "deliberately named differently since they are not in the same "
+    "hand-drawn style). Before inserting as one multi-panel figure, "
+    "decide: (a) redraw DEFINE/PRISM by hand to match the other "
+    "three's illustrated style, or (b) accept the two visual styles "
+    "side by side, or (c) regenerate all five in the plain "
+    "auto-generated style for full visual consistency.]"
 ))
 
 doc.save("/home/angelo/Documentos/OmniOmics/paper/Artigo.docx")
