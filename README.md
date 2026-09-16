@@ -7,7 +7,6 @@
 [![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![R](https://img.shields.io/badge/R-%E2%89%A54.3-276DC3?logo=r&logoColor=white)](https://www.r-project.org)
 [![Snakemake](https://img.shields.io/badge/Snakemake-workflows-039475?logo=snakemake&logoColor=white)](https://snakemake.readthedocs.io)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22780175-blue.svg)](https://doi.org/10.5281/zenodo.22780175)
 
 **An integrated desktop environment for reproducible multi-omics analysis.**
 
