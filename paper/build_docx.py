@@ -802,15 +802,12 @@ p = para()
 add_pending(p, (
     "[PENDING: Figure: per-pipeline workflow diagrams (one panel per "
     "pipeline, tool-labeled DAG). All five now exist in the same "
-    "hand-illustrated draw.io style, custom icon set "
+    "hand-illustrated draw.io style, custom icon set, and are accurate "
+    "against each pipeline's real Snakemake rules (verified directly "
+    "against pipelines/<id>/workflow/rules/*.smk, not just visually) "
     "(pipelines/<id>/<ID>.drawio.svg in the OmniOmics repo: MAGMA, "
-    "SIGMA, DOGMA, DEFINE, PRISM). Before inserting as one multi-panel "
-    "figure: DEFINE's diagram has a known typo to fix ('Annoted' -> "
-    "'Annotated' count table) and could more explicitly show "
-    "featureCounts' raw counts feeding merge_annotated_counts "
-    "alongside eggNOG's annotation (currently only the eggNOG line is "
-    "drawn into that box). Once fixed, insert all 5 as one "
-    "multi-panel figure.]"
+    "SIGMA, DOGMA, DEFINE, PRISM). Ready to insert as one multi-panel "
+    "figure.]"
 ))
 
 doc.save("/home/angelo/Documentos/OmniOmics/paper/Artigo.docx")
