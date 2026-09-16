@@ -837,8 +837,19 @@ para(
 # AUTHOR CONTRIBUTIONS
 # ============================================================
 unnumbered_heading("Author Contributions")
-p = para()
-add_pending(p, "[PENDING]")
+para(
+    "Author roles follow the CRediT (Contributor Roles) taxonomy. "
+    "A.F.B.O.: Angelo Felipe Barbosa de Oliveira; G.I.C.: Gabriel "
+    "Iketani Coelho; R.A.B.: Rafael Azevedo Baraúna; A.L.C.S.: Artur "
+    "Luiz da Costa da Silva; D.A.G.: Diego Assis das Graças. "
+    "Conceptualization: A.F.B.O., A.L.C.S., D.A.G. Methodology: "
+    "A.F.B.O. Software: A.F.B.O. Validation: A.F.B.O. Formal "
+    "analysis: A.F.B.O. Data curation: A.F.B.O. Resources: G.I.C., "
+    "D.A.G. Writing -- original draft: A.F.B.O. Writing -- review & "
+    "editing: R.A.B., A.L.C.S., D.A.G. Visualization: A.F.B.O. "
+    "Supervision: R.A.B., A.L.C.S., D.A.G. Project administration: "
+    "R.A.B., A.L.C.S., D.A.G. Funding acquisition: A.L.C.S."
+)
 
 # ============================================================
 # TABLES AND FIGURES
