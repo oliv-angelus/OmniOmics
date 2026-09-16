@@ -1,5 +1,15 @@
 # OmniOmics
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform: Linux](https://img.shields.io/badge/Platform-Linux-333333?logo=linux&logoColor=white)](docs/INSTALL.md)
+[![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Python](https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![R](https://img.shields.io/badge/R-%E2%89%A54.3-276DC3?logo=r&logoColor=white)](https://www.r-project.org)
+[![Snakemake](https://img.shields.io/badge/Snakemake-workflows-039475?logo=snakemake&logoColor=white)](https://snakemake.readthedocs.io)
+
+**Validation data:** [![DOI](https://zenodo.org/badge/1367598567.svg)](https://doi.org/10.5281/zenodo.22780175)
+
 **An integrated desktop environment for reproducible multi-omics analysis.**
 
 OmniOmics packages five Snakemake workflows — metagenomics, metatranscriptomics,
