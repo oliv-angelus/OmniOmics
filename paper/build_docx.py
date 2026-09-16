@@ -866,17 +866,6 @@ figure(
     "code.",
     width_cm=13,
 )
-figure(
-    "SIGMA_assembly_quality.png",
-    "Figure 3. SIGMA's real assembly-quality comparison (Results, Table "
-    "3; Discussion): the same E. coli isolate assembled short-read-only "
-    "versus hybrid with ONT versus hybrid with PacBio, QUAST against the "
-    "certified reference genome. The ONT path improves on every axis "
-    "with zero misassemblies; the PacBio path (2018-era CLR chemistry, "
-    "no circular-consensus correction) recovers more of the genome and "
-    "a higher N50 than short-only, but at the cost of 21 real "
-    "misassemblies short-only did not have.",
-)
 
 doc.save("/home/angelo/Documentos/OmniOmics/paper/Artigo.docx")
 print("OK: Artigo.docx written")
