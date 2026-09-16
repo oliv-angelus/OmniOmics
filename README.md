@@ -344,11 +344,10 @@ own, and that surface is what these checks target:
 ### Other current limitations
 
 - **Linux only.** Built and tested on Linux; Windows and macOS not attempted.
-- **Fixture coverage is uneven.** DOGMA's fixture exercises 5 of its 15
-  annotation columns. The readers for the other 10 were audited against their
-  tools' source code, but have not been run against data.
-- **Some optional steps have not been run end to end on real input**, notably
-  the secondary-metabolite (antiSMASH/BiG-SCAPE) and viral blocks.
+- **Some optional steps have not been run end to end on real input**, namely
+  BiG-SCAPE (secondary-metabolite block) and VIBRANT (viral block) —
+  antiSMASH and the rest of the viral block (VirSorter2, CheckV, geNomad)
+  have.
 - **The genome ring is a static figure**, not an interactive browser. Tracks are
   toggled by re-running the analysis.
 
