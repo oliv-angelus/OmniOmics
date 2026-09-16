@@ -111,6 +111,25 @@ def para(text="", size=12, italic=False, bold=False):
         r.bold = bold
     return p
 
+FIGURES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
+
+def figure(filename, caption, width_cm=16):
+    """Full-width figure (real, rendered from the pipeline's own
+    hand-illustrated draw.io diagram, not a mockup) with a centered
+    caption line underneath, Times New Roman to match the rest of the
+    document."""
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run().add_picture(os.path.join(FIGURES_DIR, filename), width=Cm(width_cm))
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = cap.add_run(caption)
+    r.font.name = "Times New Roman"
+    r.font.size = Pt(10)
+    r.italic = True
+    r.font.color.rgb = BLACK
+    doc.add_paragraph()
+
 def set_col_widths(table, widths_cm):
     table.autofit = False
     for row in table.rows:
@@ -462,7 +481,7 @@ t2_rows = [
 ]
 make_table(t2_headers, t2_rows, widths_cm=[2.2, 4.8, 4.3, 4.7])
 
-heading("Real validation outcomes", level=2)
+heading("Table 3. Real validation outcomes", level=2)
 t3_headers = ["Pipeline", "Status", "Headline result"]
 t3_rows = [
     ["SIGMA (ONT path)", "Complete, PASS",
@@ -798,17 +817,52 @@ add_pending(p, (
     "the real, complete observed-vs-expected result for all five "
     "pipelines (see Results); no further table work is pending.]"
 ))
-p = para()
-add_pending(p, (
-    "[PENDING: Figure: per-pipeline workflow diagrams (one panel per "
-    "pipeline, tool-labeled DAG). All five now exist in the same "
-    "hand-illustrated draw.io style, custom icon set, and are accurate "
-    "against each pipeline's real Snakemake rules (verified directly "
-    "against pipelines/<id>/workflow/rules/*.smk, not just visually) "
-    "(pipelines/<id>/<ID>.drawio.svg in the OmniOmics repo: MAGMA, "
-    "SIGMA, DOGMA, DEFINE, PRISM). Ready to insert as one multi-panel "
-    "figure.]"
-))
+para(
+    "Figure 1 (panels A-E): per-pipeline workflow diagrams, one panel "
+    "per pipeline, hand-illustrated in draw.io by the author and "
+    "verified against each pipeline's real Snakemake rules "
+    "(pipelines/<id>/workflow/rules/*.smk) rather than drawn from "
+    "memory. Source files (editable): pipelines/<id>/<ID>.drawio.svg "
+    "in the OmniOmics repository.",
+    size=10.5,
+)
+figure(
+    "MAGMA.png",
+    "Figure 1A. MAGMA (shotgun metagenomics): QC/host-read removal, "
+    "domain-aware hybrid assembly, binning across four binners, "
+    "dereplication, and MAG-level taxonomy/quality/functional "
+    "annotation.",
+)
+figure(
+    "SIGMA.png",
+    "Figure 1B. SIGMA (bacterial isolate genomics): QC, short/long-read "
+    "assembly with optional long-read-only or hybrid polishing, and "
+    "genome quality, taxonomy, coverage, and functional/AMR/secondary-"
+    "metabolite annotation.",
+)
+figure(
+    "DOGMA.png",
+    "Figure 1C. DOGMA (metatranscriptomics): rRNA depletion, optional "
+    "domain filtering, a three-assembler ensemble deduplicated into "
+    "one MAD transcript set, ORF calling, and multi-database "
+    "functional annotation with per-sample Salmon quantification.",
+)
+figure(
+    "DEFINE.png",
+    "Figure 1D. DEFINE (bacterial isolate RNA-seq / differential "
+    "expression): QC, reference-genome annotation (Bakta/eggNOG-"
+    "mapper, run once per project), read mapping, automatic "
+    "strandedness detection, and gene-level counting into one "
+    "annotated count table.",
+)
+figure(
+    "PRISM.png",
+    "Figure 1E. PRISM (amplicon metabarcoding): platform-aware QC/"
+    "primer removal for short and long reads, long-read-only chimera "
+    "filtering, three-way denoising/classification (DADA2 for PacBio "
+    "HiFi or Illumina, Emu for ONT), and PICRUSt2 functional inference "
+    "for the 16S PacBio path.",
+)
 
 doc.save("/home/angelo/Documentos/OmniOmics/paper/Artigo.docx")
 print("OK: Artigo.docx written")
