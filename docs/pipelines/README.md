@@ -3,7 +3,6 @@
 Each has its own page with the workflow diagram and a stage-by-stage
 description: **[MAGMA](MAGMA.md)** · **[SIGMA](SIGMA.md)** ·
 **[DOGMA](DOGMA.md)** · **[DEFINE](DEFINE.md)** · **[PRISM](PRISM.md)**.
-DEFINE's and PRISM's are still to be written; this page covers all five.
 
 Each pipeline is a self-contained directory under `pipelines/`:
 

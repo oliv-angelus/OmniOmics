@@ -99,8 +99,6 @@ description read from its actual rule files:
   [DOGMA](docs/pipelines/DOGMA.md) · [DEFINE](docs/pipelines/DEFINE.md) ·
   [PRISM](docs/pipelines/PRISM.md)
 
-DEFINE's and PRISM's pages are still to be written; the summary in
-[`docs/pipelines/`](docs/pipelines/) covers all five in the meantime.
 
 ---
 
