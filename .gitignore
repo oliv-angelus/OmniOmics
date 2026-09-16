@@ -29,3 +29,6 @@ backups/
 # Local editor/tool config -- machine-specific, not project source
 .vscode/
 .claude/
+
+# LibreOffice lock file, left behind by headless docx->pdf conversion
+paper/.~lock.*#

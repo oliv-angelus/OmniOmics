@@ -81,11 +81,11 @@ The names are acronyms, not arbitrary labels:
 
 | Pipeline | Stands for | Question it answers | Rules | Envs |
 |---|---|---|---:|---:|
-| **MAGMA** | **M**etagenome **A**ssisted **G**UI & **M**AG **A**nalyses | What organisms are in this community, and can I recover their genomes? | 62 | 35 |
+| **MAGMA** | **M**etagenome **A**ssisted **G**UI & **M**AG **A**nalyses | What organisms are in this community, and can I recover their genomes? | 63 | 35 |
 | **SIGMA** | **S**ingle **I**solate **G**enome, **M**ulti-platform **A**ssembly | I have isolate genomes — what are they, and what do they carry? | 36 | 28 |
 | **DOGMA** | **D**iversity **O**f **G**ene expression — **M**etatranscriptome **A**nalysis | What is this community *doing*? | 34 | 18 |
 | **DEFINE** | **D**ifferential **E**xpression, **F**unctional **I**nterpretation & **N**etwork **E**nrichment | Which genes change between my conditions? | 17 | 9 |
-| **PRISM** | **P**rofiling **r**RNA **I**nference of **S**pecies via **M**etabarcoding | Amplicon (16S/18S/ITS) community profiling | 13 | 6 |
+| **PRISM** | **P**rofiling **r**RNA **I**nference of **S**pecies via **M**etabarcoding | Amplicon community profiling: 16S/18S/23S/28S/ITS/rrn-operon/COI/12S, short- and long-read | 16 | 6 |
 
 Each pipeline is a self-contained directory under `pipelines/` holding its
 Snakemake workflow, its per-tool conda environments, and a manifest describing

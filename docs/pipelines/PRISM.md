@@ -4,7 +4,7 @@
 
 Amplicon sequencing: community profiling from 16S, 18S, 23S/28S, ITS, the
 full 16S-ITS-23S rrn operon, COI or 12S marker genes, on short (Illumina) and
-long (ONT/PacBio) read platforms. 13 rules across 6 tool environments.
+long (ONT/PacBio) read platforms. 16 rules across 6 tool environments.
 
 <p align="center">
   <img src="../../pipelines/prism/PRISM.drawio.svg" alt="PRISM workflow diagram" width="100%">

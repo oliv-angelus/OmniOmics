@@ -3,7 +3,7 @@
 **M**etagenome **A**ssisted **G**UI & **M**AG **A**nalyses
 
 Shotgun metagenomics: who is in a community, and can their genomes be recovered
-from it. The largest of the five pipelines — 62 rules across 35 tool
+from it. The largest of the five pipelines — 63 rules across 35 tool
 environments — and the most demanding to run.
 
 <p align="center">
@@ -141,6 +141,16 @@ need different models.
 > GFF3 through `--genefinding-gff3`. The BGCs therefore sit on the same ORFs as
 > the rest of stage 07, and came from the metagenomic model where that is what
 > the input is.
+
+`final_mag_catalog` closes stage 07 by consolidating everything the pipeline
+now knows about each final, dereplicated MAG — CheckM2 completeness and
+contamination (stage 05), GTDB-Tk taxonomy (stage 06), GUNC chimerism (stage
+05), and barrnap/tRNAscan-SE rRNA and tRNA counts (this stage) — into one
+row per MAG, with the resulting MIMAG/MISAG quality tier (Bowers et al.
+2017) computed directly. This is the same logic the Plots tab's own
+`build_magma_mag_table.R` already applies on demand; running it as a real
+pipeline artifact means a single reviewable table exists even for a
+headless/HPC deployment with no Plots tab to compute it interactively.
 
 ### 08 — Coverage
 
