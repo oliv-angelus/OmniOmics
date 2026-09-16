@@ -191,7 +191,9 @@ auth.alignment = WD_ALIGN_PARAGRAPH.CENTER
 AUTHORS = [
     ("Angelo Felipe Barbosa de Oliveira", "1"),
     ("Gabriel Iketani Coelho", "2"),
+    ("Adonney Allan de Oliveira Veras", "6"),
     ("Rafael Azevedo Baraúna", "3"),
+    ("Maria Paula da Cruz Schneider", "5"),
     ("Artur Luiz da Costa da Silva", "4"),
     ("Diego Assis das Graças", "1"),
 ]
@@ -217,6 +219,12 @@ AFFILIATIONS = [
     ("4", "Centro de Genômica e Biologia de Sistemas, Instituto de "
           "Ciências Biológicas, Universidade Federal do Pará (UFPA), "
           "Belém, PA, Brazil"),
+    ("5", "Laboratório de Genômica e Biotecnologia, Instituto de "
+          "Ciências Biológicas, Universidade Federal do Pará (UFPA), "
+          "Belém, PA, Brazil"),
+    ("6", "Faculdade de Computação (FACOMP), Universidade Federal do "
+          "Pará (UFPA), Campus Universitário de Castanhal, Castanhal, "
+          "PA, Brazil"),
 ]
 for i, (num, text) in enumerate(AFFILIATIONS):
     if i > 0:
@@ -840,15 +848,18 @@ unnumbered_heading("Author Contributions")
 para(
     "Author roles follow the CRediT (Contributor Roles) taxonomy. "
     "A.F.B.O.: Angelo Felipe Barbosa de Oliveira; G.I.C.: Gabriel "
-    "Iketani Coelho; R.A.B.: Rafael Azevedo Baraúna; A.L.C.S.: Artur "
-    "Luiz da Costa da Silva; D.A.G.: Diego Assis das Graças. "
+    "Iketani Coelho; A.A.O.V.: Adonney Allan de Oliveira Veras; "
+    "R.A.B.: Rafael Azevedo Baraúna; M.P.C.S.: Maria Paula da Cruz "
+    "Schneider; A.L.C.S.: Artur Luiz da Costa da Silva; D.A.G.: Diego "
+    "Assis das Graças. "
     "Conceptualization: A.F.B.O., A.L.C.S., D.A.G. Methodology: "
     "A.F.B.O. Software: A.F.B.O. Validation: A.F.B.O. Formal "
     "analysis: A.F.B.O. Data curation: A.F.B.O. Resources: G.I.C., "
     "D.A.G. Writing -- original draft: A.F.B.O. Writing -- review & "
-    "editing: R.A.B., A.L.C.S., D.A.G. Visualization: A.F.B.O. "
-    "Supervision: R.A.B., A.L.C.S., D.A.G. Project administration: "
-    "R.A.B., A.L.C.S., D.A.G. Funding acquisition: A.L.C.S."
+    "editing: R.A.B., A.L.C.S., D.A.G., M.P.C.S., A.A.O.V. "
+    "Visualization: A.F.B.O. Supervision: R.A.B., A.L.C.S., D.A.G., "
+    "M.P.C.S. Project administration: R.A.B., A.L.C.S., D.A.G., "
+    "M.P.C.S. Funding acquisition: A.L.C.S., M.P.C.S."
 )
 
 # ============================================================
