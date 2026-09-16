@@ -188,21 +188,49 @@ r.font.size = Pt(16)
 doc.add_paragraph()
 auth = doc.add_paragraph()
 auth.alignment = WD_ALIGN_PARAGRAPH.CENTER
-ra = auth.add_run("Angelo Felipe Barbosa de Oliveira")
-ra.bold = True
-ra.font.size = Pt(12)
-sup = auth.add_run("1")
-sup.font.superscript = True
+AUTHORS = [
+    ("Angelo Felipe Barbosa de Oliveira", "1"),
+    ("Gabriel Iketani Coelho", "2"),
+    ("Rafael Azevedo Baraúna", "3"),
+    ("Artur Luiz da Costa da Silva", "4"),
+    ("Diego Assis das Graças", "1"),
+]
+for i, (name, sup_num) in enumerate(AUTHORS):
+    if i > 0:
+        auth.add_run(", " if i < len(AUTHORS) - 1 else " & ")
+    ra = auth.add_run(name)
+    ra.bold = True
+    ra.font.size = Pt(12)
+    sup = auth.add_run(sup_num)
+    sup.font.superscript = True
 
 affil = doc.add_paragraph()
 affil.alignment = WD_ALIGN_PARAGRAPH.CENTER
-raf = affil.add_run(
-    "1Programa de Pós-Graduação em Genética e Biologia Molecular, "
-    "Universidade Federal do Pará (UFPA), Belém, PA, Brazil. "
-    "ORCID: 0000-0003-0831-447X"
-)
+AFFILIATIONS = [
+    ("1", "Programa de Pós-Graduação em Genética e Biologia Molecular, "
+          "Universidade Federal do Pará (UFPA), Belém, PA, Brazil"),
+    ("2", "Instituto de Ciências da Educação, Universidade Federal do "
+          "Oeste do Pará (UFOPA), Santarém, PA, Brazil"),
+    ("3", "Laboratório de Genômica e Bioinformática, Faculdade de "
+          "Biotecnologia, Universidade Federal do Pará (UFPA), Belém, "
+          "PA, Brazil"),
+    ("4", "Centro de Genômica e Biologia de Sistemas, Instituto de "
+          "Ciências Biológicas, Universidade Federal do Pará (UFPA), "
+          "Belém, PA, Brazil"),
+]
+for i, (num, text) in enumerate(AFFILIATIONS):
+    if i > 0:
+        affil.add_run().add_break()
+    rsup = affil.add_run(num)
+    rsup.font.superscript = True
+    rsup.font.size = Pt(10)
+    rtext = affil.add_run(text)
+    rtext.font.size = Pt(10)
+affil.add_run().add_break()
+raf = affil.add_run("ORCID (A.F.B.O.): 0000-0003-0831-447X")
 raf.font.size = Pt(10)
-raf.font.color.rgb = BLACK
+for r in affil.runs:
+    r.font.color.rgb = BLACK
 
 doc.add_paragraph()
 
@@ -709,8 +737,15 @@ para(
 # ACKNOWLEDGEMENTS
 # ============================================================
 unnumbered_heading("Acknowledgements")
-p = para()
-add_pending(p, "[PENDING]")
+para(
+    "This work was supported by the Brazilian National Council for "
+    "Scientific and Technological Development (CNPq), through the "
+    "Iwasa'i -- Centro Avançado de Pesquisa e Inovação Biotecnológica "
+    "da Amazônia Oriental project (CNPq process 445350/2024-5). The "
+    "authors thank Universidade Federal do Oeste do Pará (UFOPA) for "
+    "the institutional high-performance computing access this work's "
+    "real-dataset validation runs (Results) were executed on."
+)
 
 # ============================================================
 # REFERENCES
