@@ -31,7 +31,7 @@ This is how OmniOmics is meant to be installed. Download the `.deb` from the
 [Releases page](https://github.com/oliv-angelus/OmniOmics/releases), then:
 
 ```bash
-sudo dpkg -i omniomics_0.0.1_amd64.deb
+sudo dpkg -i omniomics_1.0.0_amd64.deb
 omniomics
 ```
 

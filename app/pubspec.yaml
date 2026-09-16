@@ -16,9 +16,11 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-# Alpha. Kept in step with AboutScreen.version and CITATION.cff -- the three
-# are updated together.
-version: 0.0.1+1
+# CITATION.cff is the single source of truth for the version the app
+# actually displays (About screen, generated citation, build.sh's .deb
+# filename all read it live) -- this field is cosmetic (unused by any
+# build/packaging step) and kept in step by hand for consistency only.
+version: 1.0.0+1
 
 environment:
   sdk: ^3.12.2

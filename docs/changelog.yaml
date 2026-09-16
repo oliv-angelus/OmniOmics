@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "1.0.0"
+  date: 2026-09-15
+  entries:
+    - pt: "**Todos os cinco pipelines agora estão validados de ponta a ponta com dados reais.** MAGMA, SIGMA, DOGMA, DEFINE e PRISM foram cada um rodados de verdade (nunca em modo dry-run ou com dados sintéticos) contra um conjunto de dados público com resultado esperado conhecido e publicado -- composição certificada de comunidade mock, genoma de referência, resultado já reportado por um artigo publicado, ou a própria classificação do fabricante do sequenciador para o mesmo arquivo de leituras. Onze de doze genes/categorias do DOGMA bateram a direção reportada por Chuckran et al. (2021); MAGMA recuperou e classificou corretamente 7 de 7 genomas montados a partir do metagenoma, sem nenhuma chamada falsa; a taxa de DEGs do DEFINE bateu a mesma ordem de grandeza do artigo fonte; o assembly híbrido de leitura longa do SIGMA alcançou 100% da fração do genoma de referência; o perfil taxonômico do PRISM mostrou forte concordância composicional com a classificação do próprio fabricante das mesmas leituras. Configuração exata, verdade de campo e resultados brutos publicados em github.com/oliv-angelus/OmniOmics-validation (também com seu próprio release e DOI no Zenodo)."
+      en: "**All five pipelines are now validated end to end with real data.** MAGMA, SIGMA, DOGMA, DEFINE, and PRISM were each run for real (never as a dry run or on synthetic data) against a public dataset with an independently known, published expected result -- a certified mock-community composition, a reference genome, a published paper's own reported result, or the sequencing vendor's own classification of the identical read file. Eleven of twelve DOGMA gene/category directions matched Chuckran et al. (2021); MAGMA correctly recovered and classified 7 of 7 metagenome-assembled genomes with no false calls; DEFINE's DEG rate matched its source paper's order of magnitude; SIGMA's hybrid long-read assembly reached 100% of the reference genome fraction; PRISM's taxonomic profiling showed strong compositional agreement with the sequencing vendor's own classification of the same reads. Exact configuration, ground truth, and raw results are published at github.com/oliv-angelus/OmniOmics-validation (itself now a tagged release with its own Zenodo DOI)."
+
 - version: "0.0.11-alpha"
   date: 2026-09-14
   entries:

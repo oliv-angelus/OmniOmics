@@ -14,15 +14,19 @@ weeks-long task that has to be repeated on every machine and revisited every tim
 a tool updates. OmniOmics does that assembly once, declaratively, and keeps it
 reproducible.
 
-> **Status: alpha (0.0.1).** The workflows and the plotting environment run end
-> to end and are validated against **synthetic control datasets** built to
-> reproduce each tool's real output format and to exercise every code path,
-> including the edge cases. Validation on **large real datasets is pending for
-> reasons of compute capacity** in our current lab, and is the subject of a
-> benchmark being prepared for the accompanying manuscript. A stable release,
-> together with the pipeline benchmark results, is planned for **December
-> 2026**. See [Validation status](#validation-status) for what that does and
-> does not establish.
+> **Status: 1.0.0.** The workflows and the plotting environment run end to end
+> and have been validated twice over: first against **synthetic control
+> datasets** built to reproduce each tool's real output format and exercise
+> every code path, including the edge cases; then for real, all five
+> pipelines run end to end on **real, non-simulated public datasets** against
+> independent, external ground truth (certified mock-community compositions,
+> reference genomes, published papers' own reported results, and a sequencing
+> vendor's own classification of the same read file), on real institutional
+> HPC hardware, not a laptop-scale approximation. Exact configuration, ground
+> truth, and raw results are published at
+> [OmniOmics-validation](https://github.com/oliv-angelus/OmniOmics-validation).
+> See [Validation status](#validation-status) for what that does and does not
+> establish.
 
 ---
 
@@ -177,7 +181,7 @@ Download the `.deb` from the
 it like any other application:
 
 ```bash
-sudo dpkg -i omniomics_0.0.1_amd64.deb
+sudo dpkg -i omniomics_1.0.0_amd64.deb
 omniomics
 ```
 
@@ -295,26 +299,52 @@ own, and that surface is what these checks target:
   legitimate refusal and from an empty-but-correct result.
 - **Format verification against tool source code** for every reader.
 - **End-to-end execution** of all five workflows and all 43 analyses.
+- **Real, non-simulated validation of all five pipelines**, each run end to
+  end on a public dataset with independent, external ground truth, on real
+  institutional HPC hardware:
+  - **MAGMA** — ZymoBIOMICS mock community (even + log-distributed): all 10
+    reference species detected; 7 of 7 recovered MAGs correctly classified by
+    GTDB-Tk with no false calls.
+  - **SIGMA** — a Zymo reference *E. coli* isolate: hybrid ONT assembly
+    reached 100.000% genome fraction against the certified reference genome
+    with zero misassemblies.
+  - **DOGMA** — a published soil metatranscriptome time course (Chuckran et
+    al. 2021): 11 of 12 real nitrogen-cycle gene/category directions matched
+    the paper's own reported results.
+  - **DEFINE** — a published *E. coli* irradiation RNA-seq study: DEG call
+    rate matched the source paper's order of magnitude, with full
+    functional-category overlap.
+  - **PRISM** — a ZymoBIOMICS 16S mock community sequenced by the vendor:
+    strong compositional agreement (Bray-Curtis 0.08-0.11) with the vendor's
+    own classification of the identical reads.
+  
+  Mixed and partial outcomes (e.g. MAGMA's read-based quantitative accuracy,
+  SIGMA's PacBio-chemistry misassemblies) are reported alongside the strong
+  results rather than smoothed over. Exact configuration, curated ground
+  truth, and raw observed-vs-expected results for every pipeline are
+  published at
+  [OmniOmics-validation](https://github.com/oliv-angelus/OmniOmics-validation)
+  ([Zenodo DOI](https://doi.org/10.5281/zenodo.22780175)), and reported in
+  full in the accompanying manuscript (`paper/` in this repository).
 
 ### Pending
 
-- **Benchmarking on large real datasets.** Not yet done, for a concrete reason:
-  the compute available in our current laboratory is not sufficient for
-  full-scale metagenomic assembly and binning. This is a capacity constraint,
-  not a design gap. The benchmark is being prepared and its results will be
-  reported in the accompanying manuscript, currently in preparation.
-- **Concordance testing** — running public datasets with known published
-  results through the application and showing that the output agrees with what
-  the same tools produce when run by hand. This is the check that matters for
-  an orchestration layer, and it is part of the same benchmark.
 - **Sustained use by people other than the author.**
+- **PRISM's PacBio marker-gene path** (the vendor's Kinnex 16S
+  mock-community release) remains unvalidated: the vendor's own data host
+  was unreachable from both the analysis machine and the compute node used
+  for this work at the time it was set up, a real external infrastructure
+  constraint documented in the companion repository.
+- A few sections of the accompanying manuscript (Acknowledgements, Author
+  Contributions, and two supporting figures) are still being finished.
 
 ### Roadmap
 
 | | |
 |---|---|
-| **December 2026** | Stable release, together with the pipeline benchmark results |
-| **In preparation** | Manuscript describing the application and the large-dataset benchmark |
+| **Now** | v1.0.0: all five pipelines validated end to end on real datasets (see above) |
+| **In preparation** | Manuscript describing the application and its real-dataset validation |
+| **Future** | Additional pipelines, a GROND/full rrn-operon mode for PRISM, an expanded Plots-tab library for SIGMA |
 
 ### Other current limitations
 
