@@ -75,8 +75,8 @@ sub_labels = [
     "Run monitoring +\nlog parsing",
     "Plots API\n(R scripts)",
 ]
-sub_w = 1.55
-gap = 0.12
+sub_w = 1.43
+gap = 0.15
 start_x = 1.9
 for i, lab in enumerate(sub_labels):
     x = start_x + i * (sub_w + gap)

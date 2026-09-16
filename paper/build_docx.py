@@ -102,6 +102,7 @@ def unnumbered_subheading(text, level=2):
 
 def para(text="", size=12, italic=False, bold=False):
     p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     if text:
         r = p.add_run(text)
         r.font.name = "Times New Roman"
@@ -122,7 +123,7 @@ def figure(filename, caption, width_cm=16):
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.add_run().add_picture(os.path.join(FIGURES_DIR, filename), width=Cm(width_cm))
     cap = doc.add_paragraph()
-    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cap.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     r = cap.add_run(caption)
     r.font.name = "Times New Roman"
     r.font.size = Pt(10)
