@@ -808,15 +808,6 @@ add_pending(p, "[PENDING]")
 # TABLES AND FIGURES
 # ============================================================
 unnumbered_heading("Tables and Figures")
-p = para()
-add_pending(p, (
-    "[PENDING: Figures. Architecture diagram (client/backend/"
-    "pipeline-registry), one assembly-quality figure (e.g., SIGMA's "
-    "short-only vs. hybrid contig-count/genome-fraction comparison) as "
-    "a visual anchor for the validation argument. Table 3 already holds "
-    "the real, complete observed-vs-expected result for all five "
-    "pipelines (see Results); no further table work is pending.]"
-))
 para(
     "Figure 1 (panels A-E): per-pipeline workflow diagrams, one panel "
     "per pipeline, hand-illustrated in draw.io by the author and "
@@ -862,6 +853,29 @@ figure(
     "filtering, three-way denoising/classification (DADA2 for PacBio "
     "HiFi or Illumina, Emu for ONT), and PICRUSt2 functional inference "
     "for the 16S PacBio path.",
+)
+figure(
+    "architecture.png",
+    "Figure 2. OmniOmics's client/backend/pipeline-registry architecture "
+    "(Materials and Methods, 2.1): a Flutter desktop client communicates "
+    "with a local FastAPI/Python backend over HTTP and WebSocket on "
+    "127.0.0.1; the backend discovers installed pipelines at startup by "
+    "scanning pipelines/<id>/ for a pipeline.yaml manifest, then spawns "
+    "Snakemake, one isolated conda environment per tool. Adding a "
+    "pipeline means adding a new directory, not changing application "
+    "code.",
+    width_cm=13,
+)
+figure(
+    "SIGMA_assembly_quality.png",
+    "Figure 3. SIGMA's real assembly-quality comparison (Results, Table "
+    "3; Discussion): the same E. coli isolate assembled short-read-only "
+    "versus hybrid with ONT versus hybrid with PacBio, QUAST against the "
+    "certified reference genome. The ONT path improves on every axis "
+    "with zero misassemblies; the PacBio path (2018-era CLR chemistry, "
+    "no circular-consensus correction) recovers more of the genome and "
+    "a higher N50 than short-only, but at the cost of 21 real "
+    "misassemblies short-only did not have.",
 )
 
 doc.save("/home/angelo/Documentos/OmniOmics/paper/Artigo.docx")
