@@ -333,15 +333,12 @@ own, and that surface is what these checks target:
   was unreachable from both the analysis machine and the compute node used
   for this work at the time it was set up, a real external infrastructure
   constraint documented in the companion repository.
-- A few sections of the accompanying manuscript (Acknowledgements, Author
-  Contributions, and two supporting figures) are still being finished.
 
 ### Roadmap
 
 | | |
 |---|---|
 | **Now** | v1.0.0: all five pipelines validated end to end on real datasets (see above) |
-| **In preparation** | Manuscript describing the application and its real-dataset validation |
 | **Future** | Additional pipelines, a GROND/full rrn-operon mode for PRISM, an expanded Plots-tab library for SIGMA |
 
 ### Other current limitations
