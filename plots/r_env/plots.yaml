@@ -9,9 +9,9 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - r-base>=4.3
-  - bioconductor-phyloseq
-  - bioconductor-deseq2
+  - r-base=4.5.3
+  - bioconductor-phyloseq=1.54.0
+  - bioconductor-deseq2=1.50.2
   # ape is CRAN, not Bioconductor, so the package is r-ape. It was listed here
   # as `bioconductor-ape`, which does not exist in bioconda -- almost certainly
   # confused with `bioconductor-apeglm` further down, which is a different
@@ -21,28 +21,28 @@ dependencies:
   # file at all and the whole Plots tab was unreachable on a fresh machine.
   # Required by load_phyloseq.R, build_phyloseq.R, build_dogma_table.R and
   # beta_diversity.R (ape::pcoa).
-  - r-ape
-  - r-vegan
-  - r-permute
-  - r-patchwork
-  - r-ggplot2
-  - r-ggrepel
-  - r-rcolorbrewer
-  - r-tidyverse
-  - r-dplyr
-  - r-tibble
-  - r-forcats
-  - r-indicspecies
-  - r-igraph
-  - r-ggraph
-  - r-hmisc
-  - r-ggvenndiagram
-  - r-complexupset
+  - r-ape=5.8_1
+  - r-vegan=2.7_5
+  - r-permute=0.9_10
+  - r-patchwork=1.3.2
+  - r-ggplot2=4.0.3
+  - r-ggrepel=0.9.8
+  - r-rcolorbrewer=1.1_3
+  - r-tidyverse=2.0.0
+  - r-dplyr=1.2.1
+  - r-tibble=3.3.1
+  - r-forcats=1.0.1
+  - r-indicspecies=1.8.0
+  - r-igraph=2.3.3
+  - r-ggraph=2.2.2
+  - r-hmisc=5.2_6
+  - r-ggvenndiagram=1.5.7
+  - r-complexupset=1.3.3
   # circlize: the circular genome ring (sigma_genome_ring). Gu et al. 2014,
   # Bioinformatics 30:2811, doi:10.1093/bioinformatics/btu393.
-  - r-circlize
-  - r-svglite
-  - r-jsonlite
-  - r-optparse
-  - bioconductor-apeglm
-  - bioconductor-clusterprofiler
+  - r-circlize=0.4.18
+  - r-svglite=2.2.2
+  - r-jsonlite=2.0.0
+  - r-optparse=1.8.2
+  - bioconductor-apeglm=1.32.0
+  - bioconductor-clusterprofiler=4.18.4

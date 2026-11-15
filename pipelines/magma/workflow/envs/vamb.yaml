@@ -4,6 +4,6 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - pip
+  - pip=24.2
   - pip:
     - vamb==5.0.2

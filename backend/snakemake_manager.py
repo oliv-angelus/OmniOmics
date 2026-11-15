@@ -70,7 +70,9 @@ async def install_snakemake() -> dict:
     proc = await asyncio.create_subprocess_exec(
         conda, "create", "-n", "snakemake",
         "-c", "conda-forge", "-c", "bioconda",
-        "snakemake", "-y",
+        # Exact pin (reviewer point: unpinned Snakemake made the validation's
+        # version unrecoverable). 9.26.0 is the version resolved and used locally.
+        "snakemake=9.26.0", "-y",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )

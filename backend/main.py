@@ -377,7 +377,7 @@ def _snakemake_runner(payload):
         rc = await install_jobs.run_proc(
             job,
             [conda, "create", "-n", "snakemake", "-c", "conda-forge", "-c", "bioconda",
-             "snakemake", "-y"],
+             "snakemake=9.26.0", "-y"],  # exact pin, see snakemake_manager.install_snakemake
             clean=clean_output)
         if rc != 0:
             raise RuntimeError("Snakemake installation failed.")
@@ -398,11 +398,11 @@ def _vibrant_tools_runner(payload):
         conda_bin = conda["path"]
         job.emit({"type": "log",
                   "text": f"conda: {conda_bin}\n"
-                          f"Installing HMMER3 and wget from conda-forge / bioconda...\n"})
+                          f"Installing HMMER 3.4 and wget 1.25.0 from conda-forge / bioconda...\n"})
 
         rc = await install_jobs.run_proc(
             job,
-            [conda_bin, "install", "-y", "-c", "conda-forge", "-c", "bioconda", "hmmer", "wget"],
+            [conda_bin, "install", "-y", "-c", "conda-forge", "-c", "bioconda", "hmmer=3.4", "wget=1.25.0"],
             clean=clean_output)
         if rc != 0:
             raise RuntimeError("conda install exited with errors.")
