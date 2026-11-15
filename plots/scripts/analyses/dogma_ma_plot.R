@@ -23,7 +23,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args(defaults = list(annotation_column = "eggnog_KEGG_ko", alpha = "0.05"))
+args <- parse_cli_args(defaults = list(min_total_count = "0", annotation_column = "eggnog_KEGG_ko", alpha = "0.05"))
 
 if (is.null(args$group_var) || args$group_var == "") stop("--group_var is required")
 if (is.null(args$reference_group) || args$reference_group == "") stop("--reference_group is required")
@@ -45,7 +45,7 @@ loaded <- readRDS(args$dogma_table_rds)
 count_data <- aggregate_dogma_counts(loaded$long_table, annotation_col, loaded$coldata)
 log_line("[dogma_ma_plot] aggregated count matrix: %d gene families x %d samples", nrow(count_data$counts), ncol(count_data$counts))
 
-dds <- run_deseq(count_data, group_var, reference_group)
+dds <- run_deseq(count_data, group_var, reference_group, min_total_count = args$min_total_count)
 coef_name <- deseq_coef_name(dds, group_var, test_group, reference_group)
 log_line("[dogma_ma_plot] comparison: %s vs %s", test_group, reference_group)
 

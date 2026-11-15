@@ -31,7 +31,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args(defaults = list(alpha = "0.05", min_lfc = "1"))
+args <- parse_cli_args(defaults = list(min_total_count = "0", alpha = "0.05", min_lfc = "1"))
 
 if (is.null(args$group_var) || args$group_var == "") stop("--group_var is required")
 if (is.null(args$reference_group) || args$reference_group == "") stop("--reference_group is required")
@@ -47,7 +47,7 @@ log_line("[de_upset] reading cached count matrix from %s", args$count_matrix_rds
 count_data <- readRDS(args$count_matrix_rds)
 log_line("[de_upset] count matrix: %d genes x %d samples", nrow(count_data$counts), ncol(count_data$counts))
 
-dds <- run_deseq(count_data, group_var, reference_group)
+dds <- run_deseq(count_data, group_var, reference_group, min_total_count = args$min_total_count)
 
 # One coefficient per non-reference level, all from the SAME fitted model --
 # resultsNames(dds)[1] is always "Intercept", every one after it is a real

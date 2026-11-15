@@ -51,7 +51,7 @@ COG_CATEGORY_NAMES <- c(
   R = "General function prediction only", S = "Function unknown"
 )
 
-args <- parse_cli_args(defaults = list(alpha = "0.05", min_lfc = "1", term_source = "COG_category", p_cutoff = "0.05"))
+args <- parse_cli_args(defaults = list(min_total_count = "0", alpha = "0.05", min_lfc = "1", term_source = "COG_category", p_cutoff = "0.05"))
 
 if (is.null(args$group_var) || args$group_var == "") stop("--group_var is required")
 if (is.null(args$reference_group) || args$reference_group == "") stop("--reference_group is required")
@@ -72,7 +72,7 @@ log_line("[functional_enrichment] reading cached count matrix from %s", args$cou
 count_data <- readRDS(args$count_matrix_rds)
 log_line("[functional_enrichment] count matrix: %d genes x %d samples", nrow(count_data$counts), ncol(count_data$counts))
 
-dds <- run_deseq(count_data, group_var, reference_group)
+dds <- run_deseq(count_data, group_var, reference_group, min_total_count = args$min_total_count)
 coef_name <- deseq_coef_name(dds, group_var, test_group, reference_group)
 log_line("[functional_enrichment] comparison: %s vs %s", test_group, reference_group)
 res_df <- as.data.frame(results(dds, name = coef_name)) %>% tibble::rownames_to_column("locus_tag") %>% filter(!is.na(padj))

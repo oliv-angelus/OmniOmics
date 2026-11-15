@@ -768,6 +768,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
           pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -809,6 +817,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
           pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -867,6 +883,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
           pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -917,6 +941,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
           pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -976,6 +1008,14 @@ analyses:
         description:
           en: "Level of group_var used as the common reference (baseline) for every comparison"
           pt: "Nível de group_var usado como referência (linha de base) comum para todas as comparações"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -1077,6 +1117,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference (which condition this comparison is actually about)"
           pt: "Nível de group_var a testar contra a referência (qual condição esta comparação realmente compara)"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -1202,6 +1250,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference"
           pt: "Nível de group_var a testar contra a referência"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -1254,6 +1310,14 @@ analyses:
         description:
           en: "Level of group_var to test against the reference"
           pt: "Nível de group_var a testar contra a referência"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05
@@ -1306,6 +1370,14 @@ analyses:
         description:
           en: "Level of group_var used as the common reference (baseline) for every comparison"
           pt: "Nível de group_var usado como referência (linha de base) comum para todas as comparações"
+      - flag: "--min_total_count"
+        type: int
+        default: 0
+        enabled: false
+        description:
+          en: "Low-count prefilter before DESeq2: drop features whose total reads across all samples are below this value (0 = only drop all-zero features). E.g. 60 reproduces Chuckran et al. 2021"
+          pt: "Pré-filtro de baixa contagem antes do DESeq2: remove features cuja soma de reads em todas as amostras fique abaixo deste valor (0 = remove só as totalmente zeradas). Ex.: 60 reproduz Chuckran et al. 2021"
+        min: 0
       - flag: "--alpha"
         type: float
         default: 0.05

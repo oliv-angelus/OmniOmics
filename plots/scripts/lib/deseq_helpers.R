@@ -106,7 +106,7 @@ run_deseq_lrt <- function(dds, group_var, reduced = ~ 1) {
   )
 }
 
-run_deseq <- function(count_data, group_var, reference_group = NULL) {
+run_deseq <- function(count_data, group_var, reference_group = NULL, min_total_count = 0) {
   coldata <- count_data$coldata
   if (!(group_var %in% colnames(coldata))) {
     stop(sprintf("group_var '%s' is not a column in the metadata table. Available columns: %s",
@@ -150,6 +150,18 @@ run_deseq <- function(count_data, group_var, reference_group = NULL) {
   formula_deseq <- as.formula(paste("~", group_var))
   dds <- DESeqDataSetFromMatrix(countData = counts, colData = coldata, design = formula_deseq)
   dds <- dds[rowSums(counts(dds)) > 0, ]  # drop genes with zero reads in every remaining sample
+  # Optional independent low-count prefilter (total reads across all samples
+  # >= min_total_count). 0 = off, the previous behaviour. Exposed so a source
+  # study's own filter can be reproduced from the GUI -- e.g. Chuckran et al.
+  # 2021 (mSystems, doi:10.1128/mSystems.00161-21) removed genes with < 60
+  # summed reads before DESeq2.
+  min_total_count <- suppressWarnings(as.numeric(min_total_count))
+  if (!is.na(min_total_count) && min_total_count > 0) {
+    n_before <- nrow(dds)
+    dds <- dds[rowSums(counts(dds)) >= min_total_count, ]
+    log_line("[deseq_helpers] min_total_count=%g: kept %d of %d features", min_total_count, nrow(dds), n_before)
+    if (nrow(dds) == 0) stop(sprintf("No feature has >= %g total reads -- lower min_total_count.", min_total_count))
+  }
 
   dds <- .size_factors(dds)
 

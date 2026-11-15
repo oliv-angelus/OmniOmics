@@ -25,7 +25,7 @@ suppressMessages({
   library(jsonlite)
 })
 
-args <- parse_cli_args(defaults = list(alpha = "0.05", min_lfc = "1", label_top_n = "15"))
+args <- parse_cli_args(defaults = list(min_total_count = "0", alpha = "0.05", min_lfc = "1", label_top_n = "15"))
 
 if (is.null(args$group_var) || args$group_var == "") stop("--group_var is required")
 if (is.null(args$reference_group) || args$reference_group == "") stop("--reference_group is required")
@@ -47,7 +47,7 @@ log_line("[volcano_plot] reading cached count matrix from %s", args$count_matrix
 count_data <- readRDS(args$count_matrix_rds)
 log_line("[volcano_plot] count matrix: %d genes x %d samples", nrow(count_data$counts), ncol(count_data$counts))
 
-dds <- run_deseq(count_data, group_var, reference_group)
+dds <- run_deseq(count_data, group_var, reference_group, min_total_count = args$min_total_count)
 coef_name <- deseq_coef_name(dds, group_var, test_group, reference_group)
 log_line("[volcano_plot] comparison: %s vs %s", test_group, reference_group)
 
