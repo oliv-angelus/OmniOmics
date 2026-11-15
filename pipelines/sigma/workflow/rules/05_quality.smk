@@ -8,6 +8,7 @@ rule quast:
     threads: config["threads"]["quast"]
     conda: "../envs/quast.yaml"
     log: "logs/quast/{sample}.log"
+    benchmark: "benchmarks/quast/{sample}.tsv"
     shell:
         "quast.py {input.contigs} -o {output.outdir} -t {threads} {params.extra} > {log} 2>&1"
 
@@ -27,6 +28,7 @@ rule checkm2:
     threads: config["threads"]["checkm2"]
     conda: "../envs/checkm2.yaml"
     log: "logs/checkm2/{sample}.log"
+    benchmark: "benchmarks/checkm2/{sample}.tsv"
     shell:
         """
         rm -rf {output.outdir} {params.indir}
@@ -46,6 +48,7 @@ rule gunc:
     threads: config["threads"]["gunc"]
     conda: "../envs/gunc.yaml"
     log: "logs/gunc/{sample}.log"
+    benchmark: "benchmarks/gunc/{sample}.tsv"
     shell:
         """
         mkdir -p {output.outdir}

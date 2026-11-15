@@ -9,6 +9,7 @@ rule bed12_from_gff:
     output:
         bed="results/03_STRANDEDNESS/reference.bed12"
     log: "logs/strandedness/bed12.log"
+    benchmark: "benchmarks/strandedness/bed12.tsv"
     shell:
         """
         mkdir -p results/03_STRANDEDNESS
@@ -30,6 +31,7 @@ rule infer_experiment:
         extra=config["params"]["rseqc"]
     conda: "../envs/rseqc.yaml"
     log: "logs/strandedness/{sample}_infer_experiment.log"
+    benchmark: "benchmarks/strandedness/{sample}_infer_experiment.tsv"
     shell:
         """
         mkdir -p results/03_STRANDEDNESS/{wildcards.sample}
@@ -55,6 +57,7 @@ rule decide_strandedness:
         script=os.path.join(workflow.basedir, "workflow", "scripts", "decide_strandedness.py")
     conda: "../envs/pandas.yaml"
     log: "logs/strandedness/decide.log"
+    benchmark: "benchmarks/strandedness/decide.tsv"
     shell:
         # Explicit interpreter, not a bare `python`: the conda env is active
         # (CONDA_PREFIX is set) but any directory earlier in PATH -- notably

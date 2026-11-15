@@ -64,8 +64,19 @@ rule cutadapt_trim:
     conda: "../envs/cutadapt.yaml"
     threads: config["threads"].get("cutadapt", 4)  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     log: "logs/cutadapt/{sample}.log"
+    benchmark: "benchmarks/cutadapt/{sample}.tsv"
+    # --revcomp: ONT and PacBio amplicon reads come off the sequencer in BOTH
+    # orientations (~50/50). The linked adapter fwd...revcomp(rev) only matches
+    # forward-strand reads, so without --revcomp every reverse-strand read
+    # failed to match and --discard-untrimmed threw it away -- half the data,
+    # silently (real bug found 2026-11-15 after review of the PRISM validation:
+    # only 28.2% of MSPLUS_REP1 reads survived this step). With --revcomp
+    # cutadapt also tries the reverse complement, keeps the better match and
+    # writes the read re-oriented, which is what the manifest always claimed
+    # this step did ("removes the primers and orients reads"). Verified on 100
+    # synthetic reads, half reversed: 50/100 kept before, 100/100 after.
     shell:
-        "cutadapt {params.linked} --discard-untrimmed --cores {threads} "
+        "cutadapt {params.linked} --revcomp --discard-untrimmed --cores {threads} "
         "--json {output.report} -o {output.long} {input.long} > {log} 2>&1"
 
 
@@ -117,6 +128,7 @@ rule cutadapt_trim_short:
     conda: "../envs/cutadapt.yaml"
     threads: config["threads"].get("cutadapt_short", 4)
     log: "logs/cutadapt/{sample}_short.log"
+    benchmark: "benchmarks/cutadapt/{sample}_short.tsv"
     shell:
         "cutadapt {params.primers} --discard-untrimmed --pair-filter any --cores {threads} "
         "--json {output.report} -o {output.r1} -p {output.r2} {input.r1} {input.r2} > {log} 2>&1"

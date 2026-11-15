@@ -25,6 +25,7 @@ rule antismash:
     threads: config["threads"]["antismash"]
     conda: "../envs/antismash.yaml"
     log: "logs/bgc/{sample}_antismash.log"
+    benchmark: "benchmarks/bgc/{sample}_antismash.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -44,6 +45,7 @@ rule bigscape:
     threads: config["threads"]["bigscape"]
     conda: "../envs/bigscape.yaml"
     log: "logs/bgc/{sample}_bigscape.log"
+    benchmark: "benchmarks/bgc/{sample}_bigscape.tsv"
     shell:
         """
         mkdir -p {output.outdir}/gbk_pool

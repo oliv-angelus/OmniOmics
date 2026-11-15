@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - polypolish=0.6.1
+  - bwa=0.7.18

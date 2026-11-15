@@ -13,6 +13,7 @@ rule bowtie2_align:
     # this log doubles as an input to qc_summary's automatic QC-alert table
     # (06_merge.smk) -- not just a debugging artifact.
     log: "logs/mapping/{sample}_bowtie2.log"
+    benchmark: "benchmarks/mapping/{sample}_bowtie2.tsv"
     shell:
         """
         mkdir -p results/02_MAPPING/{wildcards.sample}
@@ -28,5 +29,6 @@ rule index_bam:
     threads: config["threads"]["samtools_index"]
     conda: "../envs/mapping.yaml"
     log: "logs/mapping/{sample}_index.log"
+    benchmark: "benchmarks/mapping/{sample}_index.tsv"
     shell:
         "samtools index -@ {threads} {input.bam} > {log} 2>&1"

@@ -52,6 +52,7 @@ rule vsearch_cluster:
     conda: "../envs/vsearch.yaml"
     threads: config["threads"].get("vsearch_chimera", 4)  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     log: "logs/chimera/{sample}_cluster.log"
+    benchmark: "benchmarks/chimera/{sample}_cluster.tsv"
     shell:
         "vsearch --cluster_size {input.long} --id {params.id} --sizeout "
         "--centroids {output.fasta} --uc {output.uc} --threads {threads} 2> {log}"
@@ -70,6 +71,7 @@ rule vsearch_chimera:
     conda: "../envs/vsearch.yaml"
     threads: config["threads"].get("vsearch_chimera", 4)  # .get, see 04_denoise_classify.smk's _reference_db comment for why
     log: "logs/chimera/{sample}_uchime.log"
+    benchmark: "benchmarks/chimera/{sample}_uchime.tsv"
     shell:
         """
         vsearch --uchime_denovo {input.fasta} --abskew {params.abskew} \

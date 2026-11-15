@@ -27,6 +27,7 @@ rule kraken2:
     conda: "../envs/kraken2.yaml"
     threads: config["threads"]["kraken2"]
     log: "logs/screening/{sample}_kraken2.log"
+    benchmark: "benchmarks/screening/{sample}_kraken2.tsv"
     shell:
         "kraken2 --db {params.db} --threads {threads} {params.extra} {params.paired} "
         "--report {output.report} {input.reads} > {output.output} 2> {log}"
@@ -52,6 +53,7 @@ rule kaiju_classify:
     conda: "../envs/kaiju.yaml"
     threads: config["threads"]["kaiju"]
     log: "logs/screening/{sample}_kaiju_classify.log"
+    benchmark: "benchmarks/screening/{sample}_kaiju_classify.tsv"
     shell:
         "kaiju -z {threads} -t {params.nodes} -f {params.fmi} {params.reads_flag} "
         "{params.extra} -o {output.out} 2> {log}"
@@ -68,6 +70,7 @@ rule kaiju_table:
     conda: "../envs/kaiju.yaml"
     threads: 1
     log: "logs/screening/{sample}_kaiju_table.log"
+    benchmark: "benchmarks/screening/{sample}_kaiju_table.tsv"
     shell:
         """
         kaiju2table -t {params.nodes} -n {params.names_dmp} -r species -o {output.table} {input.out} > {log} 2>&1
@@ -100,6 +103,7 @@ rule extract_domain_short:
     conda: "../envs/kraken2.yaml"
     threads: 1  # extract_kraken_reads.py has no multithreading option
     log: "logs/screening/{sample}_extract_domain_short.log"
+    benchmark: "benchmarks/screening/{sample}_extract_domain_short.tsv"
     shell:
         # "$PY" "$EKR" instead of a bare extract_kraken_reads.py: conda leaves
         # KrakenTools' scripts with a plain `#!/usr/bin/env python` shebang (it
@@ -150,6 +154,7 @@ rule extract_domain_long:
     conda: "../envs/kraken2.yaml"
     threads: 1
     log: "logs/screening/{sample}_extract_domain_long.log"
+    benchmark: "benchmarks/screening/{sample}_extract_domain_long.tsv"
     shell:
         # "$PY" "$EKR" instead of a bare extract_kraken_reads.py -- same reason
         # as extract_domain_short above (KrakenTools keeps an unrewritten

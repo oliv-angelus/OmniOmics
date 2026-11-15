@@ -9,6 +9,7 @@ rule genomad:
     threads: config["threads"]["genomad"]
     conda: "../envs/genomad.yaml"
     log: "logs/viral/{sample}_genomad.log"
+    benchmark: "benchmarks/viral/{sample}_genomad.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -27,6 +28,7 @@ rule virsorter2:
     threads: config["threads"]["virsorter2"]
     conda: "../envs/virsorter2.yaml"
     log: "logs/viral/{sample}_virsorter2.log"
+    benchmark: "benchmarks/viral/{sample}_virsorter2.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -49,6 +51,7 @@ rule checkv:
     threads: config["threads"]["checkv"]
     conda: "../envs/checkv.yaml"
     log: "logs/viral/{sample}_checkv.log"
+    benchmark: "benchmarks/viral/{sample}_checkv.tsv"
     shell:
         """
         export CHECKVDB={params.db}
@@ -66,6 +69,7 @@ rule vibrant:
     threads: config["threads"]["vibrant"]
     conda: "../envs/vibrant.yaml"
     log: "logs/viral/{sample}_vibrant.log"
+    benchmark: "benchmarks/viral/{sample}_vibrant.tsv"
     shell:
         """
         rm -rf {output.outdir}

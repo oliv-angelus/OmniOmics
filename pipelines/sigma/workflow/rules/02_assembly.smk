@@ -26,6 +26,7 @@ rule unicycler:
     conda: "../envs/unicycler.yaml"
     threads: config["threads"]["unicycler"]
     log: "logs/assembly/{sample}_unicycler.log"
+    benchmark: "benchmarks/assembly/{sample}_unicycler.tsv"
     shell:
         """
         if [ "{params.rtype}" == "hybrid" ]; then
@@ -50,6 +51,7 @@ rule flye:
         platform_flag=config["long_read_platform"]["flye_flag"]
     log:
         "logs/flye/{sample}.log"
+    benchmark: "benchmarks/flye/{sample}.tsv"
     threads: config["threads"]["flye"]
     conda: "../envs/flye.yaml"
     resources: tmpdir="/tmp"
@@ -83,4 +85,5 @@ rule finalize_assembly:
     input: get_assembly_output
     output: "results/02_ASSEMBLY/{sample}/final.contigs.fa"
     log: "logs/assembly/{sample}_finalize.log"
+    benchmark: "benchmarks/assembly/{sample}_finalize.tsv"
     shell: "cp {input} {output} 2> {log}"

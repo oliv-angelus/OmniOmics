@@ -24,6 +24,7 @@ rule bakta_reference:
     threads: config["threads"]["bakta_reference"]
     conda: "../envs/bakta.yaml"
     log: "logs/reference/bakta.log"
+    benchmark: "benchmarks/reference/bakta.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -39,6 +40,7 @@ rule filter_rrna:
     output:
         gff="results/00_REFERENCE/bakta/reference_filtered.gff3"
     log: "logs/reference/filter_rrna.log"
+    benchmark: "benchmarks/reference/filter_rrna.tsv"
     shell:
         """
         awk -F'\t' '$1~/^#/ || ($3!="rRNA" && $3!="tRNA" && $3!="tmRNA")' \
@@ -53,6 +55,7 @@ rule bowtie2_index_reference:
     threads: config["threads"]["bowtie2"]
     conda: "../envs/mapping.yaml"
     log: "logs/reference/bowtie2_index.log"
+    benchmark: "benchmarks/reference/bowtie2_index.tsv"
     shell:
         """
         mkdir -p {output.idx_dir}
@@ -74,6 +77,7 @@ rule eggnog_reference:
     threads: config["threads"]["eggnog_reference"]
     conda: "../envs/eggnog.yaml"
     log: "logs/reference/eggnog.log"
+    benchmark: "benchmarks/reference/eggnog.tsv"
     shell:
         """
         mkdir -p results/00_REFERENCE/eggnog

@@ -13,6 +13,7 @@ rule coverm:
     threads: config["threads"]["coverm"]
     conda: "../envs/coverm.yaml"
     log: "logs/coverm/{sample}.log"
+    benchmark: "benchmarks/coverm/{sample}.tsv"
     shell:
         """
         mkdir -p $(dirname {output.coverage})

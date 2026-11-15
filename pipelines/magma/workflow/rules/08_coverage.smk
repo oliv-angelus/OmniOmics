@@ -15,6 +15,7 @@ rule coverm_index:
     threads: config["threads"]["coverm"]
     conda: "../envs/mapping.yaml"
     log: "logs/coverm/index.log"
+    benchmark: "benchmarks/coverm/index.tsv"
     shell:
         """
         mkdir -p results/10_MAG_COVERAGE/index
@@ -47,6 +48,7 @@ rule coverm_map_short:
     threads: config["threads"]["coverm"]
     conda: "../envs/mapping.yaml"
     log: "logs/coverm/{sample}_map.log"
+    benchmark: "benchmarks/coverm/{sample}_map_short.tsv"
     shell:
         """
         mkdir -p results/10_MAG_COVERAGE/bam
@@ -71,6 +73,7 @@ rule coverm_map_long:
     threads: config["threads"]["coverm"]
     conda: "../envs/mapping.yaml"
     log: "logs/coverm/{sample}_map.log"
+    benchmark: "benchmarks/coverm/{sample}_map_long.tsv"
     shell:
         """
         mkdir -p results/10_MAG_COVERAGE/bam
@@ -93,6 +96,7 @@ rule coverm:
     threads: config["threads"]["coverm"]
     conda: "../envs/coverm.yaml"
     log: "logs/coverm/coverm.log"
+    benchmark: "benchmarks/coverm/coverm.tsv"
     shell:
         """
         # Nem --genome-fasta-directory nem --reference são aceitos junto com

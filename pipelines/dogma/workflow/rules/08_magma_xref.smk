@@ -48,6 +48,7 @@ rule magma_mag_db:
     threads: config.get("threads", {}).get("magma_xref", 4)
     conda: "../envs/diamond.yaml"
     log: "logs/magma_xref/magma_mag_db.log"
+    benchmark: "benchmarks/magma_xref/magma_mag_db.tsv"
     shell:
         """: > {output.combined}
         for f in {params.protein_files}; do
@@ -78,6 +79,7 @@ rule magma_mag_annotate:
     threads: config.get("threads", {}).get("magma_xref", 4)
     conda: "../envs/diamond.yaml"
     log: "logs/magma_xref/{sample}_{domain}_magma_mag_annotate.log"
+    benchmark: "benchmarks/magma_xref/{sample}_{domain}_magma_mag_annotate.tsv"
     run:
         shell(
             "diamond blastp -q {input.faa} -d {params.db_prefix} --threads {threads} {params.extra} "

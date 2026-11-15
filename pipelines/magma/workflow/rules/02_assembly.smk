@@ -13,6 +13,7 @@ rule megahit:
     threads: config["threads"]["megahit"]
     conda: "../envs/megahit.yaml"
     log: "logs/megahit/{sample}.log"
+    benchmark: "benchmarks/megahit/{sample}.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -34,6 +35,7 @@ rule metaspades_hybrid:
         platform_flag=config["long_read_platform"]["spades_flag"]
     log:
         "logs/assembly/{sample}_metaspades_hybrid.log"
+    benchmark: "benchmarks/assembly/{sample}_metaspades_hybrid.tsv"
     conda:
         "../envs/spades.yaml"
     threads: config["threads"]["metaspades_hybrid"]
@@ -58,6 +60,7 @@ rule flye:
         platform_flag=config["long_read_platform"]["flye_flag"]
     log:
         "logs/flye/{sample}.log"
+    benchmark: "benchmarks/flye/{sample}.tsv"
     threads: config["threads"]["flye"]
     conda: "../envs/flye.yaml"
     resources: tmpdir="/tmp"
@@ -93,6 +96,7 @@ rule finalize_assembly:
     input: get_assembly_output
     output: "results/02_ASSEMBLY/{sample}/final.contigs.fa"
     log: "logs/assembly/{sample}_finalize.log"
+    benchmark: "benchmarks/assembly/{sample}_finalize.tsv"
     shell: "cp {input} {output} 2> {log}"
 
 rule metaquast:
@@ -105,6 +109,7 @@ rule metaquast:
     threads: config["threads"]["metaquast"]
     conda: "../envs/quast.yaml"
     log: "logs/metaquast/{sample}.log"
+    benchmark: "benchmarks/metaquast/{sample}.tsv"
     shell:
         "metaquast.py {input.contigs} -o {output.outdir} -t {threads} {params.extra} > {log} 2>&1"
 
@@ -119,6 +124,7 @@ rule tiara:
     threads: config["threads"]["tiara"]
     conda: "../envs/tiara.yaml"
     log: "logs/tiara/{sample}.log"
+    benchmark: "benchmarks/tiara/{sample}.tsv"
     shell:
         """
         mkdir -p $(dirname {output.classifications}) $(dirname {log})
@@ -139,6 +145,7 @@ rule filter_prokaryotes:
         ids_drop="results/02_ASSEMBLY/{sample}/tiara/eukaryotic_organelle_ids.txt"
     conda: "../envs/tiara.yaml"
     log: "logs/tiara/{sample}_filter.log"
+    benchmark: "benchmarks/tiara/{sample}_filter.tsv"
     shell:
         """
         mkdir -p $(dirname {output.ids_keep})
@@ -160,5 +167,6 @@ rule metaquast_prokaryotic:
     threads: config["threads"]["metaquast"]
     conda: "../envs/quast.yaml"
     log: "logs/metaquast/{sample}_prokaryotic.log"
+    benchmark: "benchmarks/metaquast/{sample}_prokaryotic.tsv"
     shell:
         "metaquast.py {input.contigs} -o {output.outdir} -t {threads} {params.extra} > {log} 2>&1"

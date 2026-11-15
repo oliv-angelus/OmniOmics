@@ -33,6 +33,7 @@ rule binette:
     threads: config["threads"]["binette"]
     conda: "../envs/binette.yaml"
     log: "logs/binette/{sample}.log"
+    benchmark: "benchmarks/binette/{sample}.tsv"
     shell:
         """
         rm -rf {params.outdir}
@@ -56,6 +57,7 @@ rule checkm2:
     threads: config["threads"]["checkm2"]
     conda: "../envs/checkm2.yaml"
     log: "logs/checkm2/{sample}.log"
+    benchmark: "benchmarks/checkm2/{sample}.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -73,6 +75,7 @@ rule gunc:
     threads: config["threads"]["gunc"]
     conda: "../envs/gunc.yaml"
     log: "logs/gunc/{sample}.log"
+    benchmark: "benchmarks/gunc/{sample}.tsv"
     shell:
         """
         rm -rf {output.outdir}

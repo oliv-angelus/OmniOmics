@@ -28,6 +28,7 @@ rule fastp:
         extra=config["params"].get("fastp", "")
     conda: "../envs/qc.yaml"
     log: "logs/fastp/{sample}.log"
+    benchmark: "benchmarks/fastp/{sample}.tsv"
     threads: config["threads"].get("fastp", 4)
     shell:
         "fastp {params.extra} --thread {threads} -i {input.r1} -I {input.r2} "
@@ -49,6 +50,7 @@ rule nanoplot_raw:
     threads: config["threads"].get("nanoplot", 4)
     conda: "../envs/qc.yaml"
     log: "logs/nanoplot/{sample}_raw.log"
+    benchmark: "benchmarks/nanoplot/{sample}_raw.tsv"
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"
 
@@ -78,6 +80,7 @@ rule filtlong:
         extra=_filtlong_extra
     conda: "../envs/qc.yaml"
     log: "logs/filtlong/{sample}.log"
+    benchmark: "benchmarks/filtlong/{sample}.tsv"
     threads: 1  # Filtlong has no multithreading option -- not configurable on the Resources tab
     shell:
         "filtlong {params.extra} {input.long} 2> {log} | gzip > {output.long}"
@@ -98,5 +101,6 @@ rule nanoplot_clean:
     threads: config["threads"].get("nanoplot", 4)
     conda: "../envs/qc.yaml"
     log: "logs/nanoplot/{sample}_clean.log"
+    benchmark: "benchmarks/nanoplot/{sample}_clean.tsv"
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"

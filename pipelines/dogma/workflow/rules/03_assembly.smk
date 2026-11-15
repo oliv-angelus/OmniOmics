@@ -57,6 +57,7 @@ rule rnaspades:
     threads: config["threads"]["rnaspades"]
     conda: "../envs/rnaspades.yaml"
     log: "logs/assembly/{sample}_{domain}_rnaspades.log"
+    benchmark: "benchmarks/assembly/{sample}_{domain}_rnaspades.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -76,6 +77,7 @@ rule megahit:
     threads: config["threads"]["megahit"]
     conda: "../envs/megahit.yaml"
     log: "logs/assembly/{sample}_{domain}_megahit.log"
+    benchmark: "benchmarks/assembly/{sample}_{domain}_megahit.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -108,6 +110,7 @@ rule trinity:
     threads: config["threads"]["trinity"]
     conda: "../envs/trinity.yaml"
     log: "logs/assembly/{sample}_{domain}_trinity.log"
+    benchmark: "benchmarks/assembly/{sample}_{domain}_trinity.tsv"
     shell:
         """
         mkdir -p $(dirname {output.fasta})
@@ -160,6 +163,7 @@ rule transcript_set:
     threads: config["threads"]["transcript_set"]
     conda: "../envs/mmseqs2.yaml"
     log: "logs/assembly/{sample}_{domain}_transcript_set.log"
+    benchmark: "benchmarks/assembly/{sample}_{domain}_transcript_set.tsv"
     shell:
         """
         tmp=$(mktemp -d)

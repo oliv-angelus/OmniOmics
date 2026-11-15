@@ -65,6 +65,7 @@ rule eukulele_setup:
     threads: config["threads"]["eukulele"]
     conda: "../envs/eukulele.yaml"
     log: "logs/annotation/eukulele_setup.log"
+    benchmark: "benchmarks/annotation/eukulele_setup.tsv"
     shell:
         "EUKulele download -d {params.database} --reference_dir {params.refdir} "
         "--alignment_choice diamond -o {params.outdir} --CPUs {threads} > {log} 2>&1"
@@ -85,6 +86,7 @@ rule eukulele_annotate:
     threads: config["threads"]["eukulele"]
     conda: "../envs/eukulele.yaml"
     log: "logs/annotation/{sample}_{domain}_eukulele.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_eukulele.tsv"
     shell:
         """
         rm -rf {params.sampledir} {params.outdir}
@@ -170,6 +172,7 @@ rule cat_setup:
     threads: config["threads"]["cat"]
     conda: "../envs/cat.yaml"
     log: "logs/annotation/cat_setup.log"
+    benchmark: "benchmarks/annotation/cat_setup.tsv"
     shell:
         """
         mkdir -p {params.downloaddir}
@@ -206,6 +209,7 @@ rule cat_annotate:
     threads: config["threads"]["cat"]
     conda: "../envs/cat.yaml"
     log: "logs/annotation/{sample}_{domain}_cat.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_cat.tsv"
     shell:
         """
         mkdir -p $(dirname {params.out_prefix})

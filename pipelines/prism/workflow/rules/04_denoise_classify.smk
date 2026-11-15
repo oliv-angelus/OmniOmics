@@ -193,6 +193,7 @@ rule dada2_pacbio:
     # real dry-run against a real short-read-only config (coi-12s project).
     threads: config["threads"].get("dada2_pacbio", 4)
     log: "logs/denoise/dada2_pacbio.log"
+    benchmark: "benchmarks/denoise/dada2_pacbio.tsv"
     shell:
         """
         if [ "{PLATFORM}" == "pacbio_hifi" ]; then
@@ -231,6 +232,7 @@ rule emu_build_db:
         prep_dir="results/04_DENOISE/emu/db_{gene}/_prep"
     conda: "../envs/emu.yaml"
     log: "logs/denoise/emu_build_db_{gene}.log"
+    benchmark: "benchmarks/denoise/emu_build_db_{gene}.tsv"
     shell:
         """
         if [ "{PLATFORM}" == "ont" ]; then
@@ -268,6 +270,7 @@ rule emu_classify:
     conda: "../envs/emu.yaml"
     threads: config["threads"].get("emu_ont", 8)  # .get, see dada2_pacbio's own comment above for why
     log: "logs/denoise/emu_{sample}.log"
+    benchmark: "benchmarks/denoise/emu_{sample}.tsv"
     shell:
         """
         if [ "{PLATFORM}" == "ont" ]; then
@@ -298,6 +301,7 @@ rule join_emu:
     params:
         pairs=lambda wc, input: [f"{s}:{t}" for s, t in zip(LONG_SAMPLES, input.tables)]
     log: "logs/denoise/join_emu.log"
+    benchmark: "benchmarks/denoise/join_emu.tsv"
     shell:
         """
         if [ -n "{params.pairs}" ]; then
@@ -350,6 +354,7 @@ rule emu_tree:
     # the real --threads passthrough to build_tree_from_sequences below.
     threads: config["threads"].get("emu_tree", 4)
     log: "logs/denoise/emu_tree.log"
+    benchmark: "benchmarks/denoise/emu_tree.tsv"
     shell:
         """
         if [ "{PLATFORM}" == "ont" ]; then
@@ -401,6 +406,7 @@ rule dada2_illumina:
     conda: "../envs/dada2.yaml"
     threads: config["threads"].get("dada2_illumina", 4)
     log: "logs/denoise/dada2_illumina.log"
+    benchmark: "benchmarks/denoise/dada2_illumina.tsv"
     shell:
         """
         if [ -n "{params.r1_list}" ]; then
@@ -430,6 +436,7 @@ rule select_abundance_table:
     output:
         table="results/05_ABUNDANCE_TABLE/prism_abundance_table.tsv"
     log: "logs/denoise/select_abundance_table.log"
+    benchmark: "benchmarks/denoise/select_abundance_table.tsv"
     shell:
         """
         mkdir -p $(dirname {output.table})

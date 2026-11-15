@@ -21,6 +21,7 @@ rule merge_annotated_counts:
         script=os.path.join(SCRIPTS, "merge_annotated_counts.py")
     conda: "../envs/pandas.yaml"
     log: "logs/tables/merge_annotated_counts.log"
+    benchmark: "benchmarks/tables/merge_annotated_counts.tsv"
     shell:
         # Explicit interpreter -- see the note in 04_strandedness.smk's
         # decide_strandedness rule (PATH can shadow the conda env's python).
@@ -51,6 +52,7 @@ rule qc_summary:
         script=os.path.join(SCRIPTS, "qc_summary.py")
     conda: "../envs/pandas.yaml"
     log: "logs/tables/qc_summary.log"
+    benchmark: "benchmarks/tables/qc_summary.tsv"
     shell:
         # Explicit interpreter -- see the note in 04_strandedness.smk's
         # decide_strandedness rule (PATH can shadow the conda env's python).

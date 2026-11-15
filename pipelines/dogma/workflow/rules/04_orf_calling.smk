@@ -31,6 +31,7 @@ rule transdecoder:
     threads: 1  # TransDecoder.LongOrfs/.Predict have no multithreading option
     conda: "../envs/transdecoder.yaml"
     log: "logs/orf_calling/{sample}_{domain}_transdecoder.log"
+    benchmark: "benchmarks/orf_calling/{sample}_{domain}_transdecoder.tsv"
     shell:
         """
         rm -rf {params.workdir}

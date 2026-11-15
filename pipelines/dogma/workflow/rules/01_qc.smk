@@ -16,6 +16,7 @@ rule fastp:
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
     conda: "../envs/qc.yaml"
     log: "logs/fastp/{sample}.log"
+    benchmark: "benchmarks/fastp/{sample}.tsv"
     threads: config["threads"]["fastp"]
     shell:
         """
@@ -36,6 +37,7 @@ rule filtlong:
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
     conda: "../envs/qc.yaml"
     log: "logs/filtlong/{sample}.log"
+    benchmark: "benchmarks/filtlong/{sample}.tsv"
     threads: 1  # Filtlong has no multithreading option -- not configurable on the Resources tab
     shell:
         """
@@ -68,6 +70,7 @@ rule ribodetector_short:
     conda: "../envs/ribodetector.yaml"
     threads: config["threads"]["ribodetector"]
     log: "logs/ribodetector/{sample}_short.log"
+    benchmark: "benchmarks/ribodetector/{sample}_short.tsv"
     shell:
         """
         if [ "{params.rtype}" == "short" ] || [ "{params.rtype}" == "hybrid" ]; then
@@ -90,6 +93,7 @@ rule ribodetector_long:
     conda: "../envs/ribodetector.yaml"
     threads: config["threads"]["ribodetector"]
     log: "logs/ribodetector/{sample}_long.log"
+    benchmark: "benchmarks/ribodetector/{sample}_long.tsv"
     shell:
         """
         if [ "{params.rtype}" == "long" ] || [ "{params.rtype}" == "hybrid" ]; then
@@ -109,6 +113,7 @@ rule nanoplot_raw:
     threads: 4
     conda: "../envs/nanoplot.yaml"
     log: "logs/nanoplot/{sample}_raw.log"
+    benchmark: "benchmarks/nanoplot/{sample}_raw.tsv"
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"
 
@@ -121,5 +126,6 @@ rule nanoplot_clean:
     threads: 4
     conda: "../envs/nanoplot.yaml"
     log: "logs/nanoplot/{sample}_clean.log"
+    benchmark: "benchmarks/nanoplot/{sample}_clean.tsv"
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"

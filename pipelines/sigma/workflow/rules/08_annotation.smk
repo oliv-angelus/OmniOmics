@@ -18,6 +18,7 @@ rule bakta:
     threads: config["threads"]["bakta"]
     conda: "../envs/bakta.yaml"
     log: "logs/annotation/{sample}_bakta.log"
+    benchmark: "benchmarks/annotation/{sample}_bakta.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -47,6 +48,7 @@ rule eggnog_sample:
     threads: config["threads"]["eggnog"]
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/{sample}_eggnog.log"
+    benchmark: "benchmarks/annotation/{sample}_eggnog.tsv"
     shell:
         "emapper.py -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
 
@@ -65,6 +67,7 @@ rule amrfinder_sample:
     threads: config["threads"]["amrfinderplus"]
     conda: "../envs/amrfinder.yaml"
     log: "logs/annotation/{sample}_amrfinder.log"
+    benchmark: "benchmarks/annotation/{sample}_amrfinder.tsv"
     shell:
         """
         mkdir -p $(dirname {output.out})
@@ -83,6 +86,7 @@ rule abricate_sample:
     threads: config["threads"]["abricate"]
     conda: "../envs/abricate.yaml"
     log: "logs/annotation/{sample}_abricate.log"
+    benchmark: "benchmarks/annotation/{sample}_abricate.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -100,6 +104,7 @@ rule vfdb_sample:
     threads: config["threads"]["vfdb"]
     conda: "../envs/abricate.yaml"
     log: "logs/annotation/{sample}_vfdb.log"
+    benchmark: "benchmarks/annotation/{sample}_vfdb.tsv"
     shell:
         """
         mkdir -p $(dirname {output.out})
@@ -116,6 +121,7 @@ rule isescan_sample:
     threads: config["threads"]["isescan"]
     conda: "../envs/isescan.yaml"
     log: "logs/annotation/{sample}_isescan.log"
+    benchmark: "benchmarks/annotation/{sample}_isescan.tsv"
     shell:
         """
         isescan.py --seqfile {input.fa} --output {output.outdir} --nthread {threads} {params.extra} > {log} 2>&1
@@ -132,6 +138,7 @@ rule mobsuite_sample:
     threads: config["threads"]["mobsuite"]
     conda: "../envs/mobsuite.yaml"
     log: "logs/annotation/{sample}_mobsuite.log"
+    benchmark: "benchmarks/annotation/{sample}_mobsuite.tsv"
     shell:
         """
         rm -rf {output.outdir}

@@ -26,6 +26,7 @@ rule fastp:
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
     conda: "../envs/qc.yaml"
     log: "logs/fastp/{sample}.log"
+    benchmark: "benchmarks/fastp/{sample}.tsv"
     threads: config["threads"]["fastp"]
     shell:
         """
@@ -46,6 +47,7 @@ rule filtlong:
         rtype=lambda wildcards: samples.loc[wildcards.sample, "read_type"]
     conda: "../envs/qc.yaml"
     log: "logs/filtlong/{sample}.log"
+    benchmark: "benchmarks/filtlong/{sample}.tsv"
     threads: 1  # Filtlong has no multithreading option -- not configurable on the Resources tab
     shell:
         """
@@ -65,6 +67,7 @@ rule nanoplot_raw:
     threads: 4
     conda: "../envs/nanoplot.yaml"
     log: "logs/nanoplot/{sample}_raw.log"
+    benchmark: "benchmarks/nanoplot/{sample}_raw.tsv"
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"
 
@@ -77,6 +80,7 @@ rule nanoplot_clean:
     threads: 4
     conda: "../envs/nanoplot.yaml"
     log: "logs/nanoplot/{sample}_clean.log"
+    benchmark: "benchmarks/nanoplot/{sample}_clean.tsv"
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"
 
@@ -92,6 +96,7 @@ rule kraken2:
     conda: "../envs/taxonomy.yaml"
     threads: config["threads"]["kraken2"]
     log: "logs/kraken2/{sample}.log"
+    benchmark: "benchmarks/kraken2/{sample}.tsv"
     shell:
         "kraken2 --db {params.db} --threads {threads} {params.extra} {params.paired} "
         "--report {output.report} {input.reads} > {output.output} 2> {log}"
@@ -109,6 +114,7 @@ rule bracken:
     conda: "../envs/taxonomy.yaml"
     threads: 1  # Bracken has no multithreading option -- not configurable on the Resources tab
     log: "logs/bracken/{sample}.log"
+    benchmark: "benchmarks/bracken/{sample}.tsv"
     shell:
         """
         if [ "{params.rtype}" == "long" ]; then
@@ -134,6 +140,7 @@ rule kreport2mpa:
         extra=config["params"]["kreport2mpa"]
     conda: "../envs/taxonomy.yaml"
     log: "logs/krakentools/{sample}_kreport2mpa.log"
+    benchmark: "benchmarks/krakentools/{sample}_kreport2mpa.tsv"
     shell:
         # Explicit interpreter: conda leaves KrakenTools' scripts with a plain
         # `#!/usr/bin/env python` shebang (it rewrites most packages' but not
@@ -191,6 +198,7 @@ rule kaiju_classify:
     conda: "../envs/kaiju.yaml"
     threads: config["threads"]["kaiju"]
     log: "logs/kaiju/{sample}_classify.log"
+    benchmark: "benchmarks/kaiju/{sample}_classify.tsv"
     shell:
         "kaiju -z {threads} -t {params.nodes} -f {params.fmi} {params.reads_flag} "
         "{params.extra} -o {output.out} 2> {log}"
@@ -207,6 +215,7 @@ rule kaiju_table:
     conda: "../envs/kaiju.yaml"
     threads: 1  # kaiju2table/addTaxonNames have no multithreading option
     log: "logs/kaiju/{sample}_table.log"
+    benchmark: "benchmarks/kaiju/{sample}_table.tsv"
     shell:
         """
         kaiju2table -t {params.nodes} -n {params.names_dmp} -r species -o {output.table} {input.out} > {log} 2>&1

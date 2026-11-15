@@ -54,6 +54,7 @@ rule drep:
     threads: config["threads"]["drep"]
     conda: "../envs/drep.yaml"
     log: "logs/drep/drep.log"
+    benchmark: "benchmarks/drep/drep.tsv"
     shell:
         """
         n_mags=$(find {input.bins_dir} -maxdepth 1 -name "*.fa" | wc -l)
@@ -78,6 +79,7 @@ rule gtdbtk:
     threads: config["threads"]["gtdbtk"]
     conda: "../envs/gtdbtk.yaml"
     log: "logs/gtdbtk/gtdbtk.log"
+    benchmark: "benchmarks/gtdbtk/gtdbtk.tsv"
     shell:
         """
         n_mags=$(find {input.bins} -maxdepth 1 -name "*.fa" | wc -l)

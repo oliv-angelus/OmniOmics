@@ -13,6 +13,7 @@ rule gtdbtk:
     threads: config["threads"]["gtdbtk"]
     conda: "../envs/gtdbtk.yaml"
     log: "logs/gtdbtk/{sample}.log"
+    benchmark: "benchmarks/gtdbtk/{sample}.tsv"
     shell:
         """
         rm -rf {params.indir}

@@ -28,6 +28,7 @@ rule prodigal_sample:
     threads: config["threads"]["prodigal"]
     conda: "../envs/pyrodigal.yaml"
     log: "logs/annotation/{sample}_prodigal.log"
+    benchmark: "benchmarks/annotation/{sample}_prodigal.tsv"
     shell:
         "pyrodigal -i {input.fa} -a {output.faa} -o {output.gff} -p meta -f gff -j {threads} {params.extra} > {log} 2>&1"
 
@@ -43,6 +44,7 @@ rule eggnog_sample:
     threads: config["threads"]["eggnog"]
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/{sample}_eggnog.log"
+    benchmark: "benchmarks/annotation/{sample}_eggnog.tsv"
     shell:
         "emapper.py -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
 
@@ -56,6 +58,7 @@ rule abricate_sample:
     threads: config["threads"]["abricate"]
     conda: "../envs/abricate.yaml"
     log: "logs/annotation/{sample}_abricate.log"
+    benchmark: "benchmarks/annotation/{sample}_abricate.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -86,6 +89,7 @@ rule amrfinder_sample:
     threads: config["threads"]["amrfinderplus"]
     conda: "../envs/amrfinder.yaml"
     log: "logs/annotation/{sample}_amrfinder.log"
+    benchmark: "benchmarks/annotation/{sample}_amrfinder.tsv"
     shell:
         """
         mkdir -p $(dirname {output.out})
@@ -104,6 +108,7 @@ rule minced_sample:
         extra=config["params"]["minced"]
     conda: "../envs/minced.yaml"
     log: "logs/annotation/{sample}_minced.log"
+    benchmark: "benchmarks/annotation/{sample}_minced.tsv"
     shell:
         "minced -minNR 2 {params.extra} {input.fa} {output.crisprs} {output.gff} > {log} 2>&1"
 
@@ -131,6 +136,7 @@ rule virsorter2_sample:
     threads: config["threads"]["virsorter2"]
     conda: "../envs/virsorter2.yaml"
     log: "logs/annotation/{sample}_virsorter2.log"
+    benchmark: "benchmarks/annotation/{sample}_virsorter2.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -157,6 +163,7 @@ rule checkv_sample:
     threads: config["threads"]["checkv"]
     conda: "../envs/checkv.yaml"
     log: "logs/annotation/{sample}_checkv.log"
+    benchmark: "benchmarks/annotation/{sample}_checkv.tsv"
     shell:
         """
         export CHECKVDB={params.db}
@@ -181,6 +188,7 @@ rule genomad_sample:
     threads: config["threads"]["genomad"]
     conda: "../envs/genomad.yaml"
     log: "logs/annotation/{sample}_genomad.log"
+    benchmark: "benchmarks/annotation/{sample}_genomad.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -201,6 +209,7 @@ rule isescan_sample:
     threads: config["threads"]["isescan"]
     conda: "../envs/isescan.yaml"
     log: "logs/annotation/{sample}_isescan.log"
+    benchmark: "benchmarks/annotation/{sample}_isescan.tsv"
     shell:
         """
         isescan.py --seqfile {input.fa} --output {output.outdir} --nthread {threads} {params.extra} > {log} 2>&1
@@ -232,6 +241,7 @@ rule antismash_sample:
     threads: config["threads"]["antismash"]
     conda: "../envs/antismash.yaml"
     log: "logs/annotation/{sample}_antismash.log"
+    benchmark: "benchmarks/annotation/{sample}_antismash.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -251,6 +261,7 @@ rule bigscape_sample:
     threads: config["threads"]["bigscape"]
     conda: "../envs/bigscape.yaml"
     log: "logs/annotation/{sample}_bigscape.log"
+    benchmark: "benchmarks/annotation/{sample}_bigscape.tsv"
     shell:
         """
         mkdir -p {output.outdir}/gbk_pool
@@ -272,6 +283,7 @@ rule mobsuite_sample:
     threads: config["threads"]["mobsuite"]
     conda: "../envs/mobsuite.yaml"
     log: "logs/annotation/{sample}_mobsuite.log"
+    benchmark: "benchmarks/annotation/{sample}_mobsuite.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -289,6 +301,7 @@ rule vibrant_sample:
     threads: config["threads"]["vibrant"]
     conda: "../envs/vibrant.yaml"
     log: "logs/annotation/{sample}_vibrant.log"
+    benchmark: "benchmarks/annotation/{sample}_vibrant.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -307,6 +320,7 @@ rule vfdb_sample:
     threads: config["threads"]["vfdb"]
     conda: "../envs/abricate.yaml"
     log: "logs/annotation/{sample}_vfdb.log"
+    benchmark: "benchmarks/annotation/{sample}_vfdb.tsv"
     shell:
         """
         mkdir -p $(dirname {output.out})
@@ -328,6 +342,7 @@ rule prodigal_mags:
     threads: config["threads"]["prodigal"]
     conda: "../envs/pyrodigal.yaml"
     log: "logs/annotation/mags_prodigal.log"
+    benchmark: "benchmarks/annotation/mags_prodigal.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -354,6 +369,7 @@ rule eggnog_mags:
     threads: config["threads"]["eggnog"]
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/mags_eggnog.log"
+    benchmark: "benchmarks/annotation/mags_eggnog.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -379,6 +395,7 @@ rule abricate_mags:
     threads: config["threads"]["abricate"]
     conda: "../envs/abricate.yaml"
     log: "logs/annotation/mags_abricate.log"
+    benchmark: "benchmarks/annotation/mags_abricate.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -407,6 +424,7 @@ rule amrfinder_mags:
     threads: config["threads"]["amrfinderplus"]
     conda: "../envs/amrfinder.yaml"
     log: "logs/annotation/mags_amrfinder.log"
+    benchmark: "benchmarks/annotation/mags_amrfinder.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -433,6 +451,7 @@ rule minced_mags:
         extra=config["params"]["minced"]
     conda: "../envs/minced.yaml"
     log: "logs/annotation/mags_minced.log"
+    benchmark: "benchmarks/annotation/mags_minced.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -455,6 +474,7 @@ rule isescan_mags:
     threads: config["threads"]["isescan"]
     conda: "../envs/isescan.yaml"
     log: "logs/annotation/mags_isescan.log"
+    benchmark: "benchmarks/annotation/mags_isescan.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -485,6 +505,7 @@ rule antismash_mags:
     threads: config["threads"]["antismash"]
     conda: "../envs/antismash.yaml"
     log: "logs/annotation/mags_antismash.log"
+    benchmark: "benchmarks/annotation/mags_antismash.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -511,6 +532,7 @@ rule bigscape_mags:
     threads: config["threads"]["bigscape"]
     conda: "../envs/bigscape.yaml"
     log: "logs/annotation/mags_bigscape.log"
+    benchmark: "benchmarks/annotation/mags_bigscape.tsv"
     shell:
         """
         mkdir -p {output.outdir}/gbk_pool
@@ -532,6 +554,7 @@ rule vfdb_mags:
     threads: config["threads"]["vfdb"]
     conda: "../envs/abricate.yaml"
     log: "logs/annotation/mags_vfdb.log"
+    benchmark: "benchmarks/annotation/mags_vfdb.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -553,6 +576,7 @@ rule barrnap_mags:
     threads: config["threads"]["barrnap"]
     conda: "../envs/barrnap.yaml"
     log: "logs/annotation/mags_barrnap.log"
+    benchmark: "benchmarks/annotation/mags_barrnap.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -575,6 +599,7 @@ rule trnascan_mags:
     threads: config["threads"]["trnascan"]
     conda: "../envs/trnascan.yaml"
     log: "logs/annotation/mags_trnascan.log"
+    benchmark: "benchmarks/annotation/mags_trnascan.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -623,6 +648,7 @@ rule final_mag_catalog:
     output:
         tsv="results/07_DEREP/final_mag_catalog.tsv"
     log: "logs/annotation/final_mag_catalog.log"
+    benchmark: "benchmarks/annotation/final_mag_catalog.tsv"
     shell:
         # workflow/scripts/... (relative) resolves against the shell's CWD at
         # runtime, which is output_root (Snakefile: `workdir: config.get(

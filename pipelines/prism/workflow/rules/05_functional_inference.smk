@@ -30,6 +30,7 @@ rule picrust2:
     # Kaiju's fmi glob and _resolve_ref_path.
     threads: config["threads"].get("picrust2", 1)
     log: "logs/functional/picrust2.log"
+    benchmark: "benchmarks/functional/picrust2.tsv"
     shell:
         """
         if [ "{PLATFORM}" == "pacbio_hifi" ] && [ "{params.gene}" == "16S" ]; then

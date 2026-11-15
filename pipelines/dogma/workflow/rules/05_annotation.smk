@@ -30,6 +30,7 @@ rule eggnog_sample:
     threads: config["threads"]["eggnog"]
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/{sample}_{domain}_eggnog.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_eggnog.tsv"
     shell:
         "emapper.py -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
 
@@ -55,6 +56,7 @@ rule cazy_annotate:
     threads: config["threads"]["cazy"]
     conda: "../envs/dbcan.yaml"
     log: "logs/annotation/{sample}_{domain}_cazy.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_cazy.tsv"
     shell:
         "run_dbcan CAZyme_annotation --mode protein --input_raw_data {input.faa} "
         "--output_dir {params.outdir} --db_dir {params.db} --threads {threads} {params.extra} > {log} 2>&1"
@@ -87,6 +89,7 @@ rule ncycdb_index:
     threads: config["threads"]["ncycdb"]
     conda: "../envs/diamond.yaml"
     log: "logs/annotation/ncycdb_index.log"
+    benchmark: "benchmarks/annotation/ncycdb_index.tsv"
     shell:
         "diamond makedb --in {input.faa} --db {params.prefix} --threads {threads} > {log} 2>&1"
 
@@ -104,6 +107,7 @@ rule ncycdb_annotate:
     threads: config["threads"]["ncycdb"]
     conda: "../envs/diamond.yaml"
     log: "logs/annotation/{sample}_{domain}_ncycdb.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_ncycdb.tsv"
     shell:
         """
         diamond blastp -q {input.faa} -d {input.dmnd} --threads {threads} {params.extra} \
@@ -138,6 +142,7 @@ rule mcycdb_index:
     threads: config["threads"]["mcycdb"]
     conda: "../envs/diamond.yaml"
     log: "logs/annotation/mcycdb_index.log"
+    benchmark: "benchmarks/annotation/mcycdb_index.tsv"
     shell:
         "diamond makedb --in {input.faa} --db {params.prefix} --threads {threads} > {log} 2>&1"
 
@@ -155,6 +160,7 @@ rule mcycdb_annotate:
     threads: config["threads"]["mcycdb"]
     conda: "../envs/diamond.yaml"
     log: "logs/annotation/{sample}_{domain}_mcycdb.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_mcycdb.tsv"
     shell:
         """
         diamond blastp -q {input.faa} -d {input.dmnd} --threads {threads} {params.extra} \
@@ -188,6 +194,7 @@ rule scycdb_index:
     threads: config["threads"]["scycdb"]
     conda: "../envs/diamond.yaml"
     log: "logs/annotation/scycdb_index.log"
+    benchmark: "benchmarks/annotation/scycdb_index.tsv"
     shell:
         "diamond makedb --in {input.faa} --db {params.prefix} --threads {threads} > {log} 2>&1"
 
@@ -205,6 +212,7 @@ rule scycdb_annotate:
     threads: config["threads"]["scycdb"]
     conda: "../envs/diamond.yaml"
     log: "logs/annotation/{sample}_{domain}_scycdb.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_scycdb.tsv"
     shell:
         """
         diamond blastp -q {input.faa} -d {input.dmnd} --threads {threads} {params.extra} \
@@ -239,6 +247,7 @@ rule canthyd_annotate:
     threads: config["threads"]["canthyd"]
     conda: "../envs/hmmer.yaml"
     log: "logs/annotation/{sample}_{domain}_canthyd.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_canthyd.tsv"
     shell:
         "hmmsearch --tblout {output.tblout} --cpu {threads} {params.extra} {params.hmm} {input.faa} > {log} 2>&1"
 
@@ -278,6 +287,7 @@ rule fegenie_annotate:
     threads: config["threads"]["fegenie"]
     conda: "../envs/fegenie.yaml"
     log: "logs/annotation/{sample}_{domain}_fegenie.log"
+    benchmark: "benchmarks/annotation/{sample}_{domain}_fegenie.tsv"
     shell:
         """
         rm -rf {params.bindir} {params.outdir}

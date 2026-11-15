@@ -54,6 +54,7 @@ rule salmon_index:
     threads: config["threads"]["salmon"]
     conda: "../envs/salmon.yaml"
     log: "logs/quantification/{sample}_{domain}_salmon_index.log"
+    benchmark: "benchmarks/quantification/{sample}_{domain}_salmon_index.tsv"
     shell:
         "salmon index -t {input.mad} -i {output.idx_dir} -p {threads} {params.extra} > {log} 2>&1"
 
@@ -71,6 +72,7 @@ rule salmon_quant:
     threads: config["threads"]["salmon"]
     conda: "../envs/salmon.yaml"
     log: "logs/quantification/{sample}_{domain}_salmon_quant.log"
+    benchmark: "benchmarks/quantification/{sample}_{domain}_salmon_quant.tsv"
     shell:
         "salmon quant -i {input.idx_dir} -l A -1 {input.r1} -2 {input.r2} "
         "-p {threads} -o {params.outdir} {params.extra} > {log} 2>&1"

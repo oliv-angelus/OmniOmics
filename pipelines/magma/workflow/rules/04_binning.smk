@@ -13,6 +13,7 @@ rule metabat2:
     threads: config["threads"]["metabat2"]
     conda: "../envs/metabat2.yaml"
     log: "logs/binning/{sample}_metabat2.log"
+    benchmark: "benchmarks/binning/{sample}_metabat2.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -30,6 +31,7 @@ rule semibin2:
     threads: config["threads"]["semibin2"]
     conda: "../envs/semibin2.yaml"
     log: "logs/binning/{sample}_semibin2.log"
+    benchmark: "benchmarks/binning/{sample}_semibin2.tsv"
     shell:
         """
         rm -rf {output.outdir}
@@ -47,6 +49,7 @@ rule maxbin2:
     threads: config["threads"]["maxbin2"]
     conda: "../envs/maxbin2.yaml"
     log: "logs/binning/{sample}_maxbin2.log"
+    benchmark: "benchmarks/binning/{sample}_maxbin2.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -69,6 +72,7 @@ rule vamb:
     threads: config["threads"]["vamb"]
     conda: "../envs/vamb.yaml"
     log: "logs/binning/{sample}_vamb.log"
+    benchmark: "benchmarks/binning/{sample}_vamb.tsv"
     shell:
         """
         rm -rf {output.outdir}

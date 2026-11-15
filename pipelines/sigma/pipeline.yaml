@@ -632,8 +632,8 @@
     "racon": {
       "name": "Racon",
       "description": {
-        "en": "Long-read-based polishing of long-only (Flye) assemblies; not run for short/hybrid samples since Unicycler already self-polishes",
-        "pt": "Polimento baseado em reads longas para montagens apenas-longas (Flye); não roda para amostras curtas/híbridas pois o Unicycler já se autopolimenta"
+        "en": "Long-read-based polishing of long-only (Flye) assemblies; hybrid assemblies are polished with short reads instead (Polypolish + Pypolca)",
+        "pt": "Polimento baseado em reads longas para montagens apenas-longas (Flye); montagens híbridas são polidas com reads curtas (Polypolish + Pypolca)"
       },
       "citation": [
         {
@@ -738,6 +738,90 @@
       ],
       "rule_names": [
         "medaka_polish"
+      ]
+    },
+    "polypolish": {
+      "name": "Polypolish",
+      "description": {
+        "en": "Short-read polishing of hybrid (Unicycler) assemblies using every alignment of each read, so repeats are corrected too; first of two short-read polishing steps (Bouras et al. 2024). Not run for long-only or short-only samples",
+        "pt": "Polimento com reads curtas das montagens híbridas (Unicycler) usando todos os alinhamentos de cada read, corrigindo também repetições; primeira de duas etapas de polimento com reads curtas (Bouras et al. 2024). Não roda para amostras só longas ou só curtas"
+      },
+      "citation": [
+        {
+          "text": "Wick RR, Holt KE. Polypolish: Short-read polishing of long-read bacterial genome assemblies. PLoS Computational Biology. 2022;18(1):e1009802.",
+          "doi": "10.1371/journal.pcbi.1009802"
+        },
+        {
+          "text": "Bouras G, Judd LM, Edwards RA, Vreugde S, Stinear TP, Wick RR. How low can you go? Short-read polishing of Oxford Nanopore bacterial genome assemblies. Microbial Genomics. 2024;10(6):001254.",
+          "doi": "10.1099/mgen.0.001254"
+        }
+      ],
+      "category": "Polishing",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--careful",
+          "type": "bool",
+          "default": false,
+          "enabled": false,
+          "description": {
+            "en": "Ignore any reads with multiple alignments (more conservative; recommended at low short-read depth)",
+            "pt": "Ignora reads com múltiplos alinhamentos (mais conservador; recomendado com baixa profundidade de reads curtas)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "unicycler"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "polypolish_polish"
+      ]
+    },
+    "pypolca": {
+      "name": "Pypolca",
+      "description": {
+        "en": "Second short-read polishing pass on hybrid assemblies (after Polypolish), Python reimplementation of POLCA; --careful by default, as recommended by Bouras et al. 2024",
+        "pt": "Segunda etapa de polimento com reads curtas nas montagens híbridas (após o Polypolish), reimplementação em Python do POLCA; --careful por padrão, como recomendado por Bouras et al. 2024"
+      },
+      "citation": [
+        {
+          "text": "Bouras G, Judd LM, Edwards RA, Vreugde S, Stinear TP, Wick RR. How low can you go? Short-read polishing of Oxford Nanopore bacterial genome assemblies. Microbial Genomics. 2024;10(6):001254.",
+          "doi": "10.1099/mgen.0.001254"
+        },
+        {
+          "text": "Zimin AV, Salzberg SL. The genome polishing tool POLCA makes fast and accurate corrections in genome assemblies. PLoS Computational Biology. 2020;16(6):e1007981.",
+          "doi": "10.1371/journal.pcbi.1007981"
+        }
+      ],
+      "category": "Polishing",
+      "read_type": "short",
+      "flags": [
+        {
+          "flag": "--careful",
+          "type": "bool",
+          "default": true,
+          "enabled": true,
+          "description": {
+            "en": "Equivalent to --min_alt 4 --min_ratio 3 (fewer, safer changes)",
+            "pt": "Equivale a --min_alt 4 --min_ratio 3 (menos alterações, mais seguras)"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "polypolish"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "pypolca_polish"
       ]
     },
     "ragtag": {
@@ -2815,6 +2899,8 @@
     "flye": "",
     "racon": "",
     "medaka": "",
+    "polypolish": "",
+    "pypolca": "--careful",
     "ragtag": "-u",
     "bowtie2": "",
     "minimap2": "",
@@ -2848,6 +2934,8 @@
     "flye": 64,
     "racon": 16,
     "medaka": 16,
+    "polypolish": 16,
+    "pypolca": 16,
     "ragtag": 8,
     "bowtie2": 16,
     "minimap2": 16,

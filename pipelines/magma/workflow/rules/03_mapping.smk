@@ -13,6 +13,7 @@ rule bowtie2_index:
     threads: config["threads"]["bowtie2"]
     conda: "../envs/mapping.yaml"
     log: "logs/mapping/{sample}_index.log"
+    benchmark: "benchmarks/mapping/{sample}_index.tsv"
     shell:
         """
         mkdir -p {output.idx_dir}
@@ -35,6 +36,7 @@ rule map_reads:
         minimap2_preset=config["long_read_platform"]["minimap2_preset"]
     log:
         "logs/mapping/{sample}_map.log"
+    benchmark: "benchmarks/mapping/{sample}_map.tsv"
     threads: lambda wildcards: config["threads"]["minimap2"] if samples.loc[wildcards.sample, "read_type"] == "long" else config["threads"]["bowtie2"]
     resources: tmpdir="/tmp"
     conda:
@@ -61,6 +63,7 @@ rule index_bam:
     threads: config["threads"]["samtools_index"]
     conda: "../envs/mapping.yaml"
     log: "logs/mapping/{sample}_index_bam.log"
+    benchmark: "benchmarks/mapping/{sample}_index_bam.tsv"
     shell:
         "samtools index -@ {threads} {params.extra} {input.bam} > {log} 2>&1"
 
@@ -75,5 +78,6 @@ rule calculate_depth:
     threads: 1  # jgi_summarize_bam_contig_depths has no multithreading option -- not configurable on the Resources tab
     conda: "../envs/metabat2.yaml"
     log: "logs/mapping/{sample}_depth.log"
+    benchmark: "benchmarks/mapping/{sample}_depth.tsv"
     shell:
         "jgi_summarize_bam_contig_depths --outputDepth {output.depth} {params.extra} {input.bam} > {log} 2>&1"

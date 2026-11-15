@@ -17,6 +17,7 @@ rule featurecounts:
     threads: config["threads"]["featurecounts"]
     conda: "../envs/subread.yaml"
     log: "logs/counts/featurecounts.log"
+    benchmark: "benchmarks/counts/featurecounts.tsv"
     shell:
         """
         mkdir -p results/04_COUNTS

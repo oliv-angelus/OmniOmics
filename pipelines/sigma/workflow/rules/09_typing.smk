@@ -11,5 +11,6 @@ rule mlst:
     threads: config["threads"]["mlst"]
     conda: "../envs/mlst.yaml"
     log: "logs/typing/{sample}_mlst.log"
+    benchmark: "benchmarks/typing/{sample}_mlst.tsv"
     shell:
         "mlst --threads {threads} {params.extra} {input.fa} > {output} 2> {log}"

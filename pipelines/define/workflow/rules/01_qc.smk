@@ -11,6 +11,7 @@ rule fastp:
         extra=config["params"]["fastp"]
     conda: "../envs/qc.yaml"
     log: "logs/qc/{sample}_fastp.log"
+    benchmark: "benchmarks/qc/{sample}_fastp.tsv"
     threads: config["threads"]["fastp"]
     shell:
         """
@@ -28,6 +29,7 @@ rule fastqc_raw:
     conda: "../envs/fastqc.yaml"
     threads: config["threads"]["fastqc"]
     log: "logs/qc/{sample}_fastqc_raw.log"
+    benchmark: "benchmarks/qc/{sample}_fastqc_raw.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -43,6 +45,7 @@ rule fastqc_trim:
     conda: "../envs/fastqc.yaml"
     threads: config["threads"]["fastqc"]
     log: "logs/qc/{sample}_fastqc_trim.log"
+    benchmark: "benchmarks/qc/{sample}_fastqc_trim.tsv"
     shell:
         """
         mkdir -p {output.outdir}
@@ -57,6 +60,7 @@ rule multiqc_raw:
         outdir=directory("results/01_QC/multiqc_raw")
     conda: "../envs/multiqc.yaml"
     log: "logs/qc/multiqc_raw.log"
+    benchmark: "benchmarks/qc/multiqc_raw.tsv"
     shell:
         "multiqc {input} -o {output.outdir} > {log} 2>&1"
 
@@ -69,5 +73,6 @@ rule multiqc_trim:
         outdir=directory("results/01_QC/multiqc_trim")
     conda: "../envs/multiqc.yaml"
     log: "logs/qc/multiqc_trim.log"
+    benchmark: "benchmarks/qc/multiqc_trim.tsv"
     shell:
         "multiqc {input.fastqc} {input.fastp} -o {output.outdir} > {log} 2>&1"
