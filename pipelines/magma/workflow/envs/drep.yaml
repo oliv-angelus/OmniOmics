@@ -3,4 +3,21 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - drep=3.4.0
+  # 3.4.0 crashes in primary clustering with pandas >=2
+  # (TypeError: DataFrame.pivot() takes 1 positional argument but 4 were
+  # given -- dRep 3.4.0 calls pivot() positionally). 3.7.1 uses
+  # pivot(index=, columns=, values=). Versions below are the combination
+  # validated on the MAGMA ZymoBIOMICS runs.
+  - drep=3.7.1
+  - python=3.11.16
+  - pandas=3.0.5
+  - numpy=2.4.6
+  - scipy=1.17.1
+  - scikit-learn=1.9.0
+  - checkm-genome=1.2.5
+  - mash=2.3
+  - mummer4=4.0.1
+  - fastani=1.34
+  - skani=0.3.2
+  - prodigal=2.6.3
+  - hmmer=3.4
