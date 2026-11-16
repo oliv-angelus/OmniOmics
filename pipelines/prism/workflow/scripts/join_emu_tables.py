@@ -46,7 +46,14 @@ SUMMARY_ROWS = {"unmapped", "mapped_filtered", "mapped_unclassified"}
 
 
 def lineage_from_row(row):
-    return ";".join(f"{prefix}{row.get(rank, '') or ''}" for rank, prefix in RANK_PREFIXES)
+    # Emu's own prebuilt database (NCBI taxonomy) names the top rank
+    # "superkingdom" instead of "domain".
+    def value(rank):
+        v = row.get(rank, "") or ""
+        if not v and rank == "domain":
+            v = row.get("superkingdom", "") or ""
+        return v
+    return ";".join(f"{prefix}{value(rank)}" for rank, prefix in RANK_PREFIXES)
 
 
 def main():

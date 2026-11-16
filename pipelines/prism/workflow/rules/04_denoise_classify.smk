@@ -35,7 +35,10 @@ def _reference_db(tool_id):
     # actual pre-existing HPC config (2026-09-11) -- same gotcha class
     # picrust2's own `config["threads"].get("picrust2", 1)` comment already
     # documents, just missed here on the first pass.
-    return _flag_value(config["params"].get(tool_id, ""), "--reference_db", "gtdb")
+    # Emu's default is its own prebuilt database (see the emu_16s database
+    # entry in pipeline.yaml); the PacBio/DADA2 path keeps GTDB.
+    default = "emu" if tool_id == "emu_ont" else "gtdb"
+    return _flag_value(config["params"].get(tool_id, ""), "--reference_db", default)
 
 
 def _emu_max_align_len():
@@ -68,6 +71,7 @@ def _emu_max_align_len():
 # magma/workflow/rules/01_qc_tax.smk), just not yet applied here. These patterns
 # mirror each database's own "detect_files" fingerprint in pipeline.yaml.
 _DB_FILE_PATTERNS = {
+    "emu_16s": ["species_taxid.fasta"],
     "gtdb_ssu": ["*.fa"],
     "silva_ssu": ["silva_ssu_dada2.fasta"],
     "silva_lsu": ["silva_lsu_dada2.fasta"],
@@ -127,6 +131,8 @@ def _resolve_ref_path(gene, reference_db):
     if gene == "ITS":
         return _resolve_db_file("unite_its")
     if gene == "16S":
+        if reference_db == "emu":
+            return _resolve_db_file("emu_16s")
         return _resolve_db_file("silva_ssu") if reference_db == "silva" \
             else _resolve_db_file("gtdb_ssu")
     if gene == "18S":
@@ -239,6 +245,16 @@ rule emu_build_db:
             if [ -z "{params.ref}" ]; then
                 echo "No reference database configured for --gene {wildcards.gene} (checked GTDB/SILVA SSU/SILVA LSU/UNITE as appropriate) -- configure it on the Databases tab first." > {log}
                 exit 1
+            fi
+            # Emu's own prebuilt database (reference_db emu) is already in
+            # Emu format: copy it instead of rebuilding it.
+            refdir=$(dirname {params.ref})
+            if [ "$(basename {params.ref})" = "species_taxid.fasta" ] && [ -s "$refdir/taxonomy.tsv" ]; then
+                mkdir -p $(dirname {output.seqs})
+                cp {params.ref} {output.seqs}
+                cp "$refdir/taxonomy.tsv" {output.tax}
+                echo "Using prebuilt Emu database at $refdir" > {log}
+                exit 0
             fi
             mkdir -p {params.prep_dir}
             python3 {workflow.basedir}/workflow/scripts/build_emu_taxonomy.py \

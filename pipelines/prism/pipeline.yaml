@@ -536,13 +536,14 @@
         {
           "flag": "--reference_db",
           "type": "choice",
-          "default": "gtdb",
+          "default": "emu",
           "enabled": true,
           "description": {
-            "en": "Reference database -- gtdb only supports --gene 16S; silva supports 16S/18S/23S/28S (one combined SSU file serves 16S+18S, one combined LSU file serves 23S+28S); unite is selected automatically for --gene ITS regardless of this flag",
-            "pt": "Banco de referência -- gtdb só suporta --gene 16S; silva suporta 16S/18S/23S/28S (um arquivo SSU combinado atende 16S+18S, um arquivo LSU combinado atende 23S+28S); unite é selecionado automaticamente para --gene ITS independente desta flag"
+            "en": "Reference database -- emu (default, 16S only) is Emu's own prebuilt rrnDB + NCBI 16S RefSeq database, the one Emu was validated with; gtdb only supports --gene 16S; silva supports 16S/18S/23S/28S (one combined SSU file serves 16S+18S, one combined LSU file serves 23S+28S); unite is selected automatically for --gene ITS regardless of this flag. On the ZymoBIOMICS standard, the GTDB r220 SSU reference sent E. coli reads to a MAG-derived Alloprevotella entry whose 16S is identical to E. coli's, so emu is the default",
+            "pt": "Banco de referência -- emu (padrão, apenas 16S) é o banco pré-construído do próprio Emu, rrnDB + NCBI 16S RefSeq, com o qual o Emu foi validado; gtdb só suporta --gene 16S; silva suporta 16S/18S/23S/28S (um arquivo SSU combinado atende 16S+18S, um arquivo LSU combinado atende 23S+28S); unite é selecionado automaticamente para --gene ITS independente desta flag. No padrão ZymoBIOMICS, a referência GTDB r220 SSU mandou as reads de E. coli para uma entrada de Alloprevotella derivada de MAG cujo 16S é idêntico ao da E. coli, por isso emu é o padrão"
           },
           "choices": [
+            "emu",
             "gtdb",
             "silva"
           ]
@@ -624,6 +625,45 @@
     }
   },
   "databases": {
+    "emu_16s": {
+      "name": "Emu default 16S database (rrnDB + NCBI 16S RefSeq)",
+      "description": {
+        "en": "Emu's own prebuilt full-length 16S reference: rrnDB v5.6 combined with NCBI 16S RefSeq, NCBI taxonomy (49,243 sequences, 17,556 taxa). The database Emu was developed and validated with (Curry et al. 2022), built from isolate genomes, so it avoids the contaminant 16S copies that genome-derived references such as GTDB inherit from MAGs. Default reference for the Nanopore (Emu) path",
+        "pt": "Referência de 16S completo pré-construída do próprio Emu: rrnDB v5.6 combinado com o NCBI 16S RefSeq, taxonomia do NCBI (49.243 sequências, 17.556 táxons). É o banco com que o Emu foi desenvolvido e validado (Curry et al. 2022), construído a partir de genomas de isolados, o que evita as cópias contaminantes de 16S que referências derivadas de genomas, como o GTDB, herdam de MAGs. Referência padrão do caminho Nanopore (Emu)"
+      },
+      "citation": [
+        {
+          "text": "Curry KD, Wang Q, Nute MG, et al. Emu: species-level microbial community profiling of full-length 16S rRNA Oxford Nanopore sequencing data. Nature Methods. 2022;19:845-853.",
+          "doi": "10.1038/s41592-022-01520-4"
+        },
+        {
+          "text": "Stoddard SF, Smith BJ, Hein R, Roller BRK, Schmidt TM. rrnDB: improved tools for interpreting rRNA gene abundance in bacteria and archaea and a new foundation for future development. Nucleic Acids Research. 2015;43(D1):D593-D598.",
+          "doi": "10.1093/nar/gku1201"
+        }
+      ],
+      "setting_key": "db_emu_16s",
+      "size_gb": 0.1,
+      "detect_files": [
+        "species_taxid.fasta",
+        "taxonomy.tsv"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "emu_prebuilt_2022",
+          "label": "Emu default database (~12 MB download) ★ Recommended",
+          "size_gb": 0.012,
+          "description": {
+            "en": "rrnDB v5.6 + NCBI 16S RefSeq, as distributed by the Emu authors on OSF (osf.io/56uf7, emu-prebuilt)",
+            "pt": "rrnDB v5.6 + NCBI 16S RefSeq, como distribuído pelos autores do Emu no OSF (osf.io/56uf7, emu-prebuilt)"
+          },
+          "url": "https://files.us.osf.io/v1/resources/56uf7/providers/osfstorage/63da8a656946a0023a7a54ef",
+          "filename": "emu.tar.gz",
+          "extract": true
+        }
+      ],
+      "config_key": "emu_16s"
+    },
     "gtdb_ssu": {
       "name": "GTDB 16S (DADA2/Emu-formatted)",
       "description": {
@@ -881,7 +921,7 @@
     "cutadapt": "-e 0.1",
     "vsearch_chimera": "--id 0.95 --abskew 2.0",
     "dada2_pacbio": "--gene 16S --reference_db gtdb --max_ee 2.0 --min_asv_totalfreq 5",
-    "emu_ont": "--gene 16S --reference_db gtdb --min-abundance 0.0001",
+    "emu_ont": "--gene 16S --reference_db emu --min-abundance 0.0001",
     "picrust2": "--max_nsti 2.0",
     "fastp": "--qualified_quality_phred 20 --length_required 50",
     "cutadapt_short": "-e 0.1",
