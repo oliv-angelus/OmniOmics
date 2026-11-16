@@ -53,6 +53,12 @@ samples = pd.read_table(config["samples"]).set_index("sample", drop=False).filln
 # not-yet-populated `db_eukulele` path doesn't block a run.
 EUKULELE_DB = config.get("databases", {}).get("eukulele", "")
 EUKULELE_DATABASE_NAME = config.get("params", {}).get("eukulele_database", "marmmetsp")
+# Upper bound (GNU `timeout` duration) for `EUKulele download`. It has no
+# network timeout of its own: on a host that cannot reach the database server
+# it hangs forever with an empty log, holding its threads/memory and blocking
+# the rest of the run. Fail loudly instead, so the user can retry or pre-load
+# the database.
+EUKULELE_DOWNLOAD_TIMEOUT = config.get("params", {}).get("eukulele_download_timeout", "6h")
 
 
 rule eukulele_setup:
@@ -61,14 +67,23 @@ rule eukulele_setup:
     params:
         refdir=EUKULELE_DB,
         database=EUKULELE_DATABASE_NAME,
-        outdir="results/05_ANNOTATION/_eukulele_setup"
+        outdir="results/05_ANNOTATION/_eukulele_setup",
+        timeout=EUKULELE_DOWNLOAD_TIMEOUT
     threads: config["threads"]["eukulele"]
     conda: "../envs/eukulele.yaml"
     log: "logs/annotation/eukulele_setup.log"
     benchmark: "benchmarks/annotation/eukulele_setup.tsv"
     shell:
-        "EUKulele download -d {params.database} --reference_dir {params.refdir} "
-        "--alignment_choice diamond -o {params.outdir} --CPUs {threads} > {log} 2>&1"
+        """
+        rc=0
+        timeout -k 60 {params.timeout} EUKulele download -d {params.database} \
+            --reference_dir {params.refdir} --alignment_choice diamond \
+            -o {params.outdir} --CPUs {threads} > {log} 2>&1 || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            echo "ERROR: EUKulele download did not finish within {params.timeout} (no network access to the database server, or a very slow connection). Retry, raise params.eukulele_download_timeout, or point the EUKulele database to an already-downloaded copy." >> {log}
+        fi
+        exit $rc
+        """
 
 
 rule eukulele_annotate:
@@ -160,6 +175,11 @@ rule eukulele_annotate:
 # config.yaml today, see DOGMA).
 CAT_DB = config.get("databases", {}).get("cat", "")
 CAT_DATABASE_CHOICE = config.get("params", {}).get("cat_database", "GTDB")
+# Upper bound for `CAT_pack download`, for the same reason as
+# EUKULELE_DOWNLOAD_TIMEOUT (no network timeout of its own; hangs forever on a
+# host without access to the server). Generous default: the raw GTDB/nr files
+# are ~123-186 GiB compressed.
+CAT_DOWNLOAD_TIMEOUT = config.get("params", {}).get("cat_download_timeout", "48h")
 
 
 rule cat_setup:
@@ -168,7 +188,8 @@ rule cat_setup:
     params:
         downloaddir=os.path.join(CAT_DB, "raw"),
         dbdir=CAT_DB,
-        dbchoice=CAT_DATABASE_CHOICE
+        dbchoice=CAT_DATABASE_CHOICE,
+        timeout=CAT_DOWNLOAD_TIMEOUT
     threads: config["threads"]["cat"]
     conda: "../envs/cat.yaml"
     log: "logs/annotation/cat_setup.log"
@@ -176,7 +197,13 @@ rule cat_setup:
     shell:
         """
         mkdir -p {params.downloaddir}
-        CAT_pack download --db {params.dbchoice} -o {params.downloaddir} --no_log > {log} 2>&1
+        rc=0
+        timeout -k 60 {params.timeout} CAT_pack download --db {params.dbchoice} \
+            -o {params.downloaddir} --no_log > {log} 2>&1 || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            echo "ERROR: CAT_pack download did not finish within {params.timeout} (no network access to the database server, or a very slow connection). Retry, raise params.cat_download_timeout, or point the CAT database to an already-prepared copy." >> {log}
+        fi
+        [ "$rc" -eq 0 ] || exit $rc
         if [ "{params.dbchoice}" = "nr" ]; then
             fasta=$(ls {params.downloaddir}/*nr.gz | head -1)
             names=$(ls {params.downloaddir}/*names.dmp | head -1)
