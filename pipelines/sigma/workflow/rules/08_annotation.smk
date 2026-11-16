@@ -50,7 +50,7 @@ rule eggnog_sample:
     log: "logs/annotation/{sample}_eggnog.log"
     benchmark: "benchmarks/annotation/{sample}_eggnog.tsv"
     shell:
-        "emapper.py -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
+        "emapper.py --override -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
 
 rule amrfinder_sample:
     input:

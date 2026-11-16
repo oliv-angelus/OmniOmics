@@ -81,6 +81,6 @@ rule eggnog_reference:
     shell:
         """
         mkdir -p results/00_REFERENCE/eggnog
-        emapper.py -m diamond -i {input.faa} --data_dir {params.db} \
+        emapper.py --override -m diamond -i {input.faa} --data_dir {params.db} \
             -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1
         """

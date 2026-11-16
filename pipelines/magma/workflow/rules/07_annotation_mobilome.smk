@@ -46,7 +46,7 @@ rule eggnog_sample:
     log: "logs/annotation/{sample}_eggnog.log"
     benchmark: "benchmarks/annotation/{sample}_eggnog.tsv"
     shell:
-        "emapper.py -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
+        "emapper.py --override -m diamond -i {input.faa} --data_dir {params.db} -o {params.out_prefix} --cpu {threads} {params.extra} > {log} 2>&1"
 
 rule abricate_sample:
     input:
@@ -379,7 +379,7 @@ rule eggnog_mags:
             faa="$d/${{magname}}_proteins.faa"
             [ -e "$faa" ] || continue
             mkdir -p {output.outdir}/$magname
-            emapper.py -m diamond -i "$faa" --data_dir {params.db} \
+            emapper.py --override -m diamond -i "$faa" --data_dir {params.db} \
                        -o {output.outdir}/$magname/${{magname}}_annotations \
                        --cpu {threads} {params.extra} >> {log} 2>&1
         done
