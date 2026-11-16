@@ -20,10 +20,62 @@ rule megahit:
         megahit -1 {input.r1} -2 {input.r2} -o {output.outdir} -t {threads} {params.extra} > {log} 2>&1
         """
 
-rule metaspades_hybrid:
+# Depth normalization of the short reads before hybrid metaSPAdes (BBNorm).
+# A dominant organism at very high depth makes metaSPAdes leave uncollapsed
+# bubbles: on the ZymoBIOMICS Log community, Listeria (~89% of reads,
+# k-mer coverage ~1,150x) assembled into 94 contigs summing 4.43 Mb for a
+# 2.99 Mb genome (about half the genome in 2+ near-identical copies). CheckM2
+# read the duplicated markers as contamination and the best Listeria bin
+# fell to 64% completeness. Capping depth at 100x (target=100) with no
+# low-depth filtering (min=0, so low-abundance organisms keep every read)
+# gave 47 contigs summing 2.97 Mb, with the other species' genome fraction
+# unchanged. Only the assembly input is normalized: read mapping for
+# binning coverage still uses the original reads. Brown et al. 2012
+# (arXiv:1203.4802); Howe et al. 2014, PNAS 111:4904 (doi:10.1073/pnas.1402564111).
+BBNORM_ACTIVE = "bbnorm" in (config.get("active_tools") or [])
+
+
+def _bbnorm_args():
+    # Manifest flags arrive as "target 100 min 0"; BBTools wants key=value.
+    toks = str(config["params"].get("bbnorm", "")).split()
+    return " ".join(f"{k}={v}" for k, v in zip(toks[0::2], toks[1::2]))
+
+
+rule bbnorm:
     input:
         r1="results/01_QC/{sample}/{sample}_R1_clean.fastq.gz",
-        r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz",
+        r2="results/01_QC/{sample}/{sample}_R2_clean.fastq.gz"
+    output:
+        r1="results/02_ASSEMBLY/{sample}/bbnorm/{sample}_R1_norm.fastq.gz",
+        r2="results/02_ASSEMBLY/{sample}/bbnorm/{sample}_R2_norm.fastq.gz"
+    params:
+        extra=_bbnorm_args()
+    threads: config["threads"].get("bbnorm", 16)
+    conda: "../envs/bbnorm.yaml"
+    log: "logs/assembly/{sample}_bbnorm.log"
+    benchmark: "benchmarks/assembly/{sample}_bbnorm.tsv"
+    shell:
+        """
+        bbnorm.sh in={input.r1} in2={input.r2} out={output.r1} out2={output.r2} \
+            threads={threads} {params.extra} > {log} 2>&1
+        """
+
+
+def _assembly_short_reads(wildcards):
+    if BBNORM_ACTIVE:
+        return {
+            "r1": f"results/02_ASSEMBLY/{wildcards.sample}/bbnorm/{wildcards.sample}_R1_norm.fastq.gz",
+            "r2": f"results/02_ASSEMBLY/{wildcards.sample}/bbnorm/{wildcards.sample}_R2_norm.fastq.gz",
+        }
+    return {
+        "r1": f"results/01_QC/{wildcards.sample}/{wildcards.sample}_R1_clean.fastq.gz",
+        "r2": f"results/01_QC/{wildcards.sample}/{wildcards.sample}_R2_clean.fastq.gz",
+    }
+
+
+rule metaspades_hybrid:
+    input:
+        unpack(_assembly_short_reads),
         nano="results/01_QC/{sample}/{sample}_clean.fastq.gz"
     output:
         "results/02_ASSEMBLY/{sample}/metaspades_hybrid/contigs.fasta"

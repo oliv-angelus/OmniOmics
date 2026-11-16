@@ -844,6 +844,66 @@
         "megahit"
       ]
     },
+    "bbnorm": {
+      "name": "BBNorm (depth normalization)",
+      "description": {
+        "en": "Caps short-read depth at a target coverage before hybrid metaSPAdes assembly, leaving lower-depth organisms untouched. Without it, a dominant organism at very high depth assembles into many redundant, near-identical contigs: on the ZymoBIOMICS Log community, Listeria (~89% of reads) assembled at 1.48x its genome size, which CheckM2 read as contamination, dropping its MAG below 70% completeness. Only the assembly input is normalized; binning coverage still uses the original reads",
+        "pt": "Limita a profundidade das reads curtas a uma cobertura-alvo antes da montagem híbrida com o metaSPAdes, sem alterar organismos de menor profundidade. Sem isso, um organismo dominante em profundidade muito alta é montado em muitos contigs redundantes e quase idênticos: na comunidade ZymoBIOMICS Log, a Listeria (~89% das reads) foi montada com 1,48 vez o tamanho do genoma, o que o CheckM2 leu como contaminação, derrubando o MAG para menos de 70% de completude. Só a entrada da montagem é normalizada; a cobertura para o binning continua usando as reads originais"
+      },
+      "citation": [
+        {
+          "text": "Bushnell B, Rood J, Singer E. BBMerge -- accurate paired shotgun read merging via overlap. PLoS ONE. 2017;12(10):e0185056. (BBTools suite, which includes BBNorm; sourceforge.net/projects/bbmap)",
+          "doi": "10.1371/journal.pone.0185056"
+        },
+        {
+          "text": "Howe AC, Jansson JK, Malfatti SA, Tringe SG, Tiedje JM, Brown CT. Tackling soil diversity with the assembly of large, complex metagenomes. PNAS. 2014;111(13):4904-4909.",
+          "doi": "10.1073/pnas.1402564111"
+        }
+      ],
+      "category": "Assembly",
+      "read_type": "hybrid",
+      "flags": [
+        {
+          "flag": "target",
+          "type": "int",
+          "default": 100,
+          "enabled": true,
+          "description": {
+            "en": "Target depth: reads from regions above this k-mer depth are downsampled to it",
+            "pt": "Profundidade-alvo: reads de regiões acima desta profundidade de k-mers são reduzidas até ela"
+          },
+          "min": 10
+        },
+        {
+          "flag": "min",
+          "type": "int",
+          "default": 0,
+          "enabled": true,
+          "description": {
+            "en": "Discard reads below this depth. Keep 0 for metagenomes, so low-abundance organisms lose no reads",
+            "pt": "Descarta reads abaixo desta profundidade. Mantenha 0 em metagenomas, para que organismos pouco abundantes não percam reads"
+          },
+          "min": 0
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp"
+          ],
+          "min": 1
+        },
+        {
+          "tools": [
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "bbnorm"
+      ]
+    },
     "metaspades_hybrid": {
       "name": "metaSPAdes (hybrid)",
       "description": {
@@ -4101,6 +4161,7 @@
     "kreport2mpa": "",
     "kaiju": "",
     "megahit": "--min-contig-len 300 -m 0.85",
+    "bbnorm": "target 100 min 0",
     "metaspades_hybrid": "-m 60",
     "flye": "",
     "tiara": "--min_len 500",
@@ -4144,6 +4205,7 @@
     "prodigal": 8,
     "megahit": 64,
     "flye": 64,
+    "bbnorm": 16,
     "metaspades_hybrid": 64,
     "bowtie2": 16,
     "minimap2": 16,
