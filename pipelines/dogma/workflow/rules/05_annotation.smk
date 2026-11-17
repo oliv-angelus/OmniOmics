@@ -275,6 +275,15 @@ rule canthyd_annotate:
 # finished without crashing!!!"), produced the real expected output files
 # (FeGenie-geneSummary.csv, FeGenie-geneSummary-clusters.csv,
 # FeGenie-heatmap-data.csv).
+#
+# FeGenie assumes Prodigal-style ORF IDs (`<contig>_<n>`): its Geobacter /
+# Thermincola operon search does `int(id.split("_")[-1])`. TransDecoder IDs
+# end in `.p<n>` (e.g. `..._g1_i1.p3`), which crashed it with
+# `ValueError: invalid literal for int() with base 10: 'i1.p3'` -- but only
+# when that search found hits, so some samples passed and others failed.
+# The bin file is therefore a copy with headers rewritten `<transcript>.p<n>`
+# -> `<transcript>_<n>` (description dropped); ORF IDs in FeGenie's output
+# map back to TransDecoder's by turning the final `_<n>` into `.p<n>`.
 rule fegenie_annotate:
     input:
         faa="results/04_ORF_CALLING/{sample}/{domain}/{sample}_transdecoder.pep"
@@ -292,7 +301,8 @@ rule fegenie_annotate:
         """
         rm -rf {params.bindir} {params.outdir}
         mkdir -p {params.bindir}
-        ln -sf "$(readlink -f {input.faa})" "{params.bindir}/{wildcards.sample}.faa"
+        sed -E 's/^>([^[:space:]]+)\\.p([0-9]+).*/>\\1_\\2/' {input.faa} \
+            > "{params.bindir}/{wildcards.sample}.faa"
         FeGenie.py -bin_dir {params.bindir} -bin_ext faa --orfs --meta \
             -out {params.outdir} -t {threads} --nohup {params.extra} > {log} 2>&1
         rm -rf {params.bindir}
