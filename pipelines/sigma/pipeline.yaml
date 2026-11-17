@@ -1447,6 +1447,16 @@
             "realign",
             "denovo"
           ]
+        },
+        {
+          "flag": "--dbmem",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Load the whole eggnog.db (~44 GB) into RAM before annotating instead of querying it on disk once per protein -- much faster on large protein sets (metagenomes/metatranscriptomes). Each running instance needs its own ~50 GB; how many run at once follows the RAM field in the Resources tab (or the machine's total RAM), and the flag is dropped automatically if not even one copy fits",
+            "pt": "Carrega o eggnog.db inteiro (~44 GB) na RAM antes de anotar, em vez de consultá-lo no disco uma vez por proteína -- muito mais rápido em conjuntos grandes de proteínas (metagenomas/metatranscriptomas). Cada instância em execução precisa de ~50 GB próprios; quantas rodam ao mesmo tempo segue o campo de RAM da aba Recursos (ou a RAM total da máquina), e o flag é retirado automaticamente se nem uma cópia couber"
+          }
         }
       ],
       "requires": [
@@ -2925,7 +2935,11 @@
     "antismash": "",
     "bigscape": "--mix --classify none"
   },
-  "special_overrides": {},
+  "special_overrides": {
+    "eggnog_dbmem_targets": [
+      "eggnog"
+    ]
+  },
   "default_threads": {
     "fastp": 4,
     "kraken2": 8,

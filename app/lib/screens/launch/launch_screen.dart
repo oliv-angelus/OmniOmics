@@ -967,13 +967,17 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// RAM (GB) isn't a general setting -- only the few tools listed in the
   /// manifest's special_overrides.ram_gb_targets actually read it (it fills
   /// in their -m/--memory flag), so its field sits next to those tools'
-  /// thread field instead of at the top like it used to.
+  /// thread field instead of at the top like it used to. eggNOG-mapper
+  /// (special_overrides.eggnog_dbmem_targets) shows it too: with --dbmem the
+  /// same RAM value caps how many ~50 GB eggnog.db copies run at once.
   Widget _buildResourcesTab() {
     final colors = context.colors;
     final defaultThreads = (_manifest?['default_threads'] as Map<String, dynamic>?) ?? {};
-    final ramTargets = ((_manifest?['special_overrides'] as Map<String, dynamic>?)?['ram_gb_targets'] as List?)
-            ?.map((e) => e.toString()).toSet() ??
-        {};
+    final specialOverrides = _manifest?['special_overrides'] as Map<String, dynamic>?;
+    final ramTargets = <String>{
+      ...((specialOverrides?['ram_gb_targets'] as List?) ?? const []).map((e) => e.toString()),
+      ...((specialOverrides?['eggnog_dbmem_targets'] as List?) ?? const []).map((e) => e.toString()),
+    };
     final relevantCategories = _categories.map((c) => ToolCategory(
               category: c.category,
               tools: c.tools.where((t) => _activeTools.contains(t.id) && defaultThreads.containsKey(t.id)).toList(),

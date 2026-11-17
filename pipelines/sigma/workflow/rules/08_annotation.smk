@@ -33,6 +33,19 @@ rule bakta:
         bakta --db {params.db} --output {output.outdir} --prefix {wildcards.sample} --keep-contig-headers --threads {threads} {params.extra} {input.fa} > {log} 2>&1
         """
 
+# eggNOG-mapper --dbmem (see backend/config_engine.py): each instance holds its
+# own ~44 GB copy of eggnog.db in RAM. `mem_mb` lets a memory-capped scheduler
+# (--resources mem_mb=..., a cluster profile) place it; `eggnog_dbmem` is the
+# unit the app caps with --resources eggnog_dbmem=<slots>.
+EGGNOG_DBMEM_MB = 50000
+
+
+def _eggnog_resources():
+    if "--dbmem" in str(config["params"].get("eggnog", "")).split():
+        return {"mem_mb": EGGNOG_DBMEM_MB, "eggnog_dbmem": 1}
+    return {}
+
+
 rule eggnog_sample:
     """Optional deeper functional annotation (KEGG/COG/GO) on top of Bakta's
     own gene calls -- consumes Bakta's protein FASTA directly instead of
@@ -46,6 +59,7 @@ rule eggnog_sample:
         extra=config["params"]["eggnog"],
         out_prefix="results/08_ANNOTATION/{sample}/eggnog/{sample}_annotations"
     threads: config["threads"]["eggnog"]
+    resources: **_eggnog_resources()
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/{sample}_eggnog.log"
     benchmark: "benchmarks/annotation/{sample}_eggnog.tsv"

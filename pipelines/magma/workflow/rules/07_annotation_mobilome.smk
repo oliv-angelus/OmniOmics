@@ -32,6 +32,21 @@ rule prodigal_sample:
     shell:
         "pyrodigal -i {input.fa} -a {output.faa} -o {output.gff} -p meta -f gff -j {threads} {params.extra} > {log} 2>&1"
 
+# eggNOG-mapper --dbmem (see backend/config_engine.py): each instance holds its
+# own ~44 GB copy of eggnog.db in RAM. `mem_mb` lets a memory-capped scheduler
+# (--resources mem_mb=..., a cluster profile) place it; `eggnog_dbmem` is the
+# unit the app caps with --resources eggnog_dbmem=<slots>.
+EGGNOG_DBMEM_MB = 50000
+
+
+def _eggnog_dbmem_on():
+    return "--dbmem" in str(config["params"].get("eggnog", "")).split()
+
+
+def _eggnog_resources():
+    return {"mem_mb": EGGNOG_DBMEM_MB, "eggnog_dbmem": 1} if _eggnog_dbmem_on() else {}
+
+
 rule eggnog_sample:
     input:
         faa="results/09_ANNOTATION/{sample}/prodigal/{sample}_proteins.faa"
@@ -42,6 +57,7 @@ rule eggnog_sample:
         extra=config["params"]["eggnog"],
         out_prefix="results/09_ANNOTATION/{sample}/eggnog/{sample}_annotations"
     threads: config["threads"]["eggnog"]
+    resources: **_eggnog_resources()
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/{sample}_eggnog.log"
     benchmark: "benchmarks/annotation/{sample}_eggnog.tsv"
@@ -365,7 +381,10 @@ rule eggnog_mags:
         outdir=directory("results/09_ANNOTATION/mags/eggnog")
     params:
         db=config["databases"]["eggnog"],
-        extra=config["params"]["eggnog"]
+        # --dbmem dropped here: this loop starts one emapper per MAG (a few
+        # thousand proteins each), so re-loading eggnog.db into RAM every
+        # time would cost more than the per-protein disk lookups it saves.
+        extra=" ".join(x for x in str(config["params"]["eggnog"]).split() if x != "--dbmem")
     threads: config["threads"]["eggnog"]
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/mags_eggnog.log"

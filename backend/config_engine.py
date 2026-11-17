@@ -9,6 +9,10 @@ import re
 import csv
 import glob
 
+# RAM one eggNOG-mapper --dbmem instance needs (eggnog.db resident + DIAMOND
+# + Python overhead), in GB. Must match EGGNOG_DBMEM_MB in the rules.
+EGGNOG_DBMEM_GB = 50
+
 from pipelines import get_pipeline
 from databases_engine import get_databases_status
 
@@ -211,6 +215,39 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
                 mem_flag = f"-m {ram}"
             params[tool_id] = f"{cleaned} {mem_flag}".strip()
 
+    # eggNOG-mapper --dbmem: loads the whole eggnog.db (~39 GB on disk, ~44 GB
+    # resident) into RAM instead of querying the SQLite file once per protein.
+    # On DOGMA's metatranscriptomes (~200k-580k proteins per sample) the
+    # on-disk annotation step ran at ~7 proteins/s -- ~20 h per sample on
+    # tapajos -- which is what --dbmem removes (Cantalapiedra et al. 2021,
+    # doi:10.1093/molbev/msab293). Each instance holds its own copy, so the
+    # number that may run at once is capped by the RAM budget: the Resources
+    # tab's RAM field when the user filled it in, otherwise the machine's
+    # total RAM. 15% stays free for everything else running alongside. A
+    # machine too small for even one copy gets --dbmem stripped instead of
+    # an out-of-memory crash. The rules declare one `eggnog_dbmem` unit per
+    # job; main.py turns `eggnog_dbmem_slots` into `--resources`.
+    eggnog_dbmem_slots = 0
+    dbmem_tools = [t for t in overrides.get("eggnog_dbmem_targets", [])
+                   if "--dbmem" in str(params.get(t, "")).split()]
+    if dbmem_tools:
+        budget_gb = 0
+        try:
+            budget_gb = float(data.get("ram_gb") or 0)
+        except (TypeError, ValueError):
+            budget_gb = 0
+        if budget_gb <= 0:
+            try:
+                import psutil
+                budget_gb = psutil.virtual_memory().total / 1024 ** 3
+            except Exception:
+                budget_gb = 0
+        eggnog_dbmem_slots = int(budget_gb * 0.85 // EGGNOG_DBMEM_GB)
+        if eggnog_dbmem_slots < 1:
+            for t in dbmem_tools:
+                params[t] = " ".join(x for x in str(params[t]).split() if x != "--dbmem")
+            eggnog_dbmem_slots = 0
+
     active_tools = data.get("active_tools", [])
     all_binners = overrides.get("active_binners", [])
     active_binners = [b for b in all_binners if b in active_tools]
@@ -340,6 +377,8 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
         "long_read_platform": long_read_platform,
         "amplicon_preset": amplicon_preset,
     }
+    if eggnog_dbmem_slots:
+        config["eggnog_dbmem_slots"] = eggnog_dbmem_slots
 
     yaml_path = os.path.join(config_dir, "config.yaml")
     with open(yaml_path, "w") as f:

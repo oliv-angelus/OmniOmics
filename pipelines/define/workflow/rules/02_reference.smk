@@ -62,6 +62,19 @@ rule bowtie2_index_reference:
         bowtie2-build --threads {threads} {input.fa} {output.idx_dir}/reference > {log} 2>&1
         """
 
+# eggNOG-mapper --dbmem (see backend/config_engine.py): the instance holds its
+# own ~44 GB copy of eggnog.db in RAM. `mem_mb` lets a memory-capped scheduler
+# (--resources mem_mb=..., a cluster profile) place it; `eggnog_dbmem` is the
+# unit the app caps with --resources eggnog_dbmem=<slots>.
+EGGNOG_DBMEM_MB = 50000
+
+
+def _eggnog_resources():
+    if "--dbmem" in str(config["params"].get("eggnog_reference", "")).split():
+        return {"mem_mb": EGGNOG_DBMEM_MB, "eggnog_dbmem": 1}
+    return {}
+
+
 rule eggnog_reference:
     """Functional annotation of the reference's own proteins (OG, COG, GO,
     EC, KEGG, PFAM) -- merged into the final annotated count table in
@@ -75,6 +88,7 @@ rule eggnog_reference:
         extra=config["params"]["eggnog_reference"],
         out_prefix="results/00_REFERENCE/eggnog/reference_annotations"
     threads: config["threads"]["eggnog_reference"]
+    resources: **_eggnog_resources()
     conda: "../envs/eggnog.yaml"
     log: "logs/reference/eggnog.log"
     benchmark: "benchmarks/reference/eggnog.tsv"

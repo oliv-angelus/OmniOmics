@@ -1597,6 +1597,19 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         if omit_from:
             cmd += ["--omit-from", *omit_from]
 
+        # How many eggNOG-mapper --dbmem instances fit in RAM at once (each
+        # holds its own ~44 GB copy of eggnog.db) -- computed by
+        # config_engine.generate_config from the RAM budget. Without this cap
+        # Snakemake would start one per sample as soon as cores allow.
+        try:
+            import yaml as _yaml
+            with open(config_path) as _f:
+                _slots = int((_yaml.safe_load(_f) or {}).get("eggnog_dbmem_slots") or 0)
+        except Exception:
+            _slots = 0
+        if _slots > 0:
+            cmd += ["--resources", f"eggnog_dbmem={_slots}"]
+
         # Dart live-monitoring bridge (github.com/karlaycosta/snakemake-dart):
         # an official Snakemake logger plugin streaming structured JSON events
         # (job details, resources, and a live rulegraph/DAG) over websocket,

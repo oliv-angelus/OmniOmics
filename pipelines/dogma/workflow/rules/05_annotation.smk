@@ -17,6 +17,18 @@ samples = pd.read_table(config["samples"]).set_index("sample", drop=False).filln
 # (ncycdb/mcycdb/scycdb) build their DIAMOND index from the reference database
 # itself, not from any sample's data, so they stay domain-independent.
 
+# eggNOG-mapper --dbmem (see backend/config_engine.py): each instance holds its
+# own ~44 GB copy of eggnog.db in RAM. `mem_mb` lets a memory-capped scheduler
+# (--resources mem_mb=..., a cluster profile) place it; `eggnog_dbmem` is the
+# unit the app caps with --resources eggnog_dbmem=<slots>.
+EGGNOG_DBMEM_MB = 50000
+
+
+def _eggnog_resources():
+    if "--dbmem" in str(config["params"].get("eggnog", "")).split():
+        return {"mem_mb": EGGNOG_DBMEM_MB, "eggnog_dbmem": 1}
+    return {}
+
 
 rule eggnog_sample:
     input:
@@ -28,6 +40,7 @@ rule eggnog_sample:
         extra=config["params"]["eggnog"],
         out_prefix="results/05_ANNOTATION/{sample}/{domain}/eggnog/{sample}_annotations"
     threads: config["threads"]["eggnog"]
+    resources: **_eggnog_resources()
     conda: "../envs/eggnog.yaml"
     log: "logs/annotation/{sample}_{domain}_eggnog.log"
     benchmark: "benchmarks/annotation/{sample}_{domain}_eggnog.tsv"
