@@ -392,6 +392,10 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
   /// Writes samples.tsv + config.yaml from the current in-memory state
   /// (inputs/databases/tools tabs) into `<output_dir>/config/`. Shared by the
   /// standalone "Salvar" action and by `_start`, which saves then launches.
+  /// The config/generate payload of the last _buildAndSaveConfig, reused by
+  /// _exportRunFile so the exported run file matches what was saved.
+  Map<String, dynamic>? _lastConfigPayload;
+
   Future<Map<String, dynamic>> _buildAndSaveConfig() async {
     await _saveDraft();
 
@@ -460,6 +464,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       'amplicon_fwd_primers': _fwdPrimersController.text,
       'amplicon_rev_primers': _revPrimersController.text,...toggleInputs,
     };
+    _lastConfigPayload = configPayload;
     final configRes = await api.post('/api/pipelines/${widget.pipelineId}/config/generate', configPayload) as Map<String, dynamic>;
     return {...configRes, 'tsv_content': samplesRes['tsv_content'], 'tsv_path': samplesRes['tsv_path']};
   }
@@ -528,6 +533,33 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${_tr('config_saved')}: ${configRes['path']}')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${_tr('error_saving')}: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// Writes `<output_dir>/config/run.yaml` for `omniomics run` (command line /
+  /// HPC), from the same configuration Salvar writes.
+  Future<void> _exportRunFile() async {
+    setState(() => _saving = true);
+    try {
+      await _buildAndSaveConfig();
+      final api = ref.read(apiClientProvider);
+      final payload = {
+        ...?_lastConfigPayload,..._inputDirs,
+        'reference_mode': _referenceMode,
+        if (_referenceFile != null) 'reference_file': _referenceFile,
+        'active_tracks': {for (final entry in _activeTracks.entries) entry.key: entry.value.toList()},
+      };
+      final res = await api.post('/api/pipelines/${widget.pipelineId}/run-file/export', payload) as Map<String, dynamic>;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${_tr('run_file_exported')}: ${res['path']}')),
       );
     } catch (e) {
       if (mounted) {
@@ -1330,6 +1362,15 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
               icon: _saving
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)): const Icon(Icons.save_outlined),
               label: Text(ref.t('save_config')),
+            ),
+            const SizedBox(width: 12),
+            Tooltip(
+              message: ref.t('export_run_file_tooltip'),
+              child: OutlinedButton.icon(
+                onPressed: _canSave ? _exportRunFile: null,
+                icon: const Icon(Icons.terminal),
+                label: Text(ref.t('export_run_file')),
+              ),
             ),
             const SizedBox(width: 12),
             ElevatedButton.icon(
