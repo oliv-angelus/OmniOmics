@@ -49,6 +49,7 @@ reproducible.
 - [Requirements](docs/REQUIREMENTS.md)
 - [Installing](#installing)
 - [Using it](#using-it)
+- [Command line and HPC](#command-line-and-hpc)
 - [Plotting data produced elsewhere](#plotting-data-produced-elsewhere)
 - [Repository layout](#repository-layout)
 - [Reproducibility](#reproducibility)
@@ -225,6 +226,23 @@ The interface is available in Portuguese and English, switchable at any time.
 
 ---
 
+## Command line and HPC
+
+The pipelines also run without the interface, on a server or as one PBS job
+on a cluster, from a YAML run file (written by `bin/omniomics init <pipeline>`
+or exported from the Launch screen):
+
+```bash
+conda env create -f envs/omniomics-cli.yaml && conda activate omniomics-cli
+bin/omniomics run run.yaml --cores 32 --ram-gb 120                  # this machine
+bin/omniomics run run.yaml --submit pbs --ncpus 64 --mem-gb 240 --walltime 72:00:00
+```
+
+The command line builds the run with the same code as the app. See
+[`docs/CLI.md`](docs/CLI.md).
+
+---
+
 ## Plotting data produced elsewhere
 
 The Plots tab is usable on its own, without running any pipeline. **Plots →
@@ -244,7 +262,9 @@ documented drop-in filenames for data with no OmniOmics provenance at all.
 
 ```
 app/          Flutter desktop application
-backend/      FastAPI backend: run orchestration, databases, plotting API
+backend/      FastAPI backend: run orchestration, databases, plotting API; cli.py
+bin/          omniomics command line (see docs/CLI.md)
+envs/         Pinned conda environment for the command line on servers
 pipelines/    One directory per pipeline: Snakemake workflow + conda envs + manifest
 plots/        R analysis and export scripts, plus the analysis manifest
 scripts/      Developer tooling: test-fixture generators, the plotting test suite
