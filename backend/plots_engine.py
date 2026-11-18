@@ -125,7 +125,7 @@ def build_params_args(analysis_id: str, param_states: list) -> list:
 
 
 def _subprocess_env() -> dict:
-    """Same PATH-stripping as main._subprocess_env (see its docstring) -- duplicated here rather than imported so plots_engine has no dependency on
+    """Same PATH-stripping as run_engine.subprocess_env (see its docstring) -- duplicated here rather than imported so plots_engine has no dependency on
     main.py, matching the rest of this module's standalone engine files."""
     env = os.environ.copy()
     roots = {p for p in (env.pop("VIRTUAL_ENV", None),
@@ -138,7 +138,7 @@ def _subprocess_env() -> dict:
         )
     # R-specific leak: a system/user R installation's own libs must not shadow
     # the r-plots conda env's package versions -- same class of bug as the
-    # KrakenTools PATH leak (see main._subprocess_env).
+    # KrakenTools PATH leak (see run_engine.subprocess_env).
     for var in ("R_LIBS", "R_LIBS_USER", "R_LIBS_SITE"):
         env.pop(var, None)
     for key in list(env):
