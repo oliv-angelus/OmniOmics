@@ -1,0 +1,21 @@
+# Environment for the OmniOmics command line on a server or HPC cluster
+# (see docs/CLI.md). Same Snakemake and conda as the desktop app's snakemake
+# environment and the validation runs; the tools themselves are installed by
+# Snakemake into per-rule conda environments.
+#
+#   conda env create -f envs/omniomics-cli.yaml
+#   conda activate omniomics-cli
+#   bin/omniomics list
+name: omniomics-cli
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.14.10
+  - snakemake=9.26.0
+  - conda=26.7.2
+  - pandas=2.3.3
+  - pyyaml=6.0.3
+  - psutil=7.2.2
+  - httpx=0.28.1
+  - aiofiles=25.1.0

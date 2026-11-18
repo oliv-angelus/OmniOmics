@@ -1525,5 +1525,16 @@
     "cat": 8,
     "magma_xref": 8,
     "salmon": 8
+  },
+  "rule_resources": {
+    "kraken2": {
+      "mem_from_database": "kraken2"
+    },
+    "kaiju_classify": {
+      "mem_from_database": "kaiju"
+    },
+    "ribodetector_short": {
+      "mem_mb": 24000
+    }
   }
 }

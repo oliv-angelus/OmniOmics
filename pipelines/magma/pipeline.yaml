@@ -4387,5 +4387,28 @@
     "checkv": 16,
     "genomad": 16,
     "sylph": 16
+  },
+  "rule_resources": {
+    "kraken2": {
+      "mem_from_database": "kraken2"
+    },
+    "kaiju_classify": {
+      "mem_from_database": "kaiju"
+    },
+    "gtdbtk": {
+      "mem_mb": 32000
+    },
+    "checkm2": {
+      "mem_mb": 16000
+    },
+    "gunc": {
+      "mem_mb": 16000
+    },
+    "antismash_sample": {
+      "mem_mb": 24000
+    },
+    "antismash_mags": {
+      "mem_mb": 24000
+    }
   }
 }
