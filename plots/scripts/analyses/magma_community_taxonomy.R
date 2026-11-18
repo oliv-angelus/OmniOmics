@@ -52,7 +52,7 @@ font_scale <- style$font_scale %||% 1.0
 hide_x_axis <- isTRUE(style$hide_x_axis)
 hide_y_axis <- isTRUE(style$hide_y_axis)
 
-VALID <- c("kraken2", "kaiju", "compare")
+VALID <- c("kraken2", "kaiju", "sylph", "compare")
 if (!(classifier %in% VALID)) {
   stop(sprintf("--classifier must be one of: %s (got '%s')", paste(VALID, collapse = ", "), classifier))
 }
@@ -71,6 +71,19 @@ read_kaiju <- function() {
                  kaiju_rds))
   }
   readRDS(kaiju_rds)
+}
+
+# sylph is opt-in (off by default), so its object exists only for runs that
+# had it switched on. Its table holds relative abundances (%), which the
+# stacked bars normalise per sample anyway.
+sylph_rds <- file.path(dirname(kraken_rds), "phyloseq_sylph.rds")
+read_sylph <- function() {
+  if (!file.exists(sylph_rds)) {
+    stop(sprintf(paste0("No sylph-classified object at %s -- sylph was not switched on for this run ",
+                        "(its results folder has no abundance_table_final_sylph.tsv), or the run was ",
+                        "loaded before sylph support existed (Trocar metadados rebuilds it)."), sylph_rds))
+  }
+  readRDS(sylph_rds)
 }
 
 dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
@@ -150,7 +163,7 @@ if (classifier == "compare") {
                                               font_family = font_family, palette = palette)
   saveRDS(wide, file.path(args$out_dir, "magma_community_taxonomy.rds"))
 } else {
-  ps <- if (classifier == "kaiju") read_kaiju() else readRDS(kraken_rds)
+  ps <- switch(classifier, kaiju = read_kaiju(), sylph = read_sylph(), readRDS(kraken_rds))
   log_line("[magma_community_taxonomy] %s: %d taxa x %d samples", classifier, ntaxa(ps), nsamples(ps))
 
   ranks_to_plot <- resolve_ranks_to_plot(ps, args$rank)

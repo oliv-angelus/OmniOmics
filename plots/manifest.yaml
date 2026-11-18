@@ -269,21 +269,21 @@ analyses:
       en: "Community Taxonomy"
       pt: "Taxonomia da Comunidade"
     description:
-      en: "Stacked relative-abundance bars per sample, from whichever of MAGMA's two independent read classifications you pick -- Kraken2/Bracken (nucleotide k-mers) or Kaiju (translated protein). A third option compares the two: how much they agree, and which taxa each one finds that the other misses."
-      pt: "Barras empilhadas de abundância relativa por amostra, a partir da classificação de reads que você escolher entre as duas independentes do MAGMA -- Kraken2/Bracken (k-mers de nucleotídeo) ou Kaiju (proteína traduzida). Uma terceira opção compara as duas: o quanto concordam e quais táxons cada uma encontra que a outra não encontra."
+      en: "Stacked relative-abundance bars per sample, from whichever of MAGMA's independent read classifications you pick -- Kraken2/Bracken (nucleotide k-mers, the default), or, when they were switched on for the run, Kaiju (translated protein) or sylph (species abundances from containment ANI). A 'compare' option shows how much Kraken2/Bracken and Kaiju agree, and which taxa each one finds that the other misses."
+      pt: "Barras empilhadas de abundância relativa por amostra, a partir da classificação de reads do MAGMA que você escolher -- Kraken2/Bracken (k-mers de nucleotídeo, o padrão) ou, quando foram ativados na corrida, Kaiju (proteína traduzida) ou sylph (abundância por espécie a partir da ANI de contenção). A opção 'compare' mostra o quanto Kraken2/Bracken e Kaiju concordam e quais táxons cada um encontra que o outro não encontra."
     applies_to: [magma]
     input_shape: phyloseq
-    also_loads: [phyloseq_kaiju]
+    also_loads: [phyloseq_kaiju, phyloseq_sylph]
     script: analyses/magma_community_taxonomy.R
     parameters:
       - flag: "--classifier"
         type: choice
         default: "kraken2"
         enabled: true
-        choices: [kraken2, kaiju, compare]
+        choices: [kraken2, kaiju, sylph, compare]
         description:
-          en: "Which classification to plot -- Kraken2/Bracken, Kaiju, or 'compare' for the agreement between the two"
-          pt: "Qual classificação plotar -- Kraken2/Bracken, Kaiju, ou 'compare' para a concordância entre as duas"
+          en: "Which classification to plot -- Kraken2/Bracken, Kaiju, sylph (relative abundances, only if it ran), or 'compare' for the agreement between Kraken2/Bracken and Kaiju"
+          pt: "Qual classificação plotar -- Kraken2/Bracken, Kaiju, sylph (abundâncias relativas, só se ele rodou), ou 'compare' para a concordância entre Kraken2/Bracken e Kaiju"
       - flag: "--rank"
         type: tax_rank
         default: "all"

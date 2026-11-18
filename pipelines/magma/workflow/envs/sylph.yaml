@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - sylph=1.0.0
+  - sylph-tax=1.9.2

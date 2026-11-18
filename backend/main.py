@@ -2130,8 +2130,14 @@ INPUT_SHAPE_INFO = {
     # analysis script written for a phyloseq object works unchanged against
     # either shape, it's registered a second time in the manifest under a
     # different id/input_shape rather than needing its own R code.
+    # Kaiju and sylph are opt-in tools, so a MAGMA run often has no table for
+    # them: "optional" makes a failed load of these secondary shapes a skip
+    # instead of failing the whole load (the analysis that reaches for one
+    # says so itself when it is missing).
     "phyloseq_kaiju": {"loader_script": "load_phyloseq.R", "rds_filename": "phyloseq_kaiju.rds",
-                       "rds_flag": "--phyloseq_rds", "extra_args": ["--classifier", "kaiju"]},
+                       "rds_flag": "--phyloseq_rds", "extra_args": ["--classifier", "kaiju"], "optional": True},
+    "phyloseq_sylph": {"loader_script": "load_phyloseq.R", "rds_filename": "phyloseq_sylph.rds",
+                       "rds_flag": "--phyloseq_rds", "extra_args": ["--classifier", "sylph"], "optional": True},
     "magma_qc": {"loader_script": "load_magma_qc_table.R", "rds_filename": "magma_qc_table.rds", "rds_flag": "--magma_qc_table_rds"},
     "magma_functional": {"loader_script": "load_magma_functional_table.R", "rds_filename": "magma_functional_table.rds", "rds_flag": "--magma_functional_table_rds"},
 }
@@ -2308,6 +2314,8 @@ async def load_plot_data(data: dict):
             raise HTTPException(status_code=504, detail="Carregamento demorou demais (timeout).")
 
         if proc.returncode != 0:
+            if shape != primary_shape and shape_info.get("optional"):
+                continue
             raise HTTPException(status_code=400, detail=clean_output(stdout))
 
         columns_path = os.path.join(out_dir, "metadata_columns.json")

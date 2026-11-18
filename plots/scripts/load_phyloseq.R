@@ -25,7 +25,11 @@
 # --classifier keeps today's exact behavior.
 MAGMA_CLASSIFIER_PATTERNS <- list(
   kraken = list(pattern = "abundance_table_final_RAW\\.tsv$"),
-  kaiju = list(pattern = "abundance_table_final_kaiju_RAW\\.tsv$")
+  kaiju = list(pattern = "abundance_table_final_kaiju_RAW\\.tsv$"),
+  # Optional third table: sylph's species relative abundances (%), same
+  # tax + one-column-per-sample shape (7 GTDB ranks); see 01_qc_tax.smk's
+  # consolidate_taxonomy_sylph.
+  sylph = list(pattern = "abundance_table_final_sylph\\.tsv$")
 )
 
 ABUNDANCE_FILE_PATTERNS <- list(
@@ -137,7 +141,7 @@ dir.create(args$out_dir, recursive = TRUE, showWarnings = FALSE)
 # this run is (main.py): "phyloseq.rds" for kraken/every non-MAGMA pipeline,
 # "phyloseq_kaiju.rds" for MAGMA's Kaiju variant -- both shapes point back at
 # this same loader script, distinguished only by --classifier.
-rds_filename <- if (args$classifier == "kaiju") "phyloseq_kaiju.rds" else "phyloseq.rds"
+rds_filename <- switch(args$classifier, kaiju = "phyloseq_kaiju.rds", sylph = "phyloseq_sylph.rds", "phyloseq.rds")
 saveRDS(ps, file.path(args$out_dir, rds_filename))
 
 write_json(

@@ -84,6 +84,119 @@ rule nanoplot_clean:
     shell:
         "NanoPlot --fastq {input.long} -o {output.outdir} -t {threads} > {log} 2>&1"
 
+# ── sylph: optional species-level abundance profiler ────────────────────────
+# Estimates each reference genome's containment ANI from subsampled k-mers
+# (zero-inflated Poisson) and reports species abundances (Shaw & Yu 2025,
+# doi:10.1038/s41587-024-02412-y). Off by default, a complement to the default
+# Kraken2/Bracken: on the Zymo validation mocks it had no off-community calls
+# and split E. coli/Salmonella better, but missed species below ~0.01% of
+# reads (it needs some genome coverage) and the 2024 RefSeq fungi sketch
+# missed S. cerevisiae, so it tracked the alignment-based reference less
+# closely overall (8/20 vs 14/20 species within +/-10%).
+# The database folder holds one or more sketched databases (*.syl2db /
+# *.syldb, e.g. GTDB + RefSeq fungi) plus the sylph-tax metadata table of
+# each (*_metadata.tsv.gz); every database and every table found is used.
+def sylph_databases(wildcards=None):
+    d = config["databases"]["sylph"]
+    dbs = sorted(glob.glob(os.path.join(d, "*.syl2db")) + glob.glob(os.path.join(d, "*.syldb")))
+    if not dbs:
+        raise ValueError(f"No sylph database (*.syl2db / *.syldb) in {d!r}.")
+    return dbs
+
+def sylph_metadata(wildcards=None):
+    d = config["databases"]["sylph"]
+    # .tsv or .tsv.gz: the app's downloader gunzips .gz files it fetches.
+    meta = sorted(glob.glob(os.path.join(d, "*metadata*.tsv*")) + glob.glob(os.path.join(d, "*sylph_tax*.tsv*")))
+    if not meta:
+        raise ValueError(f"No sylph-tax metadata (*_metadata.tsv[.gz]) in {d!r}.")
+    return meta
+
+def sylph_reads_flag(wildcards, input):
+    return f"-1 {input.reads[0]} -2 {input.reads[1]}" if len(input.reads) == 2 else f"-r {input.reads[0]}"
+
+rule sylph_profile:
+    input: reads=get_qc_reads
+    output:
+        tsv="results/03_TAXONOMY/{sample}/{sample}_sylph.tsv"
+    params:
+        dbs=lambda wc: " ".join(sylph_databases()),
+        extra=config["params"].get("sylph", ""),
+        reads_flag=sylph_reads_flag
+    conda: "../envs/sylph.yaml"
+    threads: config["threads"].get("sylph", 16)
+    log: "logs/sylph/{sample}_profile.log"
+    benchmark: "benchmarks/sylph/{sample}_profile.tsv"
+    shell:
+        "sylph profile {params.dbs} {params.reads_flag} -t {threads} {params.extra} "
+        "-o {output.tsv} > {log} 2>&1"
+
+rule sylph_taxprof:
+    input:
+        tsv="results/03_TAXONOMY/{sample}/{sample}_sylph.tsv"
+    output:
+        mpa="results/03_TAXONOMY/{sample}/{sample}.sylphmpa"
+    params:
+        meta=lambda wc: " ".join(sylph_metadata()),
+        tmp="results/03_TAXONOMY/{sample}/sylph_tax_tmp"
+    conda: "../envs/sylph.yaml"
+    threads: 1  # sylph-tax has no multithreading option
+    log: "logs/sylph/{sample}_taxprof.log"
+    benchmark: "benchmarks/sylph/{sample}_taxprof.tsv"
+    shell:
+        # --no-config: the metadata tables are passed as files, so nothing is
+        # read from or written to a config in $HOME. sylph-tax names its output
+        # after the read file; one sample per call, so the single .sylphmpa
+        # produced is renamed to the sample's own name.
+        """
+        rm -rf {params.tmp} && mkdir -p {params.tmp}
+        sylph-tax --no-config taxprof {input.tsv} -t {params.meta} -o {params.tmp}/ --overwrite > {log} 2>&1
+        n=$(ls {params.tmp}/*.sylphmpa | wc -l)
+        if [ "$n" -ne 1 ]; then echo "expected 1 .sylphmpa, found $n" >> {log}; exit 1; fi
+        mv {params.tmp}/*.sylphmpa {output.mpa}
+        rm -rf {params.tmp}
+        """
+
+rule consolidate_taxonomy_sylph:
+    input:
+        mpas=expand("results/03_TAXONOMY/{sample}/{sample}.sylphmpa", sample=samples.index)
+    output:
+        final_table="results/03_TAXONOMY/abundance_table_final_sylph.tsv"
+    run:
+        # One row per species: the 7-rank lineage (domain..species, the GTDB
+        # shape the Plots tab already reads; an NCBI-style kingdom rank, as
+        # in the fungal tables, is dropped so every row has the same depth)
+        # and the taxonomic relative abundance (%) of each sample. These are
+        # percentages, not read counts -- sylph does not assign reads.
+        import pandas as pd
+
+        RANKS = ["d__", "p__", "c__", "o__", "f__", "g__", "s__"]
+
+        def read_sample(path, name):
+            rows = {}
+            with open(path) as f:
+                header = None
+                for line in f:
+                    if line.startswith("#"):
+                        continue
+                    p = line.rstrip("\n").split("\t")
+                    if header is None:
+                        header = p
+                        ci, ai = header.index("clade_name"), header.index("relative_abundance")
+                        continue
+                    ranks = p[ci].split("|")
+                    if not ranks[-1].startswith("s__"):
+                        continue  # higher ranks are sums; t__ rows are genomes
+                    by = {r[:3]: r for r in ranks}
+                    lineage = ";".join(by.get(r, r) for r in RANKS)
+                    rows[lineage] = rows.get(lineage, 0.0) + float(p[ai])
+            return pd.Series(rows, name=name, dtype=float)
+
+        cols = [read_sample(f, os.path.basename(f).replace(".sylphmpa", "")) for f in input.mpas]
+        df = pd.concat(cols, axis=1).fillna(0.0)
+        df["total"] = df.sum(axis=1)
+        out = df.reset_index().rename(columns={"index": "tax"}).sort_values("total", ascending=False)
+        out.to_csv(output.final_table, sep="\t", index=False, float_format="%.6g")
+
 rule kraken2:
     input: reads=get_qc_reads
     output:
@@ -176,11 +289,9 @@ rule consolidate_taxonomy:
         final_table = final_table.sort_values(by="total", ascending=False)
         final_table.to_csv(output.final_table, sep="\t", index=False)
 
-# ── Kaiju: protein-level complement to Kraken2. Both are always run --
-# rule all requests both abundance_table_final_RAW.tsv (Kraken2/Bracken) and
-# abundance_table_final_kaiju_RAW.tsv (Kaiju) unconditionally, there is no
-# config toggle to run just one (unlike active_binners for the binning step
-# in 05_mag_refine.smk). Kaiju's own output format (kaiju2table) isn't
+# ── Kaiju: optional protein-level complement to Kraken2 (off by default;
+# rule all requests its table only when it is in active_tools, see the
+# Snakefile). Kaiju's own output format (kaiju2table) isn't
 # Kraken-report shaped, so it gets its own summary + consolidation instead of
 # feeding Bracken/kreport2mpa, which are Kraken2-specific.
 def kaiju_reads_flag(wildcards, input):

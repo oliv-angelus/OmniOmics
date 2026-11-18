@@ -323,11 +323,87 @@
         "filtlong"
       ]
     },
+    "sylph": {
+      "name": "sylph",
+      "description": {
+        "en": "Species-level abundance profiling from containment ANI against GTDB (Shaw & Yu 2025). Optional complement to Kraken2/Bracken (off by default): it reports only species already in its database (>=95% ANI), with very few false positives, but needs some genome coverage, so species below ~0.01% of reads are often missed. Its table holds relative abundances (%), not read counts. Recommended together with Kraken2/Bracken and Kaiju for environmental or highly diverse samples.",
+        "pt": "Perfil de abundância por espécie a partir da ANI de contenção contra o GTDB (Shaw & Yu 2025). Complemento opcional ao Kraken2/Bracken (desligado por padrão): só reporta espécies presentes no banco (ANI >= 95%), com pouquíssimos falsos positivos, mas precisa de alguma cobertura do genoma, então espécies abaixo de ~0,01% das reads costumam escapar. A tabela traz abundâncias relativas (%), não contagens de reads. Recomendado junto com Kraken2/Bracken e Kaiju para amostras ambientais ou muito diversas."
+      },
+      "citation": [
+        {
+          "text": "Shaw J, Yu YW. Rapid species-level metagenome profiling and containment estimation with sylph. Nature Biotechnology. 2025;43(8):1348-1359.",
+          "doi": "10.1038/s41587-024-02412-y"
+        }
+      ],
+      "category": "Taxonomic Classification",
+      "read_type": "all",
+      "active_by_default": false,
+      "flags": [
+        {
+          "flag": "-m",
+          "type": "float",
+          "default": 95,
+          "enabled": false,
+          "min": 90,
+          "max": 100,
+          "description": {
+            "en": "Minimum adjusted ANI (%) for a genome to be reported; below 95 the authors warn results become inaccurate",
+            "pt": "ANI ajustada mínima (%) para reportar um genoma; abaixo de 95 os autores alertam que os resultados ficam imprecisos"
+          }
+        },
+        {
+          "flag": "-M",
+          "type": "int",
+          "default": 50,
+          "enabled": false,
+          "min": 1,
+          "description": {
+            "en": "Exclude genomes with fewer than this number of sampled k-mers",
+            "pt": "Exclui genomas com menos que este número de k-mers amostrados"
+          }
+        },
+        {
+          "flag": "--min-count-correct",
+          "type": "int",
+          "default": 3,
+          "enabled": false,
+          "min": 1,
+          "description": {
+            "en": "Minimum k-mer multiplicity for coverage correction; higher = more precision, less sensitivity",
+            "pt": "Multiplicidade mínima de k-mer para a correção de cobertura; maior = mais precisão, menos sensibilidade"
+          }
+        },
+        {
+          "flag": "-u",
+          "type": "bool",
+          "default": true,
+          "enabled": false,
+          "description": {
+            "en": "Estimate the fraction of reads from organisms absent from the database and scale sequence abundance by it",
+            "pt": "Estima a fração de reads de organismos ausentes do banco e escala a abundância de sequência por ela"
+          }
+        }
+      ],
+      "requires": [
+        {
+          "tools": [
+            "fastp",
+            "filtlong"
+          ],
+          "min": 1
+        }
+      ],
+      "rule_names": [
+        "sylph_profile",
+        "sylph_taxprof",
+        "consolidate_taxonomy_sylph"
+      ]
+    },
     "kraken2": {
       "name": "Kraken2",
       "description": {
-        "en": "Ultrafast k-mer based taxonomic classification",
-        "pt": "Classificação taxonômica ultrarrápida baseada em k-mer"
+        "en": "k-mer classification of every read with lowest-common-ancestor placement (default read-level taxonomy, abundances re-estimated by Bracken). Reads from species absent from the database still get a genus or family. Enough on its own for gut or other well-characterized communities. For environmental or highly diverse samples, also enable Kaiju (protein level) and sylph (species abundances from containment ANI).",
+        "pt": "Classificação por k-mer de cada read com atribuição pelo ancestral comum mais baixo (taxonomia de reads padrão, abundâncias reestimadas pelo Bracken). Reads de espécies ausentes do banco ainda recebem gênero ou família. Basta sozinho para intestino ou outras comunidades bem caracterizadas. Para amostras ambientais ou muito diversas, ative também o Kaiju (nível de proteína) e o sylph (abundância por espécie a partir da ANI de contenção)."
       },
       "citation": [
         {
@@ -504,8 +580,8 @@
     "kaiju": {
       "name": "Kaiju",
       "description": {
-        "en": "Protein-level taxonomic classification -- independent alternative or complement to Kraken2/Bracken, only needs the same clean reads",
-        "pt": "Classificação taxonômica em nível de proteína -- alternativa ou complemento independente ao Kraken2/Bracken, só precisa das mesmas reads limpas"
+        "en": "Protein-level classification of translated reads: amino-acid similarity survives more sequence divergence, so it reaches organisms distant from any reference genome. Optional (off by default). Recommended together with Kraken2/Bracken and sylph for environmental or highly diverse samples.",
+        "pt": "Classificação em nível de proteína das reads traduzidas: a similaridade de aminoácidos resiste a mais divergência de sequência, alcançando organismos distantes de qualquer genoma de referência. Opcional (desligado por padrão). Recomendado junto com Kraken2/Bracken e sylph para amostras ambientais ou muito diversas."
       },
       "citation": [
         {
@@ -515,6 +591,7 @@
       ],
       "category": "Taxonomic Classification",
       "read_type": "all",
+      "active_by_default": false,
       "flags": [
         {
           "flag": "-a",
@@ -3380,6 +3457,63 @@
     }
   },
   "databases": {
+    "sylph": {
+      "name": "sylph (GTDB)",
+      "description": {
+        "en": "Sketched GTDB species representatives (+ RefSeq fungi) and their sylph-tax taxonomy tables",
+        "pt": "Representantes de espécie do GTDB (+ fungos do RefSeq) em sketch, com as tabelas de taxonomia do sylph-tax"
+      },
+      "citation": [
+        {
+          "text": "Shaw J, Yu YW. Rapid species-level metagenome profiling and containment estimation with sylph. Nature Biotechnology. 2025;43(8):1348-1359.",
+          "doi": "10.1038/s41587-024-02412-y"
+        },
+        {
+          "text": "Parks DH, Chuvochina M, Rinke C, et al. GTDB: an ongoing census of bacterial and archaeal diversity through a phylogenetically consistent, rank normalized and complete genome-based taxonomy. Nucleic Acids Research. 2022;50(D1):D785-D794.",
+          "doi": "10.1093/nar/gkab776"
+        }
+      ],
+      "setting_key": "db_sylph",
+      "size_gb": 20,
+      "detect_files": [
+        "*.syl2db",
+        "*.syldb"
+      ],
+      "detect_dirs": [],
+      "download_options": [
+        {
+          "id": "sylph_gtdb_r232",
+          "label": "GTDB r232 + fungi (20 GB) ★ Recommended",
+          "size_gb": 20.0,
+          "description": {
+            "en": "GTDB r232 (199,923 species, two-stage -c 200 sketch; needs sylph >= 1.0) + 661 RefSeq fungal genomes",
+            "pt": "GTDB r232 (199.923 espécies, sketch -c 200 em dois estágios; requer sylph >= 1.0) + 661 genomas de fungos do RefSeq"
+          },
+          "url": "http://faust.compbio.cs.cmu.edu/sylph-stuff/gtdb-r232-c200-dbv2.syl2db",
+          "extra_files": [
+            "https://zenodo.org/records/19646381/files/gtdb_r232_metadata.tsv.gz",
+            "http://faust.compbio.cs.cmu.edu/sylph-stuff/fungi-refseq-2025-10-11-c200-dbv1.syldb",
+            "https://zenodo.org/records/17330476/files/fungi_refseq_2025-10-11_metadata.tsv.gz"
+          ]
+        },
+        {
+          "id": "sylph_gtdb_r232_c1000",
+          "label": "GTDB r232 c1000 + fungi (5.7 GB)",
+          "size_gb": 5.7,
+          "description": {
+            "en": "Smaller -c 1000 sketch: less sensitive for low-abundance species, for machines with little disk or RAM",
+            "pt": "Sketch -c 1000 menor: menos sensível para espécies pouco abundantes, para máquinas com pouco disco ou RAM"
+          },
+          "url": "http://faust.compbio.cs.cmu.edu/sylph-stuff/gtdb-r232-c1000-dbv1.syldb",
+          "extra_files": [
+            "https://zenodo.org/records/19646381/files/gtdb_r232_metadata.tsv.gz",
+            "http://faust.compbio.cs.cmu.edu/sylph-stuff/fungi-refseq-2025-10-11-c200-dbv1.syldb",
+            "https://zenodo.org/records/17330476/files/fungi_refseq_2025-10-11_metadata.tsv.gz"
+          ]
+        }
+      ],
+      "config_key": "sylph"
+    },
     "kraken2": {
       "name": "Kraken2 / Bracken",
       "description": {
@@ -4211,7 +4345,8 @@
     "vfdb": "",
     "barrnap": "--kingdom bac",
     "trnascan": "-B",
-    "coverm": "-m relative_abundance --min-covered-fraction 0"
+    "coverm": "-m relative_abundance --min-covered-fraction 0",
+    "sylph": ""
   },
   "default_threads": {
     "fastp": 4,
@@ -4250,6 +4385,7 @@
     "vibrant": 16,
     "virsorter2": 16,
     "checkv": 16,
-    "genomad": 16
+    "genomad": 16,
+    "sylph": 16
   }
 }

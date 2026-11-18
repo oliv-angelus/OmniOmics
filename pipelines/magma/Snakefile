@@ -23,6 +23,17 @@ samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
 SAMPLES = samples.index.tolist()
 LONG_SAMPLES = [s for s in SAMPLES if samples.loc[s, "read_type"] in ["long", "hybrid"]]
 
+# Read-level taxonomy: Kraken2/Bracken runs by default; Kaiju and sylph are
+# opt-in. Their final tables are requested only when their tool is active.
+# --omit-from alone is not enough: Snakemake still evaluates the params of
+# every rule rule all reaches while building the DAG, and Kaiju's look up
+# files inside its database folder -- which a user who never turned Kaiju on
+# has no reason to have downloaded. A config with no active_tools (a manual
+# headless run) keeps requesting all three, as before.
+_ACTIVE = set(config.get("active_tools") or [])
+def _tool_on(tool):
+    return not _ACTIVE or tool in _ACTIVE
+
 wildcard_constraints:
     sample="[^/]+"
 
@@ -32,9 +43,11 @@ rule all:
         expand("results/01_QC/{sample}/nanoplot_raw/NanoStats.txt", sample=LONG_SAMPLES),
         expand("results/01_QC/{sample}/nanoplot_clean/NanoStats.txt", sample=LONG_SAMPLES),
 
-        # Read-level taxonomy (Kraken2/Bracken, and/or Kaiju -- independent choices)
-        "results/03_TAXONOMY/abundance_table_final_RAW.tsv",
-        "results/03_TAXONOMY/abundance_table_final_kaiju_RAW.tsv",
+        # Read-level taxonomy: Kraken2/Bracken (default) and, optionally,
+        # Kaiju and sylph -- independent choices, see _tool_on above
+        ["results/03_TAXONOMY/abundance_table_final_sylph.tsv"] if _tool_on("sylph") else [],
+        ["results/03_TAXONOMY/abundance_table_final_RAW.tsv"] if _tool_on("kreport2mpa") else [],
+        ["results/03_TAXONOMY/abundance_table_final_kaiju_RAW.tsv"] if _tool_on("kaiju") else [],
 
         # Assembly quality (MetaQUAST — full and prokaryotic contigs)
         expand("results/02_ASSEMBLY/{sample}/metaquast", sample=SAMPLES),
