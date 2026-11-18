@@ -324,6 +324,14 @@ rule vibrant_sample:
         mkdir -p {output.outdir}
         VIBRANT_run.py -i {input.fa} -folder {output.outdir} -t {threads} \
             -d {params.db} {params.extra} > {log} 2>&1
+        # VIBRANT exits 0 even when it stops on an error (e.g. "could not
+        # identify KEGG HMM files in database directory"), writing the message
+        # only to its own run log -- which left an empty result folder that
+        # Snakemake counted as done. Surface that as a failed job.
+        if grep -qs "VIBRANT error" {output.outdir}/VIBRANT_log_run_*.log; then
+            cat {output.outdir}/VIBRANT_log_run_*.log >> {log}
+            exit 1
+        fi
         """
 
 rule vfdb_sample:
