@@ -88,11 +88,13 @@ rule nanoplot_clean:
 # Estimates each reference genome's containment ANI from subsampled k-mers
 # (zero-inflated Poisson) and reports species abundances (Shaw & Yu 2025,
 # doi:10.1038/s41587-024-02412-y). Off by default, a complement to the default
-# Kraken2/Bracken: on the Zymo validation mocks it had no off-community calls
-# and split E. coli/Salmonella better, but missed species below ~0.01% of
-# reads (it needs some genome coverage) and the 2024 RefSeq fungi sketch
-# missed S. cerevisiae, so it tracked the alignment-based reference less
-# closely overall (8/20 vs 14/20 species within +/-10%).
+# Kraken2/Bracken: on the Zymo validation mocks (sylph 1.0.0, GTDB R232 +
+# RefSeq fungi 2025) it had no off-community calls and split E. coli/
+# Salmonella better, but missed the Log species below 0.001% of reads (it
+# needs some genome coverage), so it tracked the alignment-based reference
+# less closely overall (12/20 vs 14/20 species within +/-10%). GTDB R232
+# files the matched E. coli genome (GCA_047199115.1) under a placeholder
+# genus, G047199115.
 # The database folder holds one or more sketched databases (*.syl2db /
 # *.syldb, e.g. GTDB + RefSeq fungi) plus the sylph-tax metadata table of
 # each (*_metadata.tsv.gz); every database and every table found is used.
