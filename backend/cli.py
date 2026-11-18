@@ -167,7 +167,7 @@ def prepare(run: dict, quiet: bool = False) -> dict:
 
     missing = sorted(k for k, v in (cfg["data"].get("databases") or {}).items() if not v)
     if missing and not quiet:
-        print("Databases with no path (rules that need them will fail): " + ", ".join(missing))
+        print("Databases with no path (fine if no active tool uses them): " + ", ".join(missing))
 
     # memory per rule for the database-loading rules
     rule_mem = {}
