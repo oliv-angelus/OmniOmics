@@ -1432,8 +1432,12 @@ async def _run_pipeline_task(pid: str, cmd: list, pipeline_root: str, run_id: st
     without the plugin detected never carries them.
     """
     env = _subprocess_env()  # keep the backend's own venv out of the rules' PATH
-    if extra_env:
-        env.update(extra_env)
+    for key, value in (extra_env or {}).items():
+        # None removes the variable from the run's environment
+        if value is None:
+            env.pop(key, None)
+        else:
+            env[key] = value
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -1720,7 +1724,22 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         await _emit(pid, {"type": "run_id", "id": run["id"]})
         run_extra_env = dict(dart_extra_env or {})
         if conda_path_bin_dir:
-            run_extra_env["PATH"] = f"{conda_path_bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
+            run_extra_env["PATH"] = f"{conda_path_bin_dir}{os.pathsep}{_subprocess_env().get('PATH', '')}"
+            # Snakemake runs each rule as `source <conda>/bin/activate <env>`.
+            # If the app was started from a shell with a conda env active
+            # (typically base), conda treats this as switching envs and swaps
+            # that env's bin/ for the rule env's bin/ where it sits in PATH --
+            # behind the directory prepended above, whose python and snakemake
+            # then shadow the rule env's own. VirSorter2 (its own inner
+            # Snakemake) and ISEScan (a `#!/usr/bin/env python` helper) failed
+            # this way. With no env marked active, activation puts the rule
+            # env's bin/ first.
+            for var in ("CONDA_SHLVL", "CONDA_PREFIX", "CONDA_DEFAULT_ENV",
+                        "CONDA_PROMPT_MODIFIER"):
+                run_extra_env[var] = None
+            for var in os.environ:
+                if re.fullmatch(r"CONDA_PREFIX_\d+", var):
+                    run_extra_env[var] = None
         pipeline_tasks[pid] = asyncio.create_task(
             _run_pipeline_task(pid, cmd, pipeline_root, run["id"], extra_env=run_extra_env or None)
         )
