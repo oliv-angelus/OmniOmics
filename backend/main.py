@@ -115,6 +115,24 @@ def check_python_deps() -> dict:
         "packages":  REQUIRED_PY_PACKAGES,
     }
 
+# Snakemake 9's --use-conda refuses older conda; the snakemake env installs
+# this exact conda alongside Snakemake so the base install's age doesn't matter.
+MIN_CONDA_VERSION = (24, 7, 1)
+SNAKEMAKE_ENV_CONDA = "26.7.2"
+
+
+def _conda_version(conda_exe: str | None) -> tuple | None:
+    """(major, minor, patch) of `conda --version`, or None if it can't be read."""
+    if not conda_exe:
+        return None
+    try:
+        out = subprocess.run([conda_exe, "--version"], capture_output=True, text=True, timeout=30).stdout
+        m = re.search(r"(\d+)\.(\d+)(?:\.(\d+))?", out or "")
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)) if m else None
+    except Exception:
+        return None
+
+
 def _conda_bin_dir() -> str | None:
     """Directory holding the conda executable, or None if conda is not found.
 
@@ -377,7 +395,9 @@ def _snakemake_runner(payload):
         rc = await install_jobs.run_proc(
             job,
             [conda, "create", "-n", "snakemake", "-c", "conda-forge", "-c", "bioconda",
-             "snakemake=9.26.0", "-y"],  # exact pin, see snakemake_manager.install_snakemake
+             # exact pins, see snakemake_manager.install_snakemake (conda
+             # itself too: Snakemake's --use-conda needs conda >= 24.7.1)
+             "snakemake=9.26.0", f"conda={SNAKEMAKE_ENV_CONDA}", "-y"],
             clean=clean_output)
         if rc != 0:
             raise RuntimeError("Snakemake installation failed.")
@@ -1576,6 +1596,23 @@ async def pipeline_ws(websocket: WebSocket, pid: str):
         _conda_for_path = conda or settings.get("conda_path")
         if _conda_for_path and os.path.isfile(_conda_for_path):
             conda_path_bin_dir = os.path.dirname(_conda_for_path)
+        # Snakemake 9 refuses to build rule environments with conda older than
+        # 24.7.1 ("Conda must be version 24.7.1 or later"), and only after the
+        # DAG is built -- a long-installed conda is often older. The snakemake
+        # env carries its own recent conda (see _snakemake_runner); when it
+        # does, that one goes first on PATH, whatever the base install is.
+        if snakemake_bin and os.path.isfile(os.path.join(os.path.dirname(snakemake_bin), "conda")):
+            conda_path_bin_dir = os.path.dirname(snakemake_bin)
+        _conda_exe = os.path.join(conda_path_bin_dir, "conda") if conda_path_bin_dir else shutil.which("conda")
+        _conda_ver = _conda_version(_conda_exe)
+        if _conda_ver is not None and _conda_ver < MIN_CONDA_VERSION:
+            await websocket.send_json({"type": "log", "text": (
+                f"conda {'.'.join(map(str, _conda_ver))} at {_conda_exe} is too old: Snakemake needs "
+                f"conda {'.'.join(map(str, MIN_CONDA_VERSION))} or later to build the tools' environments. "
+                "Reinstall Snakemake from the Settings screen (it now brings its own conda), "
+                "or update conda (conda update -n base conda).\n")})
+            await websocket.send_json({"type": "done", "code": 1})
+            return
 
         os.makedirs(CONDA_ENVS_DIR, exist_ok=True)
         cmd += [

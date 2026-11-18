@@ -72,7 +72,11 @@ async def install_snakemake() -> dict:
         "-c", "conda-forge", "-c", "bioconda",
         # Exact pin (reviewer point: unpinned Snakemake made the validation's
         # version unrecoverable). 9.26.0 is the version resolved and used locally.
-        "snakemake=9.26.0", "-y",
+        "snakemake=9.26.0",
+        # Snakemake 9's --use-conda needs conda >= 24.7.1; bringing an exact
+        # recent conda into this env makes the base install's age irrelevant
+        # (main.py puts this env's bin/ first on PATH when it has conda).
+        "conda=26.7.2", "-y",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
