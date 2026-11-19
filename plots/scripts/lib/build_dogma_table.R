@@ -123,7 +123,13 @@ suppressMessages({
   # dropped -- large/redundant, the ORF's sequence is already in the .pep) -
   fegenie_path <- file.path(ann_dir, "fegenie", "FeGenie-geneSummary.csv")
   if (file.exists(fegenie_path) && file.size(fegenie_path) > 0) {
-    fegenie <- read.csv(fegenie_path, check.names = FALSE, stringsAsFactors = FALSE)
+    # FeGenie writes the header twice -- a 9-column line, then the real
+    # 11-column one (heme_b/hematite motif columns added) -- in every sample
+    # of a real DOGMA run, so read.csv on the file as-is fails with "more
+    # columns than column names". Parse from the last header line on.
+    fg_lines <- readLines(fegenie_path, warn = FALSE)
+    fg_header <- max(c(1L, grep("^category,", fg_lines)))
+    fegenie <- read.csv(text = fg_lines[fg_header:length(fg_lines)], check.names = FALSE, stringsAsFactors = FALSE)
     if (nrow(fegenie) > 0) {
       fegenie <- fegenie %>% transmute(orf_id = orf, fegenie_category = category, fegenie_HMM = HMM)
       tab <- left_join(tab, fegenie, by = "orf_id")
