@@ -23,7 +23,7 @@ weeks-long task that has to be repeated on every machine and revisited every tim
 a tool updates. OmniOmics does that assembly once, declaratively, and keeps it
 reproducible.
 
-> **Status: 1.1.0.** The workflows and the plotting environment run end to
+> **Status: 1.1.1.** The workflows and the plotting environment run end to
 > end. Each of the five pipelines was validated on a public, non-simulated
 > dataset with a published expected result (mock-community compositions, a
 > reference genome, published differential-expression results), on an HPC
@@ -365,7 +365,7 @@ own, and that surface is what these checks target:
 
 | | |
 |---|---|
-| **Now** | v1.1.0: command line and PBS mode; all five pipelines validated end to end on public datasets (see above) |
+| **Now** | v1.1: command line and PBS mode; all five pipelines validated end to end on public datasets (see above) |
 | **Future** | SLURM support for the command line, a terminal-free installer, a usability evaluation, additional pipelines, a GROND/full rrn-operon mode for PRISM, an expanded Plots-tab library for SIGMA |
 
 ### Other current limitations
