@@ -7,28 +7,25 @@ authors:
     family-names: "Barbosa de Oliveira"
     orcid: "https://orcid.org/0000-0003-0831-447X"
     affiliation: "Laboratório de Engenharia Biológica (ENGBIO), Instituto de Ciências Biológicas (ICB), Universidade Federal do Pará (UFPA), Belém, PA, Brazil"
-version: "1.0.1"
-date-released: "2026-11-04"
+version: "1.1.0"
+date-released: "2026-11-19"
 license: MIT
 repository-code: "https://github.com/oliv-angelus/OmniOmics"
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.23958932"
-    description: "Archived snapshot of version 1.0.1"
+    value: "10.5281/zenodo.23958931"
+    description: "Concept DOI on Zenodo -- always resolves to the latest version"
 abstract: >-
   OmniOmics is a desktop application that packages five Snakemake workflows for
   metagenomics (MAGMA), isolate genomics (SIGMA), metatranscriptomics (DOGMA),
   differential expression (DEFINE) and amplicon metabarcoding (PRISM) behind a
   graphical interface, together with an integrated plotting environment that
-  turns each workflow's output into publication-ready figures. It is aimed at
-  researchers who need reproducible multi-omics analysis without assembling and
-  maintaining the toolchain by hand. All five pipelines were validated end to
-  end on real, non-simulated public datasets against independent, external
-  ground truth (certified mock-community compositions, reference genomes,
-  published papers' own reported results, and a sequencing vendor's own
-  classification of the same read file); the exact configuration, ground
-  truth, and results are published at github.com/oliv-angelus/
-  OmniOmics-validation and reported in the accompanying manuscript.
+  turns each workflow's output into publication-ready figures. The same runs
+  can be started from a command line, on a server or as one job on a PBS
+  cluster. Each pipeline was validated end to end on a public, non-simulated
+  dataset with a published expected result; the configurations, reference
+  data and results are published at github.com/oliv-angelus/OmniOmics-validation
+  and reported in the accompanying manuscript.
 keywords:
   - bioinformatics
   - metagenomics
