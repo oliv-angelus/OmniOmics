@@ -18,7 +18,8 @@ Linux; Windows and macOS have not been attempted.
 
 Per-pipeline figures, including the pipelines that will not run at all without
 AVX2, are in [REQUIREMENTS.md](REQUIREMENTS.md). Read it before a large run:
-MAGMA's memory floor is set by GTDB-Tk's documented 150 GB.
+the read-classifier databases (Kraken2 PlusPFP ~232 GB, Kaiju ~200 GB) set
+the memory needed by MAGMA, SIGMA and DOGMA.
 
 You do **not** need conda, Snakemake, R or any bioinformatics tool installed
 beforehand. The application installs what it needs, when it needs it.
@@ -31,7 +32,7 @@ This is how OmniOmics is meant to be installed. Download the `.deb` from the
 [Releases page](https://github.com/oliv-angelus/OmniOmics/releases), then:
 
 ```bash
-sudo dpkg -i omniomics_1.0.0_amd64.deb
+sudo dpkg -i omniomics_1.1.0_amd64.deb
 omniomics
 ```
 
@@ -163,7 +164,8 @@ still works.
 
 **A step dies abruptly with no error of its own.** Usually the operating
 system's OOM killer, which leaves nothing in the run log. Check the pipeline's
-memory requirements; GTDB-Tk alone documents 150 GB.
+memory requirements in [REQUIREMENTS.md](REQUIREMENTS.md); Kraken2 and Kaiju load
+their whole database into RAM.
 
 **An analysis refuses with a message about missing data.** That is by design —
 the message names what is missing and why. Analyses do not draw figures they

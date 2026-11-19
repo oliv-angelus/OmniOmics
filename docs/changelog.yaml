@@ -13,6 +13,18 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "1.1.0"
+  date: 2026-11-19
+  entries:
+    - pt: "**Linha de comando e modo HPC.** Os pipelines podem rodar sem a interface, num servidor (`bin/omniomics run run.yaml`) ou como um único job PBS (`--submit pbs`), com o mesmo código de configuração da tela de lançamento. A tela de lançamento exporta a configuração como arquivo de execução (Revisão → Exportar para linha de comando). Veja docs/CLI.md."
+      en: "**Command line and HPC mode.** The pipelines can run without the interface, on a server (`bin/omniomics run run.yaml`) or as one PBS job (`--submit pbs`), built with the same configuration code as the Launch screen. The Launch screen exports its configuration as a run file (Review → Export for command line). See docs/CLI.md."
+    - pt: "**SIGMA: montagens híbridas agora são polidas com leituras curtas** (Polypolish e Pypolca), já que o Unicycler 0.5.0 deixou de polir. **PRISM: leituras sequenciadas no sentido reverso são reorientadas** antes da remoção de primers, em vez de descartadas. **VIBRANT** agora falha o job quando termina com erro (ele reporta erro com status 0)."
+      en: "**SIGMA: hybrid assemblies are now polished with short reads** (Polypolish and Pypolca), since Unicycler 0.5.0 no longer polishes. **PRISM: reads sequenced in the reverse orientation are re-oriented** before primer trimming instead of being discarded. **VIBRANT** now fails the job when it ends in error (it reports errors with exit status 0)."
+    - pt: "**Gráficos do DOGMA:** a aba de gráficos não conseguia abrir execuções reais do DOGMA, porque o FeGenie escreve o cabeçalho de `FeGenie-geneSummary.csv` duas vezes. Corrigido."
+      en: "**DOGMA plots:** the Plots tab could not open real DOGMA runs, because FeGenie writes the header of `FeGenie-geneSummary.csv` twice. Fixed."
+    - pt: "**Memória:** regras que carregam um banco inteiro na RAM (Kraken2, Kaiju) ou precisam de mais memória (GTDB-Tk, CheckM2, GUNC, antiSMASH) declaram isso, e a execução nunca as inicia juntas além do orçamento de memória. Validação refeita nos cinco pipelines: github.com/oliv-angelus/OmniOmics-validation (v2.0.0)."
+      en: "**Memory:** rules that load a whole database into RAM (Kraken2, Kaiju) or need more memory (GTDB-Tk, CheckM2, GUNC, antiSMASH) declare it, and a run never starts them together beyond its memory budget. All five pipelines validated again: github.com/oliv-angelus/OmniOmics-validation (v2.0.0)."
+
 - version: "1.0.0"
   date: 2026-09-15
   entries:

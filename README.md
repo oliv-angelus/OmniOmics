@@ -23,19 +23,15 @@ weeks-long task that has to be repeated on every machine and revisited every tim
 a tool updates. OmniOmics does that assembly once, declaratively, and keeps it
 reproducible.
 
-> **Status: 1.0.0.** The workflows and the plotting environment run end to end
-> and have been validated twice over: first against **synthetic control
-> datasets** built to reproduce each tool's real output format and exercise
-> every code path, including the edge cases; then for real, all five
-> pipelines run end to end on **real, non-simulated public datasets** against
-> independent, external ground truth (certified mock-community compositions,
-> reference genomes, published papers' own reported results, and a sequencing
-> vendor's own classification of the same read file), on real institutional
-> HPC hardware, not a laptop-scale approximation. Exact configuration, ground
-> truth, and raw results are published at
+> **Status: 1.1.0.** The workflows and the plotting environment run end to
+> end. Each of the five pipelines was validated on a public, non-simulated
+> dataset with a published expected result (mock-community compositions, a
+> reference genome, published differential-expression results), on an HPC
+> compute node; configurations, reference data and results are published at
 > [OmniOmics-validation](https://github.com/oliv-angelus/OmniOmics-validation).
-> See [Validation status](#validation-status) for what that does and does not
-> establish.
+> The same runs can be started from a command line, locally or as one PBS job
+> ([`docs/CLI.md`](docs/CLI.md)). See [Validation status](#validation-status)
+> for what that does and does not establish.
 
 ---
 
@@ -182,14 +178,17 @@ reference databases you enable need.
 [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) gives minimum and recommended RAM
 and cores per pipeline, and lists which pipelines need a CPU with **AVX2**
 (MAGMA and SIGMA do; without it CheckM2 aborts with `Illegal instruction`).
-MAGMA's floor is set by GTDB-Tk, which documents a 150 GB requirement.
+Memory is set mostly by the read-classifier databases: Kraken2 with the
+PlusPFP database (~232 GB) and Kaiju (~200 GB) are loaded whole into RAM, so
+MAGMA, SIGMA and DOGMA with those databases need a machine with about 256 GB;
+with a 16-GB Kraken2 database and Kaiju off, 64 GB covers most runs.
 
 Download the `.deb` from the
 [Releases page](https://github.com/oliv-angelus/OmniOmics/releases) and install
 it like any other application:
 
 ```bash
-sudo dpkg -i omniomics_1.0.0_amd64.deb
+sudo dpkg -i omniomics_1.1.0_amd64.deb
 omniomics
 ```
 
@@ -326,33 +325,30 @@ own, and that surface is what these checks target:
   legitimate refusal and from an empty-but-correct result.
 - **Format verification against tool source code** for every reader.
 - **End-to-end execution** of all five workflows and all 43 analyses.
-- **Real, non-simulated validation of all five pipelines**, each run end to
-  end on a public dataset with independent, external ground truth, on real
-  institutional HPC hardware:
-  - **MAGMA** — ZymoBIOMICS mock community (even + log-distributed): all 10
-    reference species detected; 7 of 7 recovered MAGs correctly classified by
-    GTDB-Tk with no false calls.
-  - **SIGMA** — a Zymo reference *E. coli* isolate: hybrid ONT assembly
-    reached 100.000% genome fraction against the certified reference genome
-    with zero misassemblies.
-  - **DOGMA** — a published soil metatranscriptome time course (Chuckran et
-    al. 2021): 11 of 12 real nitrogen-cycle gene/category directions matched
-    the paper's own reported results.
-  - **DEFINE** — a published *E. coli* irradiation RNA-seq study: DEG call
-    rate matched the source paper's order of magnitude, with full
-    functional-category overlap.
-  - **PRISM** — a ZymoBIOMICS 16S mock community sequenced by the vendor:
-    strong compositional agreement (Bray-Curtis 0.08-0.11) with the vendor's
-    own classification of the identical reads.
-  
-  Mixed and partial outcomes (e.g. MAGMA's read-based quantitative accuracy,
-  SIGMA's PacBio-chemistry misassemblies) are reported alongside the strong
-  results rather than smoothed over. Exact configuration, curated ground
-  truth, and raw observed-vs-expected results for every pipeline are
-  published at
+- **Validation of all five pipelines on public, non-simulated data**, each
+  run end to end with a published expected result, on an HPC compute node
+  (128 cores, ~264 GB RAM; Snakemake 9.26.0):
+  - **MAGMA** — ZymoBIOMICS mock communities (Even, Log): read-based
+    abundances within ±10% of an alignment reference from the same reads for
+    8 of 10 (Even) and 6 of 10 (Log) species; one MAG per bacterium in Even,
+    8 dereplicated MAGs, all classified as the expected species.
+  - **SIGMA** — the Zymo *E. coli* isolate: both hybrid assemblies (ONT,
+    PacBio) 2 circular contigs, 100% genome fraction, no misassemblies.
+  - **DOGMA** — soil metatranscriptomes, glucose amendment (Chuckran et al.
+    2021), n = 4 per time point: 12 of 14 reported responses reproduced at
+    FDR < 0.01.
+  - **DEFINE** — *E. coli* exposed to ²³⁹Pu (Wintenberg et al. 2023): precision
+    0.72 and recall 0.53 against the DEGs from the authors' deposited count
+    matrix; all 3 GO terms reported for the contrast recovered.
+  - **PRISM** — ZymoBIOMICS 16S standard with 4 added species (ONT): all 12
+    bacteria detected in every replicate; the 8 of the base standard within
+    2-fold of their theoretical share.
+
+  Partial outcomes are reported with the rest. Configurations, reference data
+  and observed-vs-expected results are published at
   [OmniOmics-validation](https://github.com/oliv-angelus/OmniOmics-validation)
-  ([Zenodo DOI](https://doi.org/10.5281/zenodo.22780175)), and reported in
-  full in the accompanying manuscript (`paper/` in this repository).
+  ([Zenodo, concept DOI](https://doi.org/10.5281/zenodo.22780175)). Measured
+  time, memory and disk per pipeline are in the accompanying manuscript.
 
 ### Pending
 
@@ -367,16 +363,15 @@ own, and that surface is what these checks target:
 
 | | |
 |---|---|
-| **Now** | v1.0.0: all five pipelines validated end to end on real datasets (see above) |
-| **Future** | Additional pipelines, a GROND/full rrn-operon mode for PRISM, an expanded Plots-tab library for SIGMA |
+| **Now** | v1.1.0: command line and PBS mode; all five pipelines validated end to end on public datasets (see above) |
+| **Future** | SLURM support for the command line, a terminal-free installer, a usability evaluation, additional pipelines, a GROND/full rrn-operon mode for PRISM, an expanded Plots-tab library for SIGMA |
 
 ### Other current limitations
 
 - **Linux only.** Built and tested on Linux; Windows and macOS not attempted.
-- **Some optional steps have not been run end to end on real input**, namely
-  BiG-SCAPE (secondary-metabolite block) and VIBRANT (viral block) —
-  antiSMASH and the rest of the viral block (VirSorter2, CheckV, geNomad)
-  have.
+- **Not run end to end on real input in the validation:** DOGMA's CAT/BAT,
+  EUKulele and paired-MAGMA steps, whose databases were not installed on the
+  compute node.
 - **The genome ring is a static figure**, not an interactive browser. Tracks are
   toggled by re-running the analysis.
 

@@ -49,7 +49,8 @@ window silently discards an entire ITS or full rrn-operon run if left at a
 
 Long reads carry both primers on the same read, so `cutadapt` uses a
 **linked adapter** (forward…reverse-complement(reverse)) to trim both ends
-and orient the read in one pass. Short paired reads carry one primer each,
+and orient the read in one pass; with `--revcomp`, reads sequenced in the
+reverse orientation are reverse-complemented and kept rather than discarded. Short paired reads carry one primer each,
 trimmed separately per mate. Either path also accepts a **primer mix**, not
 just a single pair — ONT's own 16S kit pools a universal pair with several
 taxon-specific ones, and every forward/reverse combination is tried.

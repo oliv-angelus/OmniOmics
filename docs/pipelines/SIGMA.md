@@ -51,10 +51,13 @@ branch again.
 
 ### 03 — Polishing
 
-`racon_polish` · `medaka_polish` · `ragtag_scaffold` · `finalize_polish`
+`racon_polish` · `medaka_polish` · `polypolish_polish` · `pypolca_polish` · `ragtag_scaffold` · `finalize_polish`
 
-Long-read assemblies carry systematic error that polishing removes: Racon then
-Medaka. RagTag optionally scaffolds against a reference. The output is
+Long-read-only assemblies (Flye) are polished with the long reads: Racon then
+Medaka. Hybrid assemblies (Unicycler) are polished with the short reads:
+Polypolish then Pypolca (Bouras et al. 2024, doi:10.1099/mgen.0.001254) —
+Unicycler stopped polishing its own output in 0.5.0. RagTag optionally
+scaffolds against a reference. The output is
 `final_polished.fa`, which every later stage reads — including the Plots tab's
 genome ring, which lays its contigs out on the real lengths from this file.
 
