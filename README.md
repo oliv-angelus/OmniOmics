@@ -184,12 +184,14 @@ MAGMA, SIGMA and DOGMA with those databases need a machine with about 256 GB;
 with a 16-GB Kraken2 database and Kaiju off, 64 GB covers most runs.
 
 Download the `.deb` from the
-[Releases page](https://github.com/oliv-angelus/OmniOmics/releases) and install
-it like any other application:
+[Releases page](https://github.com/oliv-angelus/OmniOmics/releases) and open it
+with the distribution's package installer (double-click it, or right-click →
+open with Software Install / App Center / Discover); it asks for the
+administrator password and installs like any other application. From a
+terminal, the same is:
 
 ```bash
-sudo dpkg -i omniomics_1.1.0_amd64.deb
-omniomics
+sudo dpkg -i omniomics_1.1.1_amd64.deb
 ```
 
 It also appears in the desktop menu under Science.

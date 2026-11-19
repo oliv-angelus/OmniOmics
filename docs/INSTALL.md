@@ -29,10 +29,16 @@ beforehand. The application installs what it needs, when it needs it.
 ## Installing — the packaged build
 
 This is how OmniOmics is meant to be installed. Download the `.deb` from the
-[Releases page](https://github.com/oliv-angelus/OmniOmics/releases), then:
+[Releases page](https://github.com/oliv-angelus/OmniOmics/releases) and open it
+with the distribution's graphical package installer (double-click the file, or
+right-click → open with Software Install, App Center, Discover or GDebi). It
+asks for the administrator password; no terminal is needed. The package has no
+hard dependencies, so any of these installers can install it.
+
+From a terminal, the same is:
 
 ```bash
-sudo dpkg -i omniomics_1.1.0_amd64.deb
+sudo dpkg -i omniomics_1.1.1_amd64.deb
 omniomics
 ```
 

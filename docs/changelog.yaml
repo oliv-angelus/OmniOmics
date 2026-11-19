@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "1.1.1"
+  date: 2026-11-19
+  entries:
+    - pt: "**Instalação sem terminal documentada:** o .deb abre no instalador de pacotes da distribuição (duplo clique), que pede a senha de administrador. Sem mudanças de funcionamento em relação à 1.1.0; é a primeira versão 1.1 arquivada no Zenodo."
+      en: "**Terminal-free installation documented:** the .deb opens in the distribution's package installer (double-click), which asks for the administrator password. No functional changes from 1.1.0; the first 1.1 version archived on Zenodo."
+
 - version: "1.1.0"
   date: 2026-11-19
   entries:

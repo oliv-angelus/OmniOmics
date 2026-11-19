@@ -165,8 +165,8 @@ Description: Integrated desktop environment for multi-omics analysis
  genomics), DOGMA (metatranscriptomics), DEFINE (differential expression)
  and PRISM (amplicon sequencing).
  .
- Alpha release: run end to end and covered by an automated test suite, but
- not yet in sustained use on real data beyond the author.
+ Each pipeline was validated on a public dataset with a published expected
+ result; see github.com/oliv-angelus/OmniOmics-validation.
 EOF
 
 # --- 4. Build the .deb ─────────────────────────────────────────────────────────
