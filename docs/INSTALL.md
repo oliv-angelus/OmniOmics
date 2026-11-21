@@ -38,7 +38,7 @@ hard dependencies, so any of these installers can install it.
 From a terminal, the same is:
 
 ```bash
-sudo dpkg -i omniomics_1.1.1_amd64.deb
+sudo dpkg -i omniomics_1.1.2_amd64.deb
 omniomics
 ```
 

@@ -339,7 +339,7 @@
           "flag": "--dmnd_iterate",
           "type": "choice",
           "default": "no",
-          "enabled": false,
+          "enabled": true,
           "description": {
             "en": "Iterative DIAMOND search across sensitivity modes (slower, marginal sensitivity gain)",
             "pt": "Busca iterativa do DIAMOND por vários modos de sensibilidade (mais lento, ganho marginal de sensibilidade)"
@@ -510,7 +510,7 @@
           "flag": "-t",
           "type": "str",
           "default": "CDS",
-          "enabled": false,
+          "enabled": true,
           "description": {
             "en": "Feature type counted from the GFF3",
             "pt": "Tipo de feature contada do GFF3"
@@ -520,7 +520,7 @@
           "flag": "-g",
           "type": "str",
           "default": "locus_tag",
-          "enabled": false,
+          "enabled": true,
           "description": {
             "en": "GFF3 attribute used as the gene id",
             "pt": "Atributo do GFF3 usado como id do gene"

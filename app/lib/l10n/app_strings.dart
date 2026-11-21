@@ -175,7 +175,7 @@ const _pt = <String, String>{
   'about_env_ready': 'pronto',
   'about_env_missing': 'ausente',
   'about_version_label': 'Versão',
-  'about_alpha_note': 'Versão alpha. Os pipelines e a aba de plotagem rodam de ponta a ponta e são testados por uma suíte automatizada, mas o app ainda não teve uso prolongado com dados reais além do autor. Leia as limitações conhecidas no repositório antes de depender dos resultados.',
+  'about_release_note': 'Versão de lançamento. Cada um dos cinco pipelines foi validado em um conjunto de dados público com resultado esperado publicado (comunidades mock, genoma de referência, resultados publicados de expressão diferencial); configurações e resultados estão no repositório OmniOmics-validation. Leia as limitações conhecidas no repositório antes de interpretar os resultados.',
 
   'about_what_body': 'Um ambiente de desktop que reúne cinco fluxos de trabalho Snakemake -- metagenômica, metatranscriptômica, genômica de isolados, expressão diferencial e sequenciamento de amplicon -- atrás de uma interface gráfica, com um ambiente de plotagem que transforma a saída de cada um em figuras prontas para publicação.\n\nEle existe porque a análise que um laboratório precisa raramente é uma ferramenta: são vinte, cada uma com sua instalação, suas versões e seu jeito de quebrar. O OmniOmics faz essa montagem uma vez, de forma declarativa, e mantém tudo reprodutível.',
 
@@ -427,6 +427,7 @@ const _pt = <String, String>{
   'monitor_finished_error_prefix': 'Finalizado com erro (código',
   'monitor_running_title_prefix': 'Executando —',
   'monitor_stopped_log': '>>> Pipeline interrompido pelo usuário. <<<',
+  'monitor_connection_lost': 'Conexão com o backend perdida -- o estado final desta execução não foi recebido. Confira o log em .snakemake/log/ na pasta de saída.',
   'monitor_stopping_log': '>>> Interrompendo pipeline (solicitado pelo usuário)...',
   'stop_pipeline_button': 'Parar',
   'monitor_steps_suffix': 'etapas',
@@ -630,7 +631,7 @@ const _en = <String, String>{
   'about_env_ready': 'ready',
   'about_env_missing': 'missing',
   'about_version_label': 'Version',
-  'about_alpha_note': 'Alpha release. The pipelines and the plotting environment run end to end and are covered by an automated test suite, but the application has not yet seen sustained use on real data by anyone other than the author. Read the known limitations in the repository before relying on any result.',
+  'about_release_note': 'Release version. Each of the five pipelines was validated on a public dataset with a published expected result (mock communities, a reference genome, published differential-expression results); configurations and results are in the OmniOmics-validation repository. Read the known limitations in the repository before interpreting any result.',
 
   'about_what_body': 'A desktop environment that packages five Snakemake workflows -- metagenomics, metatranscriptomics, isolate genomics, differential expression and amplicon sequencing -- behind a graphical interface, with a plotting environment that turns each one\'s output into publication-ready figures.\n\nIt exists because the analysis a lab needs is rarely one tool: it is twenty, each with its own installation, its own version pins and its own way of breaking. OmniOmics does that assembly once, declaratively, and keeps it reproducible.',
 
@@ -882,6 +883,7 @@ const _en = <String, String>{
   'monitor_finished_error_prefix': 'Finished with error (code',
   'monitor_running_title_prefix': 'Running —',
   'monitor_stopped_log': '>>> Pipeline stopped by user. <<<',
+  'monitor_connection_lost': 'Connection to the backend was lost -- the final state of this run was not received. Check the log in .snakemake/log/ in the output folder.',
   'monitor_stopping_log': '>>> Stopping pipeline (requested by user)...',
   'stop_pipeline_button': 'Stop',
   'monitor_steps_suffix': 'steps',

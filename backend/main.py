@@ -8,6 +8,7 @@ import shutil
 import signal
 import sys
 import time
+import threading
 import httpx
 import aiofiles
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
@@ -2220,7 +2221,37 @@ if os.environ.get("OMNIOMICS_DEV_RELOAD"):
     _dev_reload_observer.schedule(_ManifestReloadHandler(), pipelines.PIPELINES_DIR, recursive=True)
     _dev_reload_observer.start()
 
+def _exit_when_parent_dies():
+    """Shut down cleanly once the app that launched this backend is gone.
+
+    Closing the window does not always reach Flutter's `detached` lifecycle
+    state on Linux, so the backend (and, in the PyInstaller build, its
+    bootloader) used to stay alive after the app closed, one orphan per
+    launch. The launcher passes its own PID; when that process disappears,
+    SIGTERM is sent to this process so uvicorn runs the normal shutdown hook
+    (which also stops running pipelines and plots, as a regular close does).
+    """
+    raw = os.environ.get("OMNIOMICS_PARENT_PID", "")
+    if not raw.isdigit():
+        return
+    parent_pid = int(raw)
+
+    def _watch():
+        while True:
+            time.sleep(2)
+            try:
+                os.kill(parent_pid, 0)
+            except ProcessLookupError:
+                os.kill(os.getpid(), signal.SIGTERM)
+                return
+            except PermissionError:
+                pass
+
+    threading.Thread(target=_watch, name="parent-watchdog", daemon=True).start()
+
+
 if __name__ == "__main__":
+    _exit_when_parent_dies()
     # Port is chosen by the launcher (BackendLauncher) and passed in, so it can
     # fall back to a free port when 8765 is already taken (e.g. an orphaned
     # backend from a previous crash, or a second OmniOmics instance). Defaults

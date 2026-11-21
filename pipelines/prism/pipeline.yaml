@@ -175,10 +175,10 @@
           "flag": "--min_length",
           "type": "int",
           "default": 1300,
-          "enabled": true,
+          "enabled": false,
           "description": {
-            "en": "Minimum read length to keep (bp) -- lower this for ITS (~300 bp)",
-            "pt": "Comprimento mínimo da read a manter (pb) -- reduza para ITS (~300 pb)"
+            "en": "Minimum read length to keep (bp). Off by default: the amplicon preset supplies the length window for the chosen marker gene; turn on only to override it",
+            "pt": "Comprimento mínimo da read a manter (pb). Desligado por padrão: o preset de amplicon define a janela de comprimento do gene marcador escolhido; ligue só para sobrescrevê-la"
           },
           "min": 1
         },
@@ -186,10 +186,10 @@
           "flag": "--max_length",
           "type": "int",
           "default": 1700,
-          "enabled": true,
+          "enabled": false,
           "description": {
-            "en": "Maximum read length to keep (bp) -- lower this for ITS (~1000 bp)",
-            "pt": "Comprimento máximo da read a manter (pb) -- reduza para ITS (~1000 pb)"
+            "en": "Maximum read length to keep (bp). Off by default: the amplicon preset supplies the length window for the chosen marker gene; turn on only to override it",
+            "pt": "Comprimento máximo da read a manter (pb). Desligado por padrão: o preset de amplicon define a janela de comprimento do gene marcador escolhido; ligue só para sobrescrevê-la"
           },
           "min": 1
         },
@@ -587,6 +587,7 @@
       ],
       "category": "Functional Inference",
       "read_type": "long",
+      "active_by_default": false,
       "flags": [
         {
           "flag": "--max_nsti",
@@ -604,7 +605,7 @@
           "flag": "--stratified",
           "type": "bool",
           "default": false,
-          "enabled": true,
+          "enabled": false,
           "description": {
             "en": "Also output per-ASV contributions to each predicted function, not just the per-sample total -- real diagnostic value, but noticeably slower",
             "pt": "Também gera a contribuição de cada ASV para cada função prevista, não só o total por amostra -- valor real de diagnóstico, mas visivelmente mais lento"

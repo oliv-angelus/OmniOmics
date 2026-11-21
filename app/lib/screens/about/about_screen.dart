@@ -75,10 +75,10 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 children: [
                   _Identity(about: about),
                   const SizedBox(height: 18),
-                  // The alpha caveat sits above everything, not in a footnote:
-                  // someone deciding whether to trust a result should meet it
-                  // before anything else.
-                  _AlphaNote(colors: colors),
+                  // The validation note sits above everything, not in a
+                  // footnote: someone deciding whether to trust a result
+                  // should meet it before anything else.
+                  _ReleaseNote(colors: colors),
                   const SizedBox(height: 22),
                   _Tabs(
                     tab: _tab,
@@ -160,9 +160,9 @@ class _Identity extends ConsumerWidget {
   }
 }
 
-class _AlphaNote extends ConsumerWidget {
+class _ReleaseNote extends ConsumerWidget {
   final AppPalette colors;
-  const _AlphaNote({required this.colors});
+  const _ReleaseNote({required this.colors});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -170,17 +170,17 @@ class _AlphaNote extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.statusRunningBg,
+        color: colors.statusDoneBg,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.statusRunning.withValues(alpha: 0.35)),
+        border: Border.all(color: colors.statusDone.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.science_outlined, size: 18, color: colors.statusRunning),
+          Icon(Icons.verified_outlined, size: 18, color: colors.statusDone),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(ref.t('about_alpha_note'),
+            child: Text(ref.t('about_release_note'),
                 style: TextStyle(fontSize: 12.5, height: 1.5, color: colors.textPrimary)),
           ),
         ],

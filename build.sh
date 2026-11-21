@@ -10,7 +10,7 @@ cd "$(dirname "$(realpath "$0")")"
 # the About screen serves it from there too (see backend/about.py). It used to
 # live in three places asked to stay in step by a comment, and they had already
 # drifted -- this said 0.0.1 while CITATION.cff and about_screen.dart said
-# 0.0.1-alpha.
+# 0.0.1-alpha (historical).
 #
 # Debian's version field treats "-" as the upstream/revision separator, so the
 # suffix is dropped for the package name and kept everywhere else.

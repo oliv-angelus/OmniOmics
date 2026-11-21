@@ -13,6 +13,16 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "1.1.2"
+  date: 2026-11-21
+  entries:
+    - pt: "**Rascunho da tela de lançamento não fixa mais padrões antigos.** O rascunho salvo guardava o valor de toda flag, inclusive as nunca alteradas, e uma versão nova que mudasse um padrão (ex.: o banco do Emu, de GTDB para o banco próprio do Emu) continuava recebendo o valor antigo. Agora só o que foi alterado é guardado; rascunhos antigos mantêm pastas e ferramentas, mas voltam aos padrões atuais nas flags e primers. Caminhos de banco salvos que não existem mais deixam de ir para o config.yaml."
+      en: "**The Launch screen draft no longer pins old defaults.** The saved draft stored every flag value, including untouched ones, so a release that changed a default (e.g. Emu's database, from GTDB to Emu's own) kept receiving the old value. Only what was changed is stored now; older drafts keep their folders and tools but return to the current defaults for flags and primers. Saved database paths that no longer exist are no longer written into config.yaml."
+    - pt: "**Interface e linha de comando com os mesmos padrões.** Na interface, a janela de comprimento do Filtlong no PRISM sobrepunha a do preset de amplicon (um preset de ITS perderia todas as leituras); o featureCounts do DEFINE perdia `-t CDS -g locus_tag`; o eggNOG do DEFINE e o RiboDetector do DOGMA perdiam uma flag cada. O PICRUSt2 volta a ficar desligado por padrão, como documentado."
+      en: "**Interface and command line now use the same defaults.** In the interface, PRISM's Filtlong length window overrode the amplicon preset's (an ITS preset would have lost every read); DEFINE's featureCounts lost `-t CDS -g locus_tag`; DEFINE's eggNOG and DOGMA's RiboDetector each lost one flag. PICRUSt2 is off by default again, as documented."
+    - pt: "**O backend fecha junto com o app.** No Linux, fechar a janela nem sempre encerrava o backend, que ficava rodando em segundo plano. O monitor também deixa de mostrar uma execução como ativa para sempre se a conexão com o backend cair. A tela Sobre deixa de indicar versão alpha."
+      en: "**The backend now closes with the app.** On Linux, closing the window did not always stop the backend, which kept running in the background. The Monitor also no longer shows a run as active forever if the connection to the backend drops. The About screen no longer says alpha."
+
 - version: "1.1.1"
   date: 2026-11-19
   entries:

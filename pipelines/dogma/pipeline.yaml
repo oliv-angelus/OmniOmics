@@ -221,6 +221,17 @@
             "both",
             "none"
           ]
+        },
+        {
+          "flag": "--chunk_size",
+          "type": "int",
+          "default": 200,
+          "enabled": true,
+          "description": {
+            "en": "Reads loaded per chunk (x1024) -- lower it if memory runs short",
+            "pt": "Reads carregadas por bloco (x1024) -- reduza se faltar memória"
+          },
+          "min": 1
         }
       ],
       "requires": [

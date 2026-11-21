@@ -154,8 +154,38 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
     );
   }
 
+  /// The Monitor shows the tail of the log; keeping every line of a long run
+  /// (tens of thousands) and copying the whole list on each new line made
+  /// the UI progressively slower. The full log stays on disk in the run's
+  /// .snakemake/log/.
+  static const _maxLogLines = 5000;
+
+  static List<String> _appendLog(List<String> log, String line) {
+    final next = [...log, line];
+    return next.length > _maxLogLines ? next.sublist(next.length - _maxLogLines) : next;
+  }
+
   void _listen(WsClient ws) {
-    ws.events.listen((event) {
+    ws.events.listen(
+      _onEvent,
+      // The socket closing without a "done" event (backend killed or
+      // crashed) used to leave the run "running" forever on the Monitor.
+      onError: (_) => _connectionLost(ws),
+      onDone: () => _connectionLost(ws),
+    );
+  }
+
+  void _connectionLost(WsClient ws) {
+    final current = state;
+    if (current == null || current.finished || !identical(ws, _ws)) return;
+    state = current.copyWith(
+      finished: true,
+      log: _appendLog(current.log, translate('monitor_connection_lost', ref.read(localeProvider).languageCode)),
+    );
+  }
+
+  void _onEvent(Map<String, dynamic> event) {
+    {
       final current = state;
       if (current == null) return;
       switch (event['type']) {
@@ -163,7 +193,7 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
           state = current.copyWith(runId: event['id'] as String?);
           break;
         case 'log':
-          state = current.copyWith(log: [...current.log, (event['text'] as String).trimRight()]);
+          state = current.copyWith(log: _appendLog(current.log, (event['text'] as String).trimRight()));
           break;
         case 'job_start':
           final id = event['jobid'] as int;
@@ -213,11 +243,11 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
             finished: true,
             exitCode: event['code'] as int?,
             log: current.stopped
-                ? [...current.log, translate('monitor_stopped_log', ref.read(localeProvider).languageCode)]: current.log,
+                ? _appendLog(current.log, translate('monitor_stopped_log', ref.read(localeProvider).languageCode)): current.log,
           );
           break;
       }
-    });
+    }
   }
 
   Future<void> stop() async {
@@ -225,7 +255,7 @@ class PipelineRunNotifier extends Notifier<PipelineRunState?> {
     if (current == null) return;
     state = current.copyWith(
       stopped: true,
-      log: [...current.log, translate('monitor_stopping_log', ref.read(localeProvider).languageCode)],
+      log: _appendLog(current.log, translate('monitor_stopping_log', ref.read(localeProvider).languageCode)),
     );
     final api = ref.read(apiClientProvider);
     await api.post('/api/pipelines/${current.pipelineId}/stop');

@@ -199,6 +199,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
       final categories = toolsRaw.map((e) => ToolCategory.fromJson(e as Map<String, dynamic>, lang)).toList();
       final databases = dbsRaw.map((k, v) => MapEntry(k, DatabaseDef.fromJson(k, v as Map<String, dynamic>, lang)));
 
+      if (!mounted) return;
       setState(() {
         _manifest = manifest;
         _toolsRaw = toolsRaw;
@@ -226,6 +227,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -287,11 +289,20 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     final savedPreset = draft['amplicon_preset'] as String?;
     if (savedPreset != null && savedPreset.isNotEmpty) _ampliconPreset = savedPreset;
     if (savedPreset != null && savedPreset.isNotEmpty) _seedPrimersFromPreset(savedPreset, force: true);
+    // Drafts saved before format 2 stored every flag value and the primer
+    // fields verbatim, defaults included, so a default changed by a newer
+    // release (e.g. Emu's --reference_db, gtdb -> emu) kept coming back from
+    // the old draft and silently overrode it. Format 2 stores only what the
+    // user changed; legacy drafts keep their folders and tool selection but
+    // their per-flag values and primers are dropped once.
+    final diffFormat = (draft['draft_format'] as num?)?.toInt() == _draftFormat;
     // Hand-typed primers win over whatever the preset filled in.
-    final savedFwd = draft['amplicon_fwd_primers'] as String?;
-    if (savedFwd != null && savedFwd.isNotEmpty) _fwdPrimersController.text = savedFwd;
-    final savedRev = draft['amplicon_rev_primers'] as String?;
-    if (savedRev != null && savedRev.isNotEmpty) _revPrimersController.text = savedRev;
+    if (diffFormat) {
+      final savedFwd = draft['amplicon_fwd_primers'] as String?;
+      if (savedFwd != null && savedFwd.isNotEmpty) _fwdPrimersController.text = savedFwd;
+      final savedRev = draft['amplicon_rev_primers'] as String?;
+      if (savedRev != null && savedRev.isNotEmpty) _revPrimersController.text = savedRev;
+    }
 
     final threadOverrides = draft['thread_overrides'] as Map<String, dynamic>?;
     if (threadOverrides != null) {
@@ -320,22 +331,51 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     }
 
     final toolParams = draft['tool_params'] as Map<String, dynamic>?;
-    if (toolParams != null) {
+    if (diffFormat && toolParams != null) {
       for (final entry in toolParams.entries) {
         final state = _toolParams[entry.key];
         if (state == null) continue;
         final saved = entry.value as Map<String, dynamic>;
-        final enabled = (saved['enabledFlags'] as List?)?.map((e) => e as String).toSet();
-        if (enabled != null) {
-          state.enabledFlags..clear()..addAll(enabled);
-        }
-        final values = saved['flagValues'] as Map<String, dynamic>?;
+        state.enabledFlags.addAll(((saved['on'] as List?) ?? const []).map((e) => e as String));
+        state.enabledFlags.removeAll(((saved['off'] as List?) ?? const []).map((e) => e as String));
+        final values = saved['values'] as Map<String, dynamic>?;
         if (values != null) {
-          state.flagValues..clear()..addAll(values.map((k, v) => MapEntry(k, v as String)));
+          state.flagValues.addAll(values.map((k, v) => MapEntry(k, v.toString())));
         }
         state.extraParams = saved['extraParams'] as String? ?? '';
       }
     }
+  }
+
+  static const _draftFormat = 2;
+
+  /// The preset's own primer string, as _seedPrimersFromPreset writes it.
+  String _presetPrimers(String key) {
+    final list = (_manifest?['amplicon_presets'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final p = list.firstWhere((e) => e['id'] == _ampliconPreset, orElse: () => const <String, dynamic>{});
+    return ((p[key] as List?) ?? const []).join(', ');
+  }
+
+  /// Only what differs from the manifest defaults, so a default changed in a
+  /// later release is picked up instead of being pinned by an old draft.
+  Map<String, dynamic> _toolParamsDiff() {
+    final out = <String, dynamic>{};
+    for (final entry in _toolParams.entries) {
+      final tool = _toolsById[entry.key];
+      if (tool == null) continue;
+      final defaults = ToolParamsState.fromDefaults(tool);
+      final state = entry.value;
+      final on = state.enabledFlags.difference(defaults.enabledFlags).toList();
+      final off = defaults.enabledFlags.difference(state.enabledFlags).toList();
+      final values = <String, String>{
+        for (final v in state.flagValues.entries)
+          if (defaults.flagValues[v.key] != v.value) v.key: v.value,
+      };
+      final extra = state.extraParams.trim();
+      if (on.isEmpty && off.isEmpty && values.isEmpty && extra.isEmpty) continue;
+      out[entry.key] = {'on': on, 'off': off, 'values': values, 'extraParams': state.extraParams};
+    }
+    return out;
   }
 
   Map<String, dynamic> _draftPayload() => {
@@ -350,22 +390,18 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
         'cores': _coresController.text,
         'long_read_platform': _longReadPlatform,
         'amplicon_preset': _ampliconPreset,
-        'amplicon_fwd_primers': _fwdPrimersController.text,
-        'amplicon_rev_primers': _revPrimersController.text,
+        'amplicon_fwd_primers':
+            _fwdPrimersController.text.trim() == _presetPrimers('fwd_primers') ? '' : _fwdPrimersController.text,
+        'amplicon_rev_primers':
+            _revPrimersController.text.trim() == _presetPrimers('rev_primers') ? '' : _revPrimersController.text,
         'thread_overrides': {
           for (final entry in _threadControllers.entries)
             if (entry.value.text.trim().isNotEmpty) entry.key: entry.value.text.trim(),
         },
         'active_tools': _activeTools.toList(),
         'active_tracks': {for (final entry in _activeTracks.entries) entry.key: entry.value.toList()},
-        'tool_params': {
-          for (final entry in _toolParams.entries)
-            entry.key: {
-              'enabledFlags': entry.value.enabledFlags.toList(),
-              'flagValues': entry.value.flagValues,
-              'extraParams': entry.value.extraParams,
-            },
-        },
+        'tool_params': _toolParamsDiff(),
+        'draft_format': _draftFormat,
       };
 
   /// Best-effort -- draft persistence failing shouldn't block Save/Start.
@@ -380,6 +416,7 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> with SingleTickerPr
     final api = ref.read(apiClientProvider);
     final dbsRaw = await api.get('/api/pipelines/${widget.pipelineId}/databases') as Map<String, dynamic>;
     final lang = ref.read(localeProvider).languageCode;
+    if (!mounted) return;
     setState(() {
       _databasesRaw = dbsRaw;
       _databases = dbsRaw.map((k, v) => MapEntry(k, DatabaseDef.fromJson(k, v as Map<String, dynamic>, lang)));

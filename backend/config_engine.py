@@ -346,7 +346,13 @@ def generate_config(pipeline_id: str, data: dict) -> dict:
             # (gunc used to be the only example of this, until its own `gunc run`
             # rule started taking -d explicitly -- see 05_mag_refine.smk)
         setting_key = info["setting_key"]
-        databases_block[config_key] = data.get(setting_key) or info.get("path") or ""
+        # A stored path that no longer exists (folder moved or deleted) is left
+        # out: written into config.yaml it only failed mid-run, inside the
+        # rule, while the Databases tab already showed it as not configured.
+        stored = info.get("path") or ""
+        if stored and not os.path.exists(stored):
+            stored = ""
+        databases_block[config_key] = data.get(setting_key) or stored
 
     # Non-database sample_sheet inputs that still need to land in config.yaml
     # (unlike the persistent, global databases above, these are per-run

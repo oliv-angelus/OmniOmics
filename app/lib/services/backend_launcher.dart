@@ -27,7 +27,10 @@ class BackendLauncher {
     // Hand the port to the backend via env; Process.start merges this on top of
     // the parent environment (includeParentEnvironment defaults to true), so
     // OMNIOMICS_DEV_RELOAD and everything else run_dev.sh sets is preserved.
-    final env = {'OMNIOMICS_PORT': '$chosenPort'};
+    // OMNIOMICS_PARENT_PID lets the backend shut itself down once this app
+    // is gone (main.py's _exit_when_parent_dies): on Linux, closing the window
+    // does not always deliver the `detached` lifecycle state that calls stop().
+    final env = {'OMNIOMICS_PORT': '$chosenPort', 'OMNIOMICS_PARENT_PID': '$pid'};
 
     final exeDir = File(Platform.resolvedExecutable).parent;
     final bundledBinary = File('${exeDir.path}/backend/server');

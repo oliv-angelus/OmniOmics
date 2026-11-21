@@ -1076,16 +1076,6 @@
       "read_type": "long",
       "flags": [
         {
-          "flag": "--meta",
-          "type": "bool",
-          "default": true,
-          "enabled": true,
-          "description": {
-            "en": "Metagenome mode — handles highly uneven coverage",
-            "pt": "Modo metagenoma — lida com cobertura altamente desigual"
-          }
-        },
-        {
           "flag": "--nano-raw",
           "type": "bool",
           "default": true,
