@@ -41,13 +41,16 @@ if (!(group_var %in% colnames(sample_data(ps)))) {
 }
 
 ps_rel <- transform_sample_counts(ps, function(x) x / sum(x))
-core_taxa <- filter_taxa(ps_rel, function(x) sum(x > min_abundance) > (prevalence * nsamples(ps_rel)), TRUE)
+# Mask first, prune after: filter_taxa(prune = TRUE) cannot build a
+# zero-taxa otu_table and dies inside phyloseq before the check below.
+core_mask <- filter_taxa(ps_rel, function(x) sum(x > min_abundance) > (prevalence * nsamples(ps_rel)), FALSE)
 log_line("[core_microbiome] %d taxa in the core (present > %.3g in > %.0f%% of samples)",
-          ntaxa(core_taxa), min_abundance, prevalence * 100)
+          sum(core_mask), min_abundance, prevalence * 100)
 
-if (ntaxa(core_taxa) == 0) {
+if (sum(core_mask) == 0) {
   stop("No taxa meet the core prevalence/abundance thresholds -- try lowering --prevalence or --min_abundance.")
 }
+core_taxa <- prune_taxa(core_mask, ps_rel)
 
 ps_core_glom <- if (rank == "ASV") core_taxa else tax_glom(core_taxa, taxrank = rank, NArm = FALSE)
 

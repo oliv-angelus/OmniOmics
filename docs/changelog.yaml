@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "1.1.3"
+  date: 2026-11-21
+  entries:
+    - pt: "**Gráficos do PRISM com Nanopore/Emu voltam a carregar.** Ao confirmar os metadados, o carregamento falhava em silêncio e a tela voltava ao editor: o banco padrão do Emu (NCBI) chama o primeiro nível taxonômico de `superkingdom`, e o carregador esperava `domain`. Os dois nomes são aceitos agora, e um erro de carregamento passa a aparecer na própria tela do editor de metadados. O microbioma central sem nenhum táxon acima dos limiares mostra a mensagem para reduzir a prevalência em vez de um erro interno."
+      en: "**PRISM Nanopore/Emu runs load in the Plots tab again.** Confirming the metadata failed silently and returned to the editor: Emu's default database (NCBI) names the first rank `superkingdom`, and the loader expected `domain`. Both names are accepted now, and a load error is shown on the metadata editor screen itself. Core microbiome with no taxon above the thresholds shows the message to lower the prevalence instead of an internal error."
+
 - version: "1.1.2"
   date: 2026-11-21
   entries:

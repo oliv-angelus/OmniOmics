@@ -448,11 +448,24 @@ class _PlotWorkspaceScreenState extends ConsumerState<PlotWorkspaceScreen> {
     if (_rawMetadataText != null && !_loadingData) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: MetadataTableEditor(
-          key: ValueKey(_metadataPath),
-          rawTsv: _rawMetadataText!,
-          onConfirm: _confirmMetadata,
-          onCancel: _changeMetadata,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // A failed /api/plots/load lands back here (the editor), so the
+            // error has to be shown here too -- the picker card below is not
+            // rendered while _rawMetadataText is set.
+            if (_loadError != null)...[
+              SelectableText('${ref.t('error_prefix')}: $_loadError',
+                  style: TextStyle(color: colors.statusError, fontSize: 12.5)),
+              const SizedBox(height: 16),
+            ],
+            MetadataTableEditor(
+              key: ValueKey(_metadataPath),
+              rawTsv: _rawMetadataText!,
+              onConfirm: _confirmMetadata,
+              onCancel: _changeMetadata,
+            ),
+          ],
         ),
       );
     }

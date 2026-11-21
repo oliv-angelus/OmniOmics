@@ -152,7 +152,16 @@ build_phyloseq <- function(abundance_path, metadata_path = NULL, tree = NULL) {
   # platform produced the run.
   rank_cols_out <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
   tax <- tax[match(ids, as.character(tax[[tree$id_col]])),, drop = FALSE]
-  tax_matrix <- as.matrix(tax[, tree$rank_cols, drop = FALSE])
+  # Each rank may list alternative column names (the Emu default db, built
+  # from NCBI, calls rank 1 "superkingdom"; other Emu dbs call it "domain");
+  # the first one present in this taxonomy file is used.
+  rank_cols_in <- vapply(tree$rank_cols, function(alts) {
+    hit <- intersect(strsplit(alts, "|", fixed = TRUE)[[1]], colnames(tax))
+    if (length(hit) == 0) stop(sprintf("taxonomy file %s has no column for rank '%s' (columns: %s)",
+                                       tree$taxonomy_path, alts, paste(colnames(tax), collapse = ", ")))
+    hit[[1]]
+  }, character(1))
+  tax_matrix <- as.matrix(tax[, rank_cols_in, drop = FALSE])
   colnames(tax_matrix) <- rank_cols_out
   rownames(tax_matrix) <- ids
 
@@ -209,7 +218,7 @@ find_prism_tree_files <- function(input_dir) {
       counts_path = file.path(tree_dir, "prism_species_counts.tsv"),
       taxonomy_path = emu_taxonomy,
       id_col = "tax_id",
-      rank_cols = c("domain", "phylum", "class", "order", "family", "genus", "species")
+      rank_cols = c("domain|superkingdom", "phylum", "class", "order", "family", "genus", "species")
     )
   } else {
     warning(sprintf("Found %s but no matching prism_asv_taxonomy.tsv/prism_species_taxonomy.tsv beside it -- ignoring the tree.", tree_path))
