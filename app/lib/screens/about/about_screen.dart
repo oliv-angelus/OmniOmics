@@ -44,6 +44,8 @@ class AboutScreen extends ConsumerStatefulWidget {
 
   static const String orcid = 'https://orcid.org/0000-0003-0831-447X';
   static const String repo = 'https://github.com/oliv-angelus/OmniOmics';
+  /// Zenodo concept DOI -- resolves to the latest archived version.
+  static const String doi = 'https://doi.org/10.5281/zenodo.23958931';
 
   @override
   ConsumerState<AboutScreen> createState() => _AboutScreenState();
@@ -534,6 +536,7 @@ class _ProjectView extends ConsumerWidget {
               Wrap(spacing: 8, runSpacing: 8, children: const [
                 _LinkChip(label: 'ORCID', url: AboutScreen.orcid),
                 _LinkChip(label: 'GitHub', url: AboutScreen.repo),
+                _LinkChip(label: 'DOI (Zenodo)', url: AboutScreen.doi),
               ]),
             ],
           ),

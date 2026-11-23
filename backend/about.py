@@ -49,6 +49,16 @@ def _author_name(cff: dict) -> str:
     return f"{family}, {given}".strip(", ")
 
 
+def _doi(cff: dict) -> str:
+    """The Zenodo concept DOI from CITATION.cff (always resolves to the latest
+    version, so a release never has to change it). When the article is out,
+    add a `preferred-citation` block to the file and cite that here as well."""
+    for ident in cff.get("identifiers") or []:
+        if ident.get("type") == "doi" and ident.get("value"):
+            return str(ident["value"])
+    return str(cff.get("doi") or "")
+
+
 def _citation_formats(cff: dict) -> dict:
     """BibTeX, APA and CFF, ready to paste.
 
@@ -66,6 +76,7 @@ def _citation_formats(cff: dict) -> dict:
     family = (authors[0].get("family-names") or "").strip()
     orcid = authors[0].get("orcid", "")
     initials = " ".join(f"{p[0]}." for p in given.split() if p)
+    doi = _doi(cff)
 
     bibtex = "\n".join([
         "@software{omniomics,",
@@ -74,11 +85,13 @@ def _citation_formats(cff: dict) -> dict:
         f"  year      = {{{year}}},",
         f"  version   = {{{version}}},",
         f"  license   = {{{licence}}},",
+        *([f"  doi       = {{{doi}}},"] if doi else []),
         f"  url       = {{{repo}}},",
         f"  orcid     = {{{orcid}}}",
         "}",
     ])
-    apa = f"{family}, {initials} ({year}). {title} (Version {version}) [Computer software]. {repo}"
+    apa = (f"{family}, {initials} ({year}). {title} (Version {version}) [Computer software]. "
+           + (f"https://doi.org/{doi}" if doi else repo))
 
     try:
         with open(CITATION_PATH) as f:
@@ -160,6 +173,7 @@ def about_data() -> dict:
         "author": _author_name(cff),
         "license": cff.get("license", ""),
         "repository": cff.get("repository-code", ""),
+        "doi": _doi(cff),
         "orcid": ((cff.get("authors") or [{}])[0]).get("orcid", ""),
         "citation": _citation_formats(cff),
         "references": references,
