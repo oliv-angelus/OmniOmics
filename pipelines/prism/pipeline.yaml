@@ -124,7 +124,7 @@
       ]
     },
     "cutadapt_short": {
-      "name": "Cutadapt (reads curtas pareadas)",
+      "name": "Cutadapt (paired short reads)",
       "description": {
         "en": "Removes the marker-gene primers from paired short reads (fwd primer at R1's 5' end, rev primer at R2's 5' end), discarding any pair where the expected primer isn't found on both mates -- the standard paired-end amplicon convention (unlike the long-read cutadapt tool above, which needs a single linked adapter since both primers sit on the same read). Defaults shown here are the MiFish-U 12S primers (Miya et al. 2015); swap via the Amplicon preset (Inputs tab) for COI (Leray et al. 2013) or any other short-amplicon marker",
         "pt": "Remove os primers do gene marcador de reads curtas pareadas (primer forward na extremidade 5' da R1, primer reverse na extremidade 5' da R2), descartando qualquer par em que o primer esperado não seja encontrado em ambas as mates -- a convenção padrão de amplicon pareado (diferente do cutadapt de reads longas acima, que precisa de um único adaptador ligado já que os dois primers ficam na mesma read). Os padrões mostrados aqui são os primers MiFish-U de 12S (Miya et al. 2015); troque via o preset de Amplicon (aba Entradas) para COI (Leray et al. 2013) ou qualquer outro marcador de amplicon curto"
@@ -402,10 +402,13 @@
       ],
       "rule_names": [
         "dada2_pacbio"
+      ],
+      "platforms": [
+        "pacbio_hifi"
       ]
     },
     "dada2_illumina": {
-      "name": "DADA2 (Illumina, reads curtas pareadas)",
+      "name": "DADA2 (Illumina, paired short reads)",
       "description": {
         "en": "Exact amplicon sequence variant (ASV) inference for paired-end short reads (Illumina) -- the original, textbook DADA2 workflow (Callahan et al. 2016), unlike the reparameterized long-read variants used by dada2_pacbio/emu_ont. Runs filterAndTrim -> learnErrors (forward/reverse separately) -> dada() -> mergePairs() -> makeSequenceTable() -> DADA2's own removeBimeraDenovo() for chimera removal -- no external VSEARCH chimera step needed here (unlike the long-read path), since short Illumina reads exact-dereplicate reliably, which is exactly what removeBimeraDenovo's abundance-skew logic needs to work",
         "pt": "Inferência exata de variantes de sequência de amplicon (ASV) para reads curtas pareadas (Illumina) -- o fluxo DADA2 original, de livro-texto (Callahan et al. 2016), diferente das variantes reparametrizadas para leitura longa usadas por dada2_pacbio/emu_ont. Roda filterAndTrim -> learnErrors (forward/reverse separadamente) -> dada() -> mergePairs() -> makeSequenceTable() -> removeBimeraDenovo() do próprio DADA2 para remoção de quimera -- não precisa do passo externo de quimera do VSEARCH aqui (diferente do caminho de reads longas), já que reads curtas Illumina dereplicam exato de forma confiável, exatamente o que a lógica de assimetria de abundância do removeBimeraDenovo precisa para funcionar"
@@ -571,6 +574,12 @@
       ],
       "rule_names": [
         "emu_ont"
+      ],
+      "platforms": [
+        "ont"
+      ],
+      "version_rules": [
+        "emu_classify"
       ]
     },
     "picrust2": {
@@ -622,6 +631,9 @@
       ],
       "rule_names": [
         "picrust2"
+      ],
+      "platforms": [
+        "pacbio_hifi"
       ]
     }
   },

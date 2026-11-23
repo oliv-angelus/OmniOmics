@@ -86,6 +86,36 @@ SNAKEMAKE_CITATION = {
 }
 
 
+def _ran_on_this_input(tool: dict, config: dict) -> bool:
+    """Whether an active tool actually had data to work on in this run.
+
+    A pipeline that accepts several kinds of input keeps every path's tools
+    active and lets the rules skip the paths with no data (PRISM's short-read
+    tools on a long-read run, DADA2-PacBio on an ONT run). Listing those in
+    the Methods would describe steps that never processed a read. A tool is
+    left out when its manifest read_type has no matching sample in
+    samples.tsv, or when it declares `platforms` and the run's long-read
+    platform is not among them. Missing information keeps the tool listed.
+    """
+    read_type = tool.get("read_type")
+    samples_path = config.get("samples")
+    if read_type in ("short", "long") and samples_path:
+        try:
+            with open(samples_path) as f:
+                header = f.readline().rstrip("\n").split("\t")
+                col = header.index("read_type")
+                present = {line.rstrip("\n").split("\t")[col] for line in f if line.strip()}
+        except (OSError, ValueError, IndexError):
+            present = None
+        if present is not None and read_type not in present and "hybrid" not in present:
+            return False
+    platforms = tool.get("platforms")
+    platform = (config.get("long_read_platform") or {}).get("id")
+    if platforms and platform and platform not in platforms:
+        return False
+    return True
+
+
 def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
     """Everything the report says, as data.
 
@@ -106,7 +136,8 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
     except (OSError, yaml.YAMLError):
         config = {}
 
-    active_tools = [t for t in config.get("active_tools", []) if t in tools]
+    active_tools = [t for t in config.get("active_tools", []) if t in tools
+                    and _ran_on_this_input(tools[t], config)]
     params = config.get("params", {})
     databases_block = config.get("databases", {})
 
@@ -129,7 +160,7 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
         phrases = []
         for tid in tids:
             tool = tools[tid]
-            env_paths = tool_versions.tool_env_files(pid, tid, tool.get("rule_names", []))
+            env_paths = tool_versions.tool_env_files(pid, tid, tool.get("version_rules") or tool.get("rule_names", []))
             version = tool_versions.primary_version(tid, env_paths)
             flags = _flags_string(params.get(tid))
             name = tool.get("name", tid)
@@ -140,7 +171,10 @@ def generate_report_data(pid: str, run: dict, config_path: str) -> dict:
             phrases.append(phrase)
             detail_rows.append((name, version or "-", cat, flags or "-"))
             refs.add_all(tool.get("citation", []))
-        methods_paragraphs.append(f"For {cat.lower()}, we used {_join_natural(phrases)}.")
+        # Lowercase mid-sentence, but keep acronyms ("QC", "MAG", "rRNA").
+        cat_text = " ".join(w if any(c.isupper() for c in w[1:]) or w.isupper() else w.lower()
+                            for w in cat.split())
+        methods_paragraphs.append(f"For {cat_text}, we used {_join_natural(phrases)}.")
 
     if not active_tools:
         methods_paragraphs.append("No tools were active for this run.")

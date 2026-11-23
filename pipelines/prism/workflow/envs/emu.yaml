@@ -11,5 +11,5 @@ dependencies:
   # lookup silently fails ("ValueError: f sums to 0, rather than 1") because
   # "1" != 1 as dict keys. Fixed upstream in 3.6.0's abundance code (explicit
   # `dtype={'tax_id': 'int64'}` now, confirmed by reading the installed
-  # 3.6.2 source directly) -- pin >=3.6.2, not 3.5.1.
-  - emu>=3.6.2
+  # 3.6.2 source directly) -- pinned to 3.6.2, not 3.5.1.
+  - emu=3.6.2

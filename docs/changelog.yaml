@@ -13,6 +13,12 @@
 # never announce a version it does not identify as. Flip it (and bump
 # CITATION.cff, which is the single source the About screen, the generated
 # citation and build.sh all read) when this actually ships.
+- version: "1.1.5"
+  date: 2026-11-23
+  entries:
+    - pt: "**Parágrafo de métodos só com o que rodou.** O rascunho de métodos da tela Resultados listava ferramentas de caminhos sem dados (no PRISM, fastp e DADA2 numa corrida só de Nanopore). Agora uma ferramenta fica de fora quando não há amostra do seu tipo de read ou quando a plataforma da corrida não é a dela. Dois nomes de ferramenta do PRISM saíam em português no texto em inglês, o Emu aparece com a versão (3.6.2, agora fixada exatamente no ambiente) e siglas como QC ficam em maiúsculas."
+      en: "**Methods paragraph lists only what ran.** The drafted Methods on the Results screen listed tools from paths with no data (in PRISM, fastp and DADA2 in a Nanopore-only run). A tool is now left out when no sample has its read type or the run's platform is not one it runs on. Two PRISM tool names came out in Portuguese in the English text, Emu now shows its version (3.6.2, now pinned exactly in its environment), and acronyms such as QC stay in capitals."
+
 - version: "1.1.4"
   date: 2026-11-23
   entries:

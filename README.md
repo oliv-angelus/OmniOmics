@@ -23,7 +23,7 @@ weeks-long task that has to be repeated on every machine and revisited every tim
 a tool updates. OmniOmics does that assembly once, declaratively, and keeps it
 reproducible.
 
-> **Status: 1.1.4.** The workflows and the plotting environment run end to
+> **Status: 1.1.5.** The workflows and the plotting environment run end to
 > end. Each of the five pipelines was validated on a public, non-simulated
 > dataset with a published expected result (mock-community compositions, a
 > reference genome, published differential-expression results), on an HPC
@@ -191,7 +191,7 @@ administrator password and installs like any other application. From a
 terminal, the same is:
 
 ```bash
-sudo dpkg -i omniomics_1.1.4_amd64.deb
+sudo dpkg -i omniomics_1.1.5_amd64.deb
 ```
 
 It also appears in the desktop menu under Science.
